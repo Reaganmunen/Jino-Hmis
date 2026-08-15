@@ -1,0 +1,87 @@
+/* ============================================================
+   TOOTH CHART PAGE — additive styles only.
+   Loaded after dashboard.css; reuses its tokens (--navy-*, --blue-*,
+   --slate-*, --radius-*, --shadow-*) and its .panel / .badge /
+   .timeline / .odontogram-* / .tooth-svg classes unchanged.
+   New custom properties (--purple-*) simply extend the existing
+   :root block — no collisions with anything dashboard.css defines.
+   ============================================================ */
+:root{
+  --purple-700:#7C4FE0;
+  --purple-50:#F3EEFF;
+}
+
+.stat-ic-purple{background:var(--purple-50);color:var(--purple-700);}
+
+/* ---- panel header with the Medical/Cosmetic toggle ---- */
+.panel-head-with-toggle{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;
+}
+
+/* ---- segmented control ---- */
+.segmented{
+  display:inline-flex;background:var(--slate-100);border-radius:100px;padding:3px;flex:0 0 auto;
+}
+.segmented-opt{
+  padding:8px 16px;border-radius:100px;border:none;background:none;cursor:pointer;
+  font-family:inherit;font-size:13px;font-weight:600;color:var(--slate-500);
+  transition:background .12s ease, color .12s ease, box-shadow .12s ease;
+}
+.segmented-opt:hover{color:var(--navy-900);}
+.segmented-opt.is-active{background:var(--white);color:var(--navy-950);box-shadow:var(--shadow-soft);}
+
+/* ---- cosmetic tooth condition (mirrors the cond-* pattern in dashboard.css) ---- */
+.tooth-svg.cond-cosmetic .tooth-outline{stroke:var(--purple-700);}
+.tooth-svg.cond-cosmetic .tooth-fill{fill:var(--purple-50);opacity:1;}
+.tooth-svg.cond-cosmetic .tooth-highlight{stroke:var(--purple-700);}
+
+.dot-cosmetic{background:var(--purple-700);}
+.badge-cosmetic{background:var(--purple-50);color:var(--purple-700);}
+
+/* ---- give the odontogram a bit more room since it's the whole page now ---- */
+.tooth-panel-full .odontogram-col{flex:0 0 340px;}
+
+/* ---- clickable legend (highlights matching teeth, dims the rest) ---- */
+.legend-item{
+  display:flex;align-items:center;gap:6px;font-family:inherit;font-size:11.5px;font-weight:500;
+  color:var(--slate-700);background:none;border:1px solid transparent;border-radius:100px;
+  padding:4px 9px 4px 7px;cursor:pointer;transition:background .12s ease, border-color .12s ease;
+}
+.legend-item:hover{background:var(--slate-100);}
+.legend-item.is-active{background:var(--blue-50);border-color:var(--blue-100);color:var(--navy-950);font-weight:700;}
+
+/* ---- teeth dimmed by an active legend filter ---- */
+.tooth-svg.is-dimmed{opacity:.22;}
+
+/* ---- hover tooltip on the odontogram ---- */
+.tooth-tooltip{
+  position:fixed;z-index:300;pointer-events:none;
+  background:var(--navy-950);color:#fff;padding:8px 12px;border-radius:10px;
+  font-size:12px;box-shadow:var(--shadow-card);opacity:0;transform:translateY(4px);
+  transition:opacity .1s ease, transform .1s ease;max-width:220px;
+}
+.tooth-tooltip b{display:block;font-size:12.5px;font-weight:700;margin-bottom:2px;}
+.tooth-tooltip span{display:block;color:#C9D6EC;font-size:11.5px;}
+.tooth-tooltip.is-visible{opacity:1;transform:translateY(0);}
+
+/* ---- extra timeline row bits: tooth pill, cost, appointment link, back button ---- */
+.timeline-tooth{
+  font-size:10.5px;font-weight:700;color:var(--blue-600);background:var(--blue-50);
+  border-radius:100px;padding:2px 8px;white-space:nowrap;
+}
+.timeline-cost{font-size:12.5px;font-weight:700;color:var(--navy-950);white-space:nowrap;}
+.timeline-appt-link{
+  display:inline-block;margin-top:6px;font-size:12px;font-weight:600;color:var(--blue-600);
+}
+.timeline-appt-link:hover{text-decoration:underline;}
+
+.tooth-detail-back{
+  display:inline-flex;align-items:center;gap:4px;font-family:inherit;font-size:12.5px;font-weight:600;
+  color:var(--blue-600);background:none;border:none;cursor:pointer;padding:0;margin-bottom:12px;
+}
+.tooth-detail-back:hover{text-decoration:underline;}
+
+@media (max-width:600px){
+  .panel-head-with-toggle{flex-direction:column;align-items:stretch;}
+  .segmented{align-self:flex-start;}
+}
