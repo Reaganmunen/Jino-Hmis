@@ -1,0 +1,30 @@
+const express = require('express');
+const router = express.Router();
+
+router.use('/auth', require('./authRoutes'));
+router.use('/users', require('./userRoutes'));
+router.use('/patients', require('./patientRoutes'));
+router.use('/dentist-schedules', require('./dentistScheduleRoutes'));
+router.use('/appointments', require('./appointmentRoutes'));
+router.use('/tooth-chart', require('./toothChartRoutes'));
+router.use('/diagnoses', require('./diagnosisRoutes'));
+router.use('/treatment-plans', require('./treatmentPlanRoutes'));
+router.use('/treatment-plan-items', require('./treatmentPlanItemRoutes'));
+router.use('/prescriptions', require('./prescriptionRoutes'));
+router.use('/consent-forms', require('./consentFormRoutes'));
+router.use('/patient-files', require('./patientFileRoutes'));
+router.use('/inventory-items', require('./inventoryItemRoutes'));
+router.use('/inventory-usage', require('./inventoryUsageRoutes'));
+router.use('/services', require('./serviceRoutes'));
+router.use('/bills', require('./billRoutes'));
+router.use('/bill-items', require('./billItemRoutes'));
+router.use('/payments', require('./paymentRoutes'));
+router.use('/mpesa', require('./mpesaRoutes'));
+router.use('/insurance-providers', require('./insuranceProviderRoutes'));
+router.use('/insurance-claims', require('./insuranceClaimRoutes'));
+router.use('/claim-status-history', require('./claimStatusHistoryRoutes'));
+router.use('/referrals', require('./referralRoutes'));
+router.use('/recall-reminders', require('./recallReminderRoutes'));
+router.use('/audit-log', require('./auditLogRoutes'));
+
+module.exports = router;

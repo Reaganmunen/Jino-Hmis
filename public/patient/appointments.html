@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Appointments — Jino Patient Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/dashboard.css">
+<link rel="stylesheet" href="../css/appointments.css">
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="side-top">
+      <div class="brand">
+        <span class="brand-mark">J</span>
+        <span class="brand-name">Jino</span>
+      </div>
+      <button class="side-close" id="sideClose" aria-label="Close menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <nav class="side-nav">
+      <p class="side-label">Care</p>
+      <a href="patient-portal.html" class="side-link" data-page="overview">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.7"/><rect x="14" y="3" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.7"/><rect x="3" y="14" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.7"/><rect x="14" y="14" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.7"/></svg>
+        Overview
+      </a>
+      <a href="appointments.html" class="side-link is-active" data-page="appointments">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2.2" stroke="currentColor" stroke-width="1.7"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        My Appointments
+      </a>
+      <a href="tooth-chart.html" class="side-link" data-page="toothchart">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 4c2.6 0 4.2 1.7 4.5 3.7.3 2-.4 3-.6 4.9-.2 1.9.3 3.3-.9 5.9-.5 1.1-1.4 1.5-2 .6-.5-.8-.6-1.9-1-1.9s-.5 1.1-1 1.9c-.6.9-1.5.5-2-.6-1.2-2.6-.7-4-.9-5.9-.2-1.9-.9-2.9-.6-4.9C7.8 5.7 9.4 4 12 4Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+        Tooth Chart
+      </a>
+      <a href="billing.html" class="side-link" data-page="billing">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="2.3" stroke="currentColor" stroke-width="1.7"/><path d="M3 10h18" stroke="currentColor" stroke-width="1.7"/><circle cx="7" cy="14.5" r="1" fill="currentColor"/></svg>
+        Billing &amp; Payments
+      </a>
+      <a href="treatments.html" class="side-link" data-page="treatments">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 19V5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8 12h8M8 16h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        Treatment Plans
+      </a>
+      <a href="prescriptions.html" class="side-link" data-page="prescriptions">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M7 3h10M9 3v5.5L4.6 16a2.6 2.6 0 0 0 2.2 4h10.4a2.6 2.6 0 0 0 2.2-4L15 8.5V3" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M6.5 14.5h11" stroke="currentColor" stroke-width="1.7"/></svg>
+        Prescriptions
+      </a>
+
+      <p class="side-label">Records</p>
+      <a href="documents.html" class="side-link" data-page="documents">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 3h8l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M14 3v5h5" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+        Documents
+      </a>
+      <a href="consent-forms.html" class="side-link" data-page="consent">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 19V5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8.5 14.5l2.2 2.2L16 12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Consent Forms
+      </a>
+      <a href="referrals.html" class="side-link" data-page="referrals">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.7"/><circle cx="17" cy="8" r="3" stroke="currentColor" stroke-width="1.7"/><path d="M2.5 20c.6-3.3 3-5 5.5-5s4.9 1.7 5.5 5M13 15.3c.6-.2 1.3-.3 2-.3 2.5 0 4.9 1.7 5.5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        Referrals
+      </a>
+
+      <p class="side-label">Account</p>
+      <a href="profile.html" class="side-link" data-page="profile">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.6" stroke="currentColor" stroke-width="1.7"/><path d="M4.5 20c.8-4 3.8-6 7.5-6s6.7 2 7.5 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        Profile &amp; Settings
+      </a>
+    </nav>
+
+    <div class="side-bottom">
+      <a href="../login.html" class="side-link side-logout">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 17l5-5-5-5M20 12H9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 19H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        Log Out
+      </a>
+    </div>
+  </aside>
+
+  <div class="scrim" id="scrim"></div>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main">
+
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="side-open" id="sideOpen" aria-label="Open menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+        <div>
+          <p class="topbar-kicker">Patient Portal</p>
+          <h1 class="topbar-title">My Appointments</h1>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="icon-btn" aria-label="Notifications">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M6 9a6 6 0 1 1 12 0c0 4.2 1 5.6 1.6 6.4.3.4 0 1-.5 1H4.9c-.5 0-.8-.6-.5-1C5 14.6 6 13.2 6 9Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9.5 19a2.5 2.5 0 0 0 5 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          <span class="icon-dot"></span>
+        </button>
+        <div class="avatar" id="avatarInitials">--</div>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <!-- ---- Toolbar: total count, date nav, day/week toggle, book ---- -->
+      <section class="cal-toolbar">
+        <div class="cal-total">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2.2" stroke="currentColor" stroke-width="1.7"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          <b id="totalCount">0</b> total appointments
+        </div>
+
+        <div class="cal-nav">
+          <button class="btn btn-outline btn-sm" id="todayBtn">Today</button>
+          <button class="icon-link-btn" id="prevDate" aria-label="Previous">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="icon-link-btn" id="nextDate" aria-label="Next">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <span class="cal-date-label" id="calDateLabel">—</span>
+        </div>
+
+        <div class="cal-right">
+          <div class="view-toggle">
+            <button class="view-btn is-active" data-view="day">Day</button>
+            <button class="view-btn" data-view="week">Week</button>
+          </div>
+          <button class="btn btn-primary" id="openBooking">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            Book Appointment
+          </button>
+        </div>
+      </section>
+
+      <!-- ---- Tabs ---- -->
+      <div class="cal-tabs">
+        <button class="cal-tab is-active" data-tab="calendar">Calendar</button>
+        <button class="cal-tab" data-tab="history">Log History</button>
+      </div>
+
+      <!-- ---- Calendar tab ---- -->
+      <section class="panel cal-panel" id="calendarPanel">
+        <div class="day-timeline" id="dayTimeline"><!-- rendered by JS --></div>
+        <div class="week-agenda" id="weekAgenda" style="display:none;"><!-- rendered by JS --></div>
+      </section>
+
+      <!-- ---- Log History tab ---- -->
+      <section class="panel" id="historyPanel" style="display:none;">
+        <div class="panel-head">
+          <h2>Appointment history</h2>
+        </div>
+        <p class="panel-sub">Every past and cancelled appointment on your record, most recent first.</p>
+        <div class="appt-list" id="historyList"><!-- rendered by JS --></div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ============ BOOKING MODAL ============ -->
+<div class="modal-scrim" id="modalScrim">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-head">
+      <div>
+        <p class="modal-kicker" id="modalStepLabel">Step 1 of 3</p>
+        <h2 id="modalTitle">Choose a dentist</h2>
+      </div>
+      <button class="icon-btn" id="modalClose" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <div class="modal-progress">
+      <span class="prog-step is-active" data-step="1">1</span>
+      <span class="prog-line"></span>
+      <span class="prog-step" data-step="2">2</span>
+      <span class="prog-line"></span>
+      <span class="prog-step" data-step="3">3</span>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- Step 1: dentist -->
+      <div class="wizard-step is-active" data-step="1">
+        <div class="dentist-grid" id="dentistGrid"><!-- JS --></div>
+      </div>
+
+      <!-- Step 2: date & time -->
+      <div class="wizard-step" data-step="2">
+        <label class="field-label" for="apptDate">Preferred date</label>
+        <input type="date" id="apptDate" class="field-input">
+        <p class="field-label" style="margin-top:18px;">Available slots</p>
+        <div class="slot-grid" id="slotGrid"><!-- JS --></div>
+      </div>
+
+      <!-- Step 3: reason & confirm -->
+      <div class="wizard-step" data-step="3">
+        <label class="field-label" for="apptReason">Reason for visit</label>
+        <textarea id="apptReason" class="field-input" rows="3" placeholder="e.g. Tooth sensitivity on lower left molar"></textarea>
+
+        <div class="confirm-summary" id="confirmSummary"><!-- JS --></div>
+      </div>
+
+    </div>
+
+    <div class="modal-foot">
+      <button class="btn btn-outline" id="wizardBack">Back</button>
+      <button class="btn btn-primary" id="wizardNext">Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ RESCHEDULE MODAL ============ -->
+<div class="modal-scrim" id="rescheduleScrim">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="rescheduleTitle" style="max-width:400px;">
+    <div class="modal-head">
+      <div>
+        <p class="modal-kicker">Reschedule</p>
+        <h2 id="rescheduleTitle">Pick a new time</h2>
+      </div>
+      <button class="icon-btn" id="rescheduleClose" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <label class="field-label" for="rescheduleDate">New date</label>
+      <input type="date" id="rescheduleDate" class="field-input">
+      <p class="field-label" style="margin-top:18px;">Available slots</p>
+      <div class="slot-grid" id="rescheduleSlotGrid"><!-- JS --></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" id="rescheduleCancel">Cancel</button>
+      <button class="btn btn-primary" id="rescheduleConfirm">Confirm new time</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!--
+  api.js must load first — it defines fetchMethod / getStoredUser / clearSession.
+  Adjust paths below to wherever these actually live relative to this file.
+-->
+<script src="../js/api.js"></script>
+<script src="../js/appointments.js"></script>
+</body>
+</html>

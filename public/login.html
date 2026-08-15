@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Log in — Jino</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/auth.css">
+</head>
+<body>
+
+<div class="auth-shell">
+
+  <aside class="auth-brand">
+    <div class="brand-stickers" aria-hidden="true">
+      <div class="sticker sticker-a">
+        <span class="sticker-ic green"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#1B7A4C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span><span class="sticker-t">Plan approved</span><span class="sticker-s">Signed off by Dr. Achieng</span></span>
+      </div>
+      <div class="sticker sticker-b">
+        <span class="sticker-ic amber"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="2.5" stroke="#9A6A11" stroke-width="1.8"/><path d="M3 10h18" stroke="#9A6A11" stroke-width="1.8"/><circle cx="7" cy="14.5" r="1" fill="#9A6A11"/></svg></span>
+        <span><span class="sticker-t">Payment received</span><span class="sticker-s">M-Pesa · confirmed</span></span>
+      </div>
+      <div class="sticker sticker-c">
+        <span class="sticker-ic blue"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="3" stroke="#2F6FED" stroke-width="1.8"/><circle cx="17" cy="8" r="3" stroke="#2F6FED" stroke-width="1.8"/><path d="M2.5 20c.6-3.3 3-5 5.5-5s4.9 1.7 5.5 5M13 15.3c.6-.2 1.3-.3 2-.3 2.5 0 4.9 1.7 5.5 5" stroke="#2F6FED" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+        <span><span class="sticker-t">Role-based access</span><span class="sticker-s">Scoped to your dashboard</span></span>
+      </div>
+    </div>
+    <div class="auth-brand-top">
+      <img src="assets/logo.png" alt="Jino" class="brand-logo">
+    </div>
+    <div class="auth-brand-body">
+      <h1>Welcome back</h1>
+      <p>One login for the whole clinic. Patients, dentists, front-desk and admins each land on a dashboard scoped to their role.</p>
+      <ul class="brand-points">
+        <li>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#7EA6FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Role-based dashboards, from day one
+        </li>
+        <li>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#7EA6FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Secure access to patient records
+        </li>
+        <li>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#7EA6FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Appointments, charting and billing in one place
+        </li>
+      </ul>
+    </div>
+    <div class="auth-brand-bottom">New patient? You can create your own account.</div>
+  </aside>
+
+  <main class="auth-main">
+    <div class="auth-card">
+      <div class="auth-card-head">
+        <a href="index.html" class="back-link">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Back to home
+        </a>
+        <h2>Log in</h2>
+        <p class="sub">For patients, dentists, front-desk and admin accounts.</p>
+      </div>
+
+      <div id="formError" class="form-error"></div>
+
+      <form id="loginForm" novalidate>
+        <div class="field">
+          <label for="email">Email address</label>
+          <input type="email" id="email" name="email" placeholder="you@email.com" autocomplete="email" required>
+        </div>
+
+        <div class="field">
+          <div class="field-label-row">
+            <label for="password">Password</label>
+          </div>
+          <input type="password" id="password" name="password" placeholder="Enter your password" autocomplete="current-password" required>
+        </div>
+
+        <button type="submit" id="submitBtn" class="btn btn-primary">Log in</button>
+      </form>
+
+      <p class="auth-switch">New patient? <a href="register.html">Create an account</a></p>
+    </div>
+  </main>
+
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/login.js"></script>
+</body>
+</html>
