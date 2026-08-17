@@ -1,6 +1,6 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { createUser, findUserByEmail, findUserById } = require('../models/userModel');
+const { createUser, findUserByEmail, findUserById, findUserByIdWithHash, updatePassword } = require('../models/userModel');
 const { createPatient } = require('../models/patientModel');
 
 const SALT_ROUNDS = 10;
@@ -102,4 +102,36 @@ const getMe = (req, res, next) => {
   });
 };
 
-module.exports = { register, registerPatient, login, getMe };
+// Any authenticated role (admin/dentist/receptionist/patient) can change their
+// own password. Requires the current password so a stolen/left-open session
+// can't be used to lock the real owner out.
+const changePassword = (req, res, next) => {
+  const { current_password, new_password } = req.body;
+
+  if (!current_password || !new_password) {
+    return res.status(400).json({ message: 'current_password and new_password are required' });
+  }
+  if (new_password.length < 8) {
+    return res.status(400).json({ message: 'New password must be at least 8 characters' });
+  }
+
+  findUserByIdWithHash(req.user.id, (err, user) => {
+    if (err) return next(err);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    bcrypt.compare(current_password, user.password_hash, (compareErr, isMatch) => {
+      if (compareErr) return next(compareErr);
+      if (!isMatch) return res.status(401).json({ message: 'Current password is incorrect' });
+
+      bcrypt.hash(new_password, SALT_ROUNDS, (hashErr, password_hash) => {
+        if (hashErr) return next(hashErr);
+        updatePassword(req.user.id, password_hash, (updateErr) => {
+          if (updateErr) return next(updateErr);
+          res.json({ message: 'Password updated successfully' });
+        });
+      });
+    });
+  });
+};
+
+module.exports = { register, registerPatient, login, getMe, changePassword };

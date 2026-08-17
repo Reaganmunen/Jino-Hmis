@@ -8,7 +8,7 @@ router.use(verifyToken);
 
 // Plug your multer (or other upload) middleware in before uploadFile once storage is decided,
 // e.g. router.post('/', upload.single('file'), authorizeRoles(...), uploadFile);
-router.post('/', authorizeRoles('admin', 'dentist', 'receptionist'), uploadFile);
+router.post('/', authorizeRoles('admin', 'dentist', 'receptionist', 'patient'), uploadFile);
 router.get('/patient/:patientId', getPatientFiles);
 router.delete('/:id', authorizeRoles('admin', 'dentist'), removeFile);
 

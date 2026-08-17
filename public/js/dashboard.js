@@ -51,17 +51,24 @@
       state.patientId = patient.id;
 
       document.getElementById('patientFirstName').textContent = patient.first_name;
-      document.getElementById('avatarInitials').textContent =
-        initialsOf(`${patient.first_name} ${patient.last_name}`);
 
-      const [appts, chart, dentistList, bills, plans, consentForms] = await Promise.all([
+      const [appts, chart, dentistList, bills, plans, consentForms, files] = await Promise.all([
         fetchMethod(`/appointments/patient/${patient.id}`, 'GET', null, true),
         fetchMethod(`/tooth-chart/patient/${patient.id}/current`, 'GET', null, true),
         fetchMethod('/users/dentists', 'GET', null, true),
         fetchMethod(`/bills/patient/${patient.id}`, 'GET', null, true),
         fetchMethod(`/treatment-plans/patient/${patient.id}`, 'GET', null, true),
         fetchMethod(`/consent-forms/patient/${patient.id}`, 'GET', null, true),
+        fetchMethod(`/patient-files/patient/${patient.id}`, 'GET', null, true).catch(() => []),
       ]);
+
+      // file_type is a Postgres enum without a 'profile_picture' value, so
+      // the profile photo is stored as file_type: 'photo' + description:
+      // 'Profile Picture' (see profile.js) and found the same way here.
+      const profilePhoto = files
+        .filter((f) => f.file_type === 'photo' && f.description === 'Profile Picture')
+        .sort((a, b) => new Date(b.uploaded_at) - new Date(a.uploaded_at))[0];
+      renderTopbarAvatar(`${patient.first_name} ${patient.last_name}`, profilePhoto ? profilePhoto.file_url : null);
 
       state.appointments = appts;
       state.dentists = dentistList;
@@ -593,5 +600,18 @@
     const div = document.createElement('div');
     div.textContent = str == null ? '' : String(str);
     return div.innerHTML;
+  }
+
+  function escapeAttr(str) {
+    return escapeHtml(str).replace(/"/g, '&quot;');
+  }
+
+  function renderTopbarAvatar(name, photoUrl) {
+    const el = document.getElementById('avatarInitials');
+    if (photoUrl) {
+      el.innerHTML = `<img src="${escapeAttr(photoUrl)}" alt="Profile photo">`;
+    } else {
+      el.textContent = initialsOf(name);
+    }
   }
 })();

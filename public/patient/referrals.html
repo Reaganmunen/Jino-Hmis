@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Billing &amp; Payments — Jino Patient Portal</title>
+<title>Referrals — Jino Patient Portal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
@@ -39,7 +39,7 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 4c2.6 0 4.2 1.7 4.5 3.7.3 2-.4 3-.6 4.9-.2 1.9.3 3.3-.9 5.9-.5 1.1-1.4 1.5-2 .6-.5-.8-.6-1.9-1-1.9s-.5 1.1-1 1.9c-.6.9-1.5.5-2-.6-1.2-2.6-.7-4-.9-5.9-.2-1.9-.9-2.9-.6-4.9C7.8 5.7 9.4 4 12 4Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
         Tooth Chart
       </a>
-      <a href="billing.html" class="side-link is-active" data-page="billing">
+      <a href="billing.html" class="side-link" data-page="billing">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="2.3" stroke="currentColor" stroke-width="1.7"/><path d="M3 10h18" stroke="currentColor" stroke-width="1.7"/><circle cx="7" cy="14.5" r="1" fill="currentColor"/></svg>
         Billing &amp; Payments
       </a>
@@ -61,7 +61,7 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 19V5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8.5 14.5l2.2 2.2L16 12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Consent Forms
       </a>
-      <a href="referrals.html" class="side-link" data-page="referrals">
+      <a href="referrals.html" class="side-link is-active" data-page="referrals">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.7"/><circle cx="17" cy="8" r="3" stroke="currentColor" stroke-width="1.7"/><path d="M2.5 20c.6-3.3 3-5 5.5-5s4.9 1.7 5.5 5M13 15.3c.6-.2 1.3-.3 2-.3 2.5 0 4.9 1.7 5.5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
         Referrals
       </a>
@@ -93,7 +93,7 @@
         </button>
         <div>
           <p class="topbar-kicker">Patient Portal</p>
-          <h1 class="topbar-title">Billing &amp; Payments</h1>
+          <h1 class="topbar-title">Referrals</h1>
         </div>
       </div>
       <div class="topbar-right">
@@ -108,14 +108,23 @@
     <main class="content">
 
       <!-- ---- Stat cards ---- -->
-      <section class="stat-grid" id="statGrid" aria-label="Billing summary">
+      <section class="stat-grid" id="statGrid" aria-label="Referrals summary">
         <div class="stat-card">
-          <div class="stat-ic stat-ic-red">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="2.3" stroke="currentColor" stroke-width="1.7"/><path d="M3 10h18" stroke="currentColor" stroke-width="1.7"/><circle cx="7" cy="14.5" r="1" fill="currentColor"/></svg>
+          <div class="stat-ic stat-ic-blue">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.7"/><circle cx="17" cy="8" r="3" stroke="currentColor" stroke-width="1.7"/><path d="M2.5 20c.6-3.3 3-5 5.5-5s4.9 1.7 5.5 5M13 15.3c.6-.2 1.3-.3 2-.3 2.5 0 4.9 1.7 5.5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
           </div>
           <div>
-            <p class="stat-value" id="statBalance">KSh 0</p>
-            <p class="stat-label">Outstanding balance</p>
+            <p class="stat-value" id="statTotalRef">0</p>
+            <p class="stat-label">Total referrals</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-ic stat-ic-amber">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <p class="stat-value" id="statPendingRef">0</p>
+            <p class="stat-label">Pending</p>
           </div>
         </div>
         <div class="stat-card">
@@ -123,125 +132,32 @@
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M8.5 14.5l2.2 2.2L16 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/></svg>
           </div>
           <div>
-            <p class="stat-value" id="statPaid">KSh 0</p>
-            <p class="stat-label">Total paid to date</p>
+            <p class="stat-value" id="statCompletedRef">0</p>
+            <p class="stat-label">Completed</p>
           </div>
         </div>
         <div class="stat-card">
-          <div class="stat-ic stat-ic-amber">
+          <div class="stat-ic stat-ic-red">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2.2" stroke="currentColor" stroke-width="1.7"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
           </div>
           <div>
-            <p class="stat-value" id="statPending">0</p>
-            <p class="stat-label">Bills awaiting payment</p>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-ic stat-ic-blue">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="2.3" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12.5" r="2.6" stroke="currentColor" stroke-width="1.7"/></svg>
-          </div>
-          <div>
-            <p class="stat-value" id="statLastPayment">—</p>
-            <p class="stat-label">Last payment</p>
+            <p class="stat-value" id="statLastRef">—</p>
+            <p class="stat-label">Most recent</p>
           </div>
         </div>
       </section>
 
-      <!-- ---- Bills ---- -->
+      <!-- ---- Referrals ---- -->
       <section class="panel">
         <div class="panel-head">
-          <h2>Your bills</h2>
+          <h2>Your referrals</h2>
         </div>
-        <p class="panel-sub">Tap a bill to see line items, payment history, and pay by M-Pesa or insurance.</p>
+        <p class="panel-sub">Specialists and facilities your dentist has referred you to.</p>
 
-        <div class="bill-list" id="billList"><!-- rendered by JS --></div>
+        <div class="rx-list" id="refList"><!-- rendered by JS --></div>
       </section>
 
     </main>
-  </div>
-</div>
-
-<!-- ============ M-PESA PAY MODAL ============ -->
-<div class="modal-scrim" id="payModalScrim">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="payModalTitle">
-
-    <!-- Form state -->
-    <div id="payFormView">
-      <div class="modal-head">
-        <div>
-          <p class="modal-kicker">M-Pesa Payment</p>
-          <h2 id="payModalTitle">Pay this bill</h2>
-        </div>
-        <button class="icon-btn" id="payModalClose" aria-label="Close">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        </button>
-      </div>
-
-      <div class="pay-summary" id="paySummary"><!-- JS --></div>
-
-      <label class="field-label" for="payPhone">M-Pesa phone number</label>
-      <input type="tel" id="payPhone" class="field-input" placeholder="07XX XXX XXX" style="margin-bottom:16px;">
-
-      <label class="field-label" for="payAmount">Amount to pay (KSh)</label>
-      <input type="number" id="payAmount" class="field-input" min="1" step="1">
-
-      <div class="modal-foot">
-        <button class="btn btn-outline" id="payCancel">Cancel</button>
-        <button class="btn btn-primary" id="paySubmit">Send STK push</button>
-      </div>
-    </div>
-
-    <!-- Waiting state -->
-    <div id="payWaitingView" style="display:none;">
-      <div class="modal-head">
-        <div>
-          <p class="modal-kicker">M-Pesa Payment</p>
-          <h2>Check your phone</h2>
-        </div>
-      </div>
-      <div class="mpesa-waiting">
-        <div class="mpesa-spinner"></div>
-        <p id="waitingHeadline">Waiting for confirmation…</p>
-        <span id="waitingSub">Enter your M-Pesa PIN on the prompt sent to your phone.</span>
-      </div>
-      <div class="modal-foot">
-        <button class="btn btn-outline" id="payWaitingCancel">Close</button>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<!-- ============ INSURANCE CLAIM MODAL ============ -->
-<div class="modal-scrim" id="claimModalScrim">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="claimModalTitle">
-    <div class="modal-head">
-      <div>
-        <p class="modal-kicker">Insurance Claim</p>
-        <h2 id="claimModalTitle">Pay with insurance</h2>
-      </div>
-      <button class="icon-btn" id="claimModalClose" aria-label="Close">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-      </button>
-    </div>
-
-    <div class="pay-summary" id="claimSummary"><!-- JS --></div>
-
-    <label class="field-label" for="claimProvider">Insurance provider</label>
-    <select id="claimProvider" class="field-input" style="margin-bottom:16px;"></select>
-
-    <label class="field-label" for="claimPolicyNumber">Policy number</label>
-    <input type="text" id="claimPolicyNumber" class="field-input" placeholder="e.g. SHA/12345678" style="margin-bottom:16px;">
-
-    <label class="field-label" for="claimAmount">Amount to claim (KSh)</label>
-    <input type="number" id="claimAmount" class="field-input" min="1" step="1">
-
-    <p class="bill-body-empty" style="margin-top:12px;">Our front desk reviews and submits every claim to your insurer — you'll see the status update here once it's processed.</p>
-
-    <div class="modal-foot">
-      <button class="btn btn-outline" id="claimCancel">Cancel</button>
-      <button class="btn btn-primary" id="claimSubmit">Submit claim</button>
-    </div>
   </div>
 </div>
 
@@ -251,6 +167,6 @@
   api.js must load first — it defines fetchMethod / getStoredUser / clearSession.
 -->
 <script src="../js/api.js"></script>
-<script src="../js/billing.js"></script>
+<script src="../js/referrals.js"></script>
 </body>
 </html>

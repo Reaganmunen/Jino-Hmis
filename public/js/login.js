@@ -16,7 +16,7 @@ const clearError = () => {
 // dashboard folder gets built (public/dentist/, public/receptionist/, etc.)
 const roleRedirects = {
   admin: 'admin/dashboard.html',
-  dentist: 'dentist/dashboard.html',
+  dentist: 'dentist/overview.html',
   receptionist: 'receptionist/dashboard.html',
   patient: 'patient/patient-portal.html',
 };

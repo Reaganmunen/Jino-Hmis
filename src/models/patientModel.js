@@ -3,17 +3,17 @@ const pool = require('../config/db');
 const createPatient = (data, callback) => {
   const {
     user_id, first_name, last_name, date_of_birth, national_id,
-    phone, email, address, next_of_kin_name, next_of_kin_phone,
+    phone, email, address, next_of_kin_name, next_of_kin_phone, allergies,
   } = data;
   const query = `
     INSERT INTO "Patient"
-      (user_id, first_name, last_name, date_of_birth, national_id, phone, email, address, next_of_kin_name, next_of_kin_phone)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      (user_id, first_name, last_name, date_of_birth, national_id, phone, email, address, next_of_kin_name, next_of_kin_phone, allergies)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
     RETURNING *
   `;
   const values = [
     user_id, first_name, last_name, date_of_birth, national_id,
-    phone, email, address, next_of_kin_name, next_of_kin_phone,
+    phone, email, address, next_of_kin_name, next_of_kin_phone, allergies,
   ];
   pool.query(query, values, (err, result) => {
     if (err) return callback(err);
@@ -62,18 +62,18 @@ const listPatients = (callback) => {
 const updatePatient = (id, data, callback) => {
   const {
     first_name, last_name, date_of_birth, national_id,
-    phone, email, address, next_of_kin_name, next_of_kin_phone,
+    phone, email, address, next_of_kin_name, next_of_kin_phone, allergies,
   } = data;
   const query = `
     UPDATE "Patient"
     SET first_name = $1, last_name = $2, date_of_birth = $3, national_id = $4,
-        phone = $5, email = $6, address = $7, next_of_kin_name = $8, next_of_kin_phone = $9
-    WHERE id = $10 AND deleted_at IS NULL
+        phone = $5, email = $6, address = $7, next_of_kin_name = $8, next_of_kin_phone = $9, allergies = $10
+    WHERE id = $11 AND deleted_at IS NULL
     RETURNING *
   `;
   const values = [
     first_name, last_name, date_of_birth, national_id,
-    phone, email, address, next_of_kin_name, next_of_kin_phone, id,
+    phone, email, address, next_of_kin_name, next_of_kin_phone, allergies, id,
   ];
   pool.query(query, values, (err, result) => {
     if (err) return callback(err);

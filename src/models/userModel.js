@@ -36,6 +36,16 @@ const findUserById = (id, callback) => {
   });
 };
 
+// Unlike findUserById (used for /auth/me and excludes password_hash on purpose),
+// this includes the hash — only for internal use during password verification.
+const findUserByIdWithHash = (id, callback) => {
+  const query = `SELECT * FROM "User" WHERE id = $1 AND deleted_at IS NULL`;
+  pool.query(query, [id], (err, result) => {
+    if (err) return callback(err);
+    callback(null, result.rows[0]);
+  });
+};
+
 const findUsersByRole = (role, callback) => {
   const query = `
     SELECT id, role, first_name, last_name, email, phone, is_active
@@ -83,6 +93,7 @@ module.exports = {
   createUser,
   findUserByEmail,
   findUserById,
+  findUserByIdWithHash,
   findUsersByRole,
   updateUser,
   updatePassword,

@@ -15,7 +15,7 @@ router.get('/search', authorizeRoles(...STAFF), search);
 router.get('/', authorizeRoles(...STAFF), getAllPatients);
 router.post('/', authorizeRoles('admin', 'receptionist'), addPatient);
 router.get('/:id', allowSelfOrStaff(STAFF, (req) => req.params.id), getPatient);
-router.put('/:id', authorizeRoles(...STAFF), editPatient);
+router.put('/:id', allowSelfOrStaff(STAFF, (req) => req.params.id), editPatient);
 router.delete('/:id', authorizeRoles('admin'), removePatient);
 
 module.exports = router;

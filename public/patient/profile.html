@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Billing &amp; Payments — Jino Patient Portal</title>
+<title>Profile &amp; Settings — Jino Patient Portal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
@@ -39,7 +39,7 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 4c2.6 0 4.2 1.7 4.5 3.7.3 2-.4 3-.6 4.9-.2 1.9.3 3.3-.9 5.9-.5 1.1-1.4 1.5-2 .6-.5-.8-.6-1.9-1-1.9s-.5 1.1-1 1.9c-.6.9-1.5.5-2-.6-1.2-2.6-.7-4-.9-5.9-.2-1.9-.9-2.9-.6-4.9C7.8 5.7 9.4 4 12 4Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
         Tooth Chart
       </a>
-      <a href="billing.html" class="side-link is-active" data-page="billing">
+      <a href="billing.html" class="side-link" data-page="billing">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="2.3" stroke="currentColor" stroke-width="1.7"/><path d="M3 10h18" stroke="currentColor" stroke-width="1.7"/><circle cx="7" cy="14.5" r="1" fill="currentColor"/></svg>
         Billing &amp; Payments
       </a>
@@ -67,7 +67,7 @@
       </a>
 
       <p class="side-label">Account</p>
-      <a href="profile.html" class="side-link" data-page="profile">
+      <a href="profile.html" class="side-link is-active" data-page="profile">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.6" stroke="currentColor" stroke-width="1.7"/><path d="M4.5 20c.8-4 3.8-6 7.5-6s6.7 2 7.5 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
         Profile &amp; Settings
       </a>
@@ -93,7 +93,7 @@
         </button>
         <div>
           <p class="topbar-kicker">Patient Portal</p>
-          <h1 class="topbar-title">Billing &amp; Payments</h1>
+          <h1 class="topbar-title">Profile &amp; Settings</h1>
         </div>
       </div>
       <div class="topbar-right">
@@ -107,141 +107,102 @@
 
     <main class="content">
 
-      <!-- ---- Stat cards ---- -->
-      <section class="stat-grid" id="statGrid" aria-label="Billing summary">
-        <div class="stat-card">
-          <div class="stat-ic stat-ic-red">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="2.3" stroke="currentColor" stroke-width="1.7"/><path d="M3 10h18" stroke="currentColor" stroke-width="1.7"/><circle cx="7" cy="14.5" r="1" fill="currentColor"/></svg>
-          </div>
-          <div>
-            <p class="stat-value" id="statBalance">KSh 0</p>
-            <p class="stat-label">Outstanding balance</p>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-ic stat-ic-green">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M8.5 14.5l2.2 2.2L16 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/></svg>
-          </div>
-          <div>
-            <p class="stat-value" id="statPaid">KSh 0</p>
-            <p class="stat-label">Total paid to date</p>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-ic stat-ic-amber">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2.2" stroke="currentColor" stroke-width="1.7"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-          </div>
-          <div>
-            <p class="stat-value" id="statPending">0</p>
-            <p class="stat-label">Bills awaiting payment</p>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-ic stat-ic-blue">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="2.3" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12.5" r="2.6" stroke="currentColor" stroke-width="1.7"/></svg>
-          </div>
-          <div>
-            <p class="stat-value" id="statLastPayment">—</p>
-            <p class="stat-label">Last payment</p>
-          </div>
-        </div>
-      </section>
-
-      <!-- ---- Bills ---- -->
+      <!-- ---- Profile picture + personal details ---- -->
       <section class="panel">
         <div class="panel-head">
-          <h2>Your bills</h2>
+          <h2>Personal details</h2>
         </div>
-        <p class="panel-sub">Tap a bill to see line items, payment history, and pay by M-Pesa or insurance.</p>
+        <p class="panel-sub">This information is shared with your care team.</p>
 
-        <div class="bill-list" id="billList"><!-- rendered by JS --></div>
+        <div class="avatar-row">
+          <div class="avatar-xl" id="avatarPreview">--</div>
+          <div class="avatar-actions">
+            <button class="btn btn-outline btn-sm" id="changePhotoBtn" type="button">Change photo</button>
+            <span class="hint">JPG or PNG, square photos look best.</span>
+          </div>
+          <input type="file" id="photoInput" accept="image/png,image/jpeg" style="display:none;">
+        </div>
+
+        <form id="profileForm">
+          <div class="form-grid">
+            <div>
+              <label class="field-label" for="firstName">First name</label>
+              <input type="text" id="firstName" class="field-input" required>
+            </div>
+            <div>
+              <label class="field-label" for="lastName">Last name</label>
+              <input type="text" id="lastName" class="field-input" required>
+            </div>
+            <div>
+              <label class="field-label" for="dob">Date of birth</label>
+              <input type="date" id="dob" class="field-input">
+            </div>
+            <div>
+              <label class="field-label" for="phone">Phone number</label>
+              <input type="tel" id="phone" class="field-input" placeholder="07XX XXX XXX">
+            </div>
+            <div>
+              <label class="field-label" for="email">Email</label>
+              <input type="email" id="email" class="field-input">
+            </div>
+            <div>
+              <label class="field-label" for="nationalId">National ID</label>
+              <input type="text" id="nationalId" class="field-input">
+            </div>
+            <div class="full">
+              <label class="field-label" for="address">Address</label>
+              <input type="text" id="address" class="field-input">
+            </div>
+            <div>
+              <label class="field-label" for="nokName">Next of kin name</label>
+              <input type="text" id="nokName" class="field-input">
+            </div>
+            <div>
+              <label class="field-label" for="nokPhone">Next of kin phone</label>
+              <input type="tel" id="nokPhone" class="field-input">
+            </div>
+            <div class="full">
+              <label class="field-label" for="allergies">Allergies</label>
+              <textarea id="allergies" class="field-input" placeholder="e.g. Penicillin, Latex — list anything your dentist should know before treating you"></textarea>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="saveProfileBtn">Save changes</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- ---- Change password ---- -->
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Change password</h2>
+        </div>
+        <p class="panel-sub">Use at least 8 characters. You'll need your current password to confirm.</p>
+
+        <form id="passwordForm">
+          <div class="form-grid">
+            <div class="full">
+              <label class="field-label" for="currentPassword">Current password</label>
+              <input type="password" id="currentPassword" class="field-input" required>
+            </div>
+            <div>
+              <label class="field-label" for="newPassword">New password</label>
+              <input type="password" id="newPassword" class="field-input" minlength="8" required>
+            </div>
+            <div>
+              <label class="field-label" for="confirmPassword">Confirm new password</label>
+              <input type="password" id="confirmPassword" class="field-input" minlength="8" required>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="savePasswordBtn">Update password</button>
+          </div>
+        </form>
       </section>
 
     </main>
-  </div>
-</div>
-
-<!-- ============ M-PESA PAY MODAL ============ -->
-<div class="modal-scrim" id="payModalScrim">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="payModalTitle">
-
-    <!-- Form state -->
-    <div id="payFormView">
-      <div class="modal-head">
-        <div>
-          <p class="modal-kicker">M-Pesa Payment</p>
-          <h2 id="payModalTitle">Pay this bill</h2>
-        </div>
-        <button class="icon-btn" id="payModalClose" aria-label="Close">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        </button>
-      </div>
-
-      <div class="pay-summary" id="paySummary"><!-- JS --></div>
-
-      <label class="field-label" for="payPhone">M-Pesa phone number</label>
-      <input type="tel" id="payPhone" class="field-input" placeholder="07XX XXX XXX" style="margin-bottom:16px;">
-
-      <label class="field-label" for="payAmount">Amount to pay (KSh)</label>
-      <input type="number" id="payAmount" class="field-input" min="1" step="1">
-
-      <div class="modal-foot">
-        <button class="btn btn-outline" id="payCancel">Cancel</button>
-        <button class="btn btn-primary" id="paySubmit">Send STK push</button>
-      </div>
-    </div>
-
-    <!-- Waiting state -->
-    <div id="payWaitingView" style="display:none;">
-      <div class="modal-head">
-        <div>
-          <p class="modal-kicker">M-Pesa Payment</p>
-          <h2>Check your phone</h2>
-        </div>
-      </div>
-      <div class="mpesa-waiting">
-        <div class="mpesa-spinner"></div>
-        <p id="waitingHeadline">Waiting for confirmation…</p>
-        <span id="waitingSub">Enter your M-Pesa PIN on the prompt sent to your phone.</span>
-      </div>
-      <div class="modal-foot">
-        <button class="btn btn-outline" id="payWaitingCancel">Close</button>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<!-- ============ INSURANCE CLAIM MODAL ============ -->
-<div class="modal-scrim" id="claimModalScrim">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="claimModalTitle">
-    <div class="modal-head">
-      <div>
-        <p class="modal-kicker">Insurance Claim</p>
-        <h2 id="claimModalTitle">Pay with insurance</h2>
-      </div>
-      <button class="icon-btn" id="claimModalClose" aria-label="Close">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-      </button>
-    </div>
-
-    <div class="pay-summary" id="claimSummary"><!-- JS --></div>
-
-    <label class="field-label" for="claimProvider">Insurance provider</label>
-    <select id="claimProvider" class="field-input" style="margin-bottom:16px;"></select>
-
-    <label class="field-label" for="claimPolicyNumber">Policy number</label>
-    <input type="text" id="claimPolicyNumber" class="field-input" placeholder="e.g. SHA/12345678" style="margin-bottom:16px;">
-
-    <label class="field-label" for="claimAmount">Amount to claim (KSh)</label>
-    <input type="number" id="claimAmount" class="field-input" min="1" step="1">
-
-    <p class="bill-body-empty" style="margin-top:12px;">Our front desk reviews and submits every claim to your insurer — you'll see the status update here once it's processed.</p>
-
-    <div class="modal-foot">
-      <button class="btn btn-outline" id="claimCancel">Cancel</button>
-      <button class="btn btn-primary" id="claimSubmit">Submit claim</button>
-    </div>
   </div>
 </div>
 
@@ -251,6 +212,6 @@
   api.js must load first — it defines fetchMethod / getStoredUser / clearSession.
 -->
 <script src="../js/api.js"></script>
-<script src="../js/billing.js"></script>
+<script src="../js/profile.js"></script>
 </body>
 </html>

@@ -6,7 +6,7 @@ const { authorizeRoles } = require('../middleware/roleMiddleware');
 
 router.use(verifyToken);
 
-router.post('/', authorizeRoles('admin', 'dentist', 'receptionist'), addConsentForm);
+router.post('/', authorizeRoles('admin', 'dentist', 'receptionist', 'patient'), addConsentForm);
 router.get('/patient/:patientId', getPatientConsentForms);
 
 module.exports = router;

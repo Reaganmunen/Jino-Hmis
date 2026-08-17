@@ -20,14 +20,32 @@
     patientId: null,
     patientPhone: null,
     bills: [],
-    // billId -> { items, payments, transactions, loaded, open }
+    providers: [],
+    providerMap: {},
+    // billId -> { items, payments, transactions, claim, loaded, open }
     detail: {},
     activePayBill: null,
+    activeClaimBill: null,
     pollTimer: null,
     pollDeadline: null,
   };
 
   const STATUS_LABEL = { paid: 'Paid', partial: 'Partial', unpaid: 'Unpaid', void: 'Void' };
+
+  // Claim statuses a patient can start a fresh claim over — 'rejected' lets them
+  // try again (different provider, corrected policy number); every other status
+  // means a claim is already active for that bill.
+  const CLAIM_LABEL = {
+    draft: 'Submitted — pending review',
+    submitted: 'Submitted to insurer',
+    under_review: 'Under review',
+    approved: 'Approved',
+    partially_approved: 'Partially approved',
+    rejected: 'Rejected',
+    paid: 'Paid by insurer',
+  };
+  const CLAIM_RESUBMITTABLE_STATUSES = ['rejected'];
+
   const POLL_INTERVAL_MS = 3000;
   const POLL_TIMEOUT_MS = 90000; // Daraja STK prompts typically resolve or expire well within this window
 
@@ -37,6 +55,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     initSidebar();
     initPayModal();
+    initClaimModal();
     loadBilling();
   });
 
@@ -46,11 +65,15 @@
       state.patientId = patient.id;
       state.patientPhone = patient.phone || '';
 
-      document.getElementById('avatarInitials').textContent =
-        initialsOf(`${patient.first_name} ${patient.last_name}`);
+      renderTopbarAvatar(`${patient.first_name} ${patient.last_name}`, await fetchProfilePhotoUrl(patient.id));
 
-      const bills = await fetchMethod(`/bills/patient/${patient.id}`, 'GET', null, true);
+      const [bills, providers] = await Promise.all([
+        fetchMethod(`/bills/patient/${patient.id}`, 'GET', null, true),
+        fetchMethod('/insurance-providers', 'GET', null, true).catch(() => []),
+      ]);
       state.bills = bills.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      state.providers = providers;
+      state.providerMap = Object.fromEntries(providers.map((p) => [String(p.id), p.name]));
 
       renderStats();
       renderBillList();
@@ -185,12 +208,13 @@
   async function loadBillDetail(billId) {
     const body = document.getElementById(`billBody-${billId}`);
     try {
-      const [items, payments, transactions] = await Promise.all([
+      const [items, payments, transactions, claim] = await Promise.all([
         fetchMethod(`/bill-items/bill/${billId}`, 'GET', null, true),
         fetchMethod(`/payments/bill/${billId}`, 'GET', null, true),
         fetchMethod(`/mpesa/bill/${billId}`, 'GET', null, true),
+        fetchMethod(`/insurance-claims/bill/${billId}`, 'GET', null, true).catch(() => null),
       ]);
-      state.detail[billId] = { open: true, loaded: true, items, payments, transactions };
+      state.detail[billId] = { open: true, loaded: true, items, payments, transactions, claim };
       renderBillBody(billId);
     } catch (err) {
       body.innerHTML = '<p class="bill-body-empty">Could not load this bill\'s details.</p>';
@@ -239,6 +263,22 @@
         `).join('')
       : '';
 
+    const claim = d.claim;
+    const claimHtml = claim ? `
+      <div class="bill-section">
+        <p class="bill-section-title">Insurance claim</p>
+        <div class="pay-summary">
+          <div class="pay-summary-row"><span>Provider</span><b>${escapeHtml(state.providerMap[String(claim.insurance_provider_id)] || 'Unknown provider')}</b></div>
+          <div class="pay-summary-row"><span>Policy number</span><b>${escapeHtml(claim.policy_number)}</b></div>
+          <div class="pay-summary-row"><span>Claimed</span><b>${formatMoney(claim.claim_amount)}</b></div>
+          ${claim.approved_amount != null ? `<div class="pay-summary-row"><span>Approved</span><b>${formatMoney(claim.approved_amount)}</b></div>` : ''}
+          <div class="pay-summary-row"><span>Status</span><span class="badge badge-${claim.status}">${CLAIM_LABEL[claim.status] || capitalize(claim.status)}</span></div>
+        </div>
+      </div>
+    ` : '';
+
+    const canStartClaim = !claim || CLAIM_RESUBMITTABLE_STATUSES.includes(claim.status);
+
     body.innerHTML = `
       <div class="bill-section">
         <p class="bill-section-title">Line items</p>
@@ -249,18 +289,27 @@
         ${paymentsHtml}
       </div>
       ${txnHtml ? `<div class="bill-section"><p class="bill-section-title">M-Pesa activity</p>${txnHtml}</div>` : ''}
+      ${claimHtml}
       ${bill.status !== 'void' && balance > 0 ? `
         <div class="bill-actions">
           <button class="btn btn-primary btn-sm" data-action="pay" data-id="${bill.id}"
             ${pendingTxn ? 'disabled title="A payment is already in progress for this bill"' : ''}>
             Pay ${formatMoney(balance)} via M-Pesa
           </button>
+          ${canStartClaim ? `
+            <button class="btn btn-outline btn-sm" data-action="claim" data-id="${bill.id}">
+              ${claim ? 'Submit a new claim' : 'Pay with insurance'}
+            </button>
+          ` : ''}
         </div>
       ` : ''}
     `;
 
     const payBtn = body.querySelector('[data-action="pay"]');
     if (payBtn) payBtn.addEventListener('click', () => openPayModal(bill.id));
+
+    const claimBtn = body.querySelector('[data-action="claim"]');
+    if (claimBtn) claimBtn.addEventListener('click', () => openClaimModal(bill.id));
   }
 
   /* ============================================================
@@ -396,6 +445,92 @@
   }
 
   /* ============================================================
+     INSURANCE CLAIM MODAL
+     Submitting here only ever creates a 'draft' claim (the DB column
+     default) — front desk staff review and submit it to the insurer from
+     their side. Unlike M-Pesa there's no external prompt to wait on, so
+     this is a single request/response, no polling.
+     ============================================================ */
+  function initClaimModal() {
+    const scrim = document.getElementById('claimModalScrim');
+    document.getElementById('claimModalClose').addEventListener('click', closeClaimModal);
+    document.getElementById('claimCancel').addEventListener('click', closeClaimModal);
+    scrim.addEventListener('click', (e) => { if (e.target === scrim) closeClaimModal(); });
+    document.getElementById('claimSubmit').addEventListener('click', submitClaim);
+  }
+
+  function openClaimModal(billId) {
+    const bill = state.bills.find((b) => String(b.id) === String(billId));
+    if (!bill) return;
+    const balance = Number(bill.total_amount) - Number(bill.amount_paid || 0);
+
+    state.activeClaimBill = billId;
+
+    document.getElementById('claimSummary').innerHTML = `
+      <div class="pay-summary-row"><span>Bill</span><b>#${shortId(bill.id)}</b></div>
+      <div class="pay-summary-row"><span>Amount due</span><b>${formatMoney(balance)}</b></div>
+    `;
+
+    const providerSelect = document.getElementById('claimProvider');
+    providerSelect.innerHTML = state.providers.length
+      ? state.providers.map((p) => `<option value="${escapeAttr(p.id)}">${escapeHtml(p.name)}</option>`).join('')
+      : '<option value="">No providers on file — contact the clinic</option>';
+
+    document.getElementById('claimPolicyNumber').value = '';
+    document.getElementById('claimAmount').value = balance > 0 ? Math.round(balance) : '';
+    document.getElementById('claimAmount').max = String(Math.round(balance));
+
+    const submitBtn = document.getElementById('claimSubmit');
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit claim';
+
+    document.getElementById('claimModalScrim').classList.add('is-open');
+  }
+
+  function closeClaimModal() {
+    document.getElementById('claimModalScrim').classList.remove('is-open');
+    state.activeClaimBill = null;
+  }
+
+  async function submitClaim() {
+    const billId = state.activeClaimBill;
+    const insurance_provider_id = document.getElementById('claimProvider').value;
+    const policy_number = document.getElementById('claimPolicyNumber').value.trim();
+    const claim_amount = Number(document.getElementById('claimAmount').value);
+
+    if (!insurance_provider_id) return showToast('Select an insurance provider');
+    if (!policy_number) return showToast('Enter the policy number');
+    if (!claim_amount || claim_amount <= 0) return showToast('Enter a valid claim amount');
+
+    const submitBtn = document.getElementById('claimSubmit');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting…';
+
+    try {
+      await fetchMethod('/insurance-claims', 'POST', {
+        bill_id: billId,
+        insurance_provider_id,
+        policy_number,
+        claim_amount,
+      }, true);
+
+      closeClaimModal();
+      showToast('Claim submitted — our team will review and send it to your insurer.');
+
+      delete state.detail[billId]; // force a fresh reload so the new claim shows up
+      await loadBilling();
+      if (state.detail[billId]) state.detail[billId].open = true;
+      else state.detail[billId] = { open: true, loaded: false };
+      renderBillList();
+      await loadBillDetail(billId);
+    } catch (err) {
+      showToast(err.message || 'Could not submit the insurance claim');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit claim';
+    }
+  }
+
+  /* ============================================================
      SIDEBAR
      ============================================================ */
   function initSidebar() {
@@ -460,5 +595,33 @@
     const div = document.createElement('div');
     div.textContent = str == null ? '' : String(str);
     return div.innerHTML;
+  }
+
+  function escapeAttr(str) {
+    return escapeHtml(str).replace(/"/g, '&quot;');
+  }
+
+  // file_type is a Postgres enum without a 'profile_picture' value, so the
+  // profile photo is stored as file_type: 'photo' + description: 'Profile
+  // Picture' (see profile.js) and found the same way here.
+  async function fetchProfilePhotoUrl(patientId) {
+    try {
+      const files = await fetchMethod(`/patient-files/patient/${patientId}`, 'GET', null, true);
+      const photo = files
+        .filter((f) => f.file_type === 'photo' && f.description === 'Profile Picture')
+        .sort((a, b) => new Date(b.uploaded_at) - new Date(a.uploaded_at))[0];
+      return photo ? photo.file_url : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function renderTopbarAvatar(name, photoUrl) {
+    const el = document.getElementById('avatarInitials');
+    if (photoUrl) {
+      el.innerHTML = `<img src="${escapeAttr(photoUrl)}" alt="Profile photo">`;
+    } else {
+      el.textContent = initialsOf(name);
+    }
   }
 })();

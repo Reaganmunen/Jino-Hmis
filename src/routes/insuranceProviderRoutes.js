@@ -6,7 +6,8 @@ const { authorizeRoles } = require('../middleware/roleMiddleware');
 
 router.use(verifyToken);
 
-router.get('/', authorizeRoles('admin', 'receptionist'), getAllProviders);
+// Patients need this to populate the provider dropdown when starting a claim.
+router.get('/', authorizeRoles('admin', 'receptionist', 'patient'), getAllProviders);
 router.post('/', authorizeRoles('admin'), addProvider);
 
 module.exports = router;

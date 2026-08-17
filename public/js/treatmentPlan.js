@@ -45,8 +45,7 @@
       const patient = await fetchMethod('/patients/me', 'GET', null, true);
       state.patientId = patient.id;
 
-      document.getElementById('avatarInitials').textContent =
-        initialsOf(`${patient.first_name} ${patient.last_name}`);
+      renderTopbarAvatar(`${patient.first_name} ${patient.last_name}`, await fetchProfilePhotoUrl(patient.id));
 
       const [plans, dentists, appointments] = await Promise.all([
         fetchMethod(`/treatment-plans/patient/${patient.id}`, 'GET', null, true),
@@ -314,5 +313,33 @@
     const div = document.createElement('div');
     div.textContent = str == null ? '' : String(str);
     return div.innerHTML;
+  }
+
+  function escapeAttr(str) {
+    return escapeHtml(str).replace(/"/g, '&quot;');
+  }
+
+  // file_type is a Postgres enum without a 'profile_picture' value, so the
+  // profile photo is stored as file_type: 'photo' + description: 'Profile
+  // Picture' (see profile.js) and found the same way here.
+  async function fetchProfilePhotoUrl(patientId) {
+    try {
+      const files = await fetchMethod(`/patient-files/patient/${patientId}`, 'GET', null, true);
+      const photo = files
+        .filter((f) => f.file_type === 'photo' && f.description === 'Profile Picture')
+        .sort((a, b) => new Date(b.uploaded_at) - new Date(a.uploaded_at))[0];
+      return photo ? photo.file_url : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function renderTopbarAvatar(name, photoUrl) {
+    const el = document.getElementById('avatarInitials');
+    if (photoUrl) {
+      el.innerHTML = `<img src="${escapeAttr(photoUrl)}" alt="Profile photo">`;
+    } else {
+      el.textContent = initialsOf(name);
+    }
   }
 })();
