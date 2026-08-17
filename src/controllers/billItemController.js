@@ -1,4 +1,13 @@
 const { addBillItem, findItemsByBill, removeBillItem } = require('../models/billItemModel');
+const { findBillById } = require('../models/billModel');
+
+const STAFF = ['admin', 'dentist', 'receptionist'];
+
+const canAccessBill = (user, bill) => {
+  if (STAFF.includes(user.role)) return true;
+  if (user.role === 'patient') return user.patient_id === bill.patient_id;
+  return false;
+};
 
 // Bill.total_amount recalculates automatically via DB trigger on write.
 const addItem = (req, res, next) => {
@@ -8,10 +17,20 @@ const addItem = (req, res, next) => {
   });
 };
 
+// BillItem carries no patient_id of its own — ownership is resolved through
+// the parent Bill.
 const getItemsByBill = (req, res, next) => {
-  findItemsByBill(req.params.billId, (err, items) => {
-    if (err) return next(err);
-    res.json(items);
+  findBillById(req.params.billId, (billErr, bill) => {
+    if (billErr) return next(billErr);
+    if (!bill) return res.status(404).json({ message: 'Bill not found' });
+    if (!canAccessBill(req.user, bill)) {
+      return res.status(403).json({ message: 'You do not have permission to access this resource' });
+    }
+
+    findItemsByBill(req.params.billId, (err, items) => {
+      if (err) return next(err);
+      res.json(items);
+    });
   });
 };
 

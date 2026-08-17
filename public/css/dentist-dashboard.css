@@ -1,0 +1,82 @@
+/* ============================================================
+   DENTIST OVERVIEW PAGE — additive styles only.
+   Loaded after dashboard.css; reuses its tokens (--navy-*, --blue-*,
+   --slate-*, --radius-*, --shadow-*) and its .panel / .badge /
+   .stat-card / .stat-ic / .quick-btn classes unchanged.
+   ============================================================ */
+:root{
+  --purple-700:#7C4FE0;
+  --purple-50:#F3EEFF;
+}
+.stat-ic-purple{background:var(--purple-50);color:var(--purple-700);}
+
+/* ---- today's schedule rows ---- */
+.sched-list{display:flex;flex-direction:column;gap:2px;}
+.sched-item{
+  display:flex;align-items:center;gap:14px;padding:12px 4px;
+  border-bottom:1px solid var(--slate-100);
+}
+.sched-item:last-child{border-bottom:none;}
+.sched-time{
+  flex:0 0 64px;font-family:'IBM Plex Mono',ui-monospace,monospace;
+  font-size:12.5px;font-weight:600;color:var(--slate-700);
+}
+.sched-avatar{
+  flex:0 0 auto;width:36px;height:36px;border-radius:100px;
+  background:var(--blue-100);color:var(--blue-600);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12.5px;font-weight:700;
+}
+.sched-mid{flex:1;min-width:0;}
+.sched-mid .t{margin:0;font-size:14px;font-weight:600;color:var(--navy-950);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sched-mid .s{margin:2px 0 0;font-size:12.5px;color:var(--slate-500);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sched-flags{display:flex;align-items:center;gap:6px;flex:0 0 auto;}
+.badge-needs-notes{background:var(--amber-50);color:var(--amber-700);}
+
+/* ---- top-of-page patient search panel ---- */
+.patient-search-panel{padding:16px 20px;}
+.patient-search-panel .patient-results:not(:empty){margin-top:12px;}
+
+/* ---- patient search ---- */
+.patient-search{position:relative;margin-bottom:4px;}
+.patient-search input{
+  width:100%;padding:11px 14px 11px 40px;border-radius:11px;border:1px solid var(--slate-300);
+  font-size:14px;font-family:inherit;color:var(--navy-950);background:var(--white);
+}
+.patient-search input:focus-visible{outline:2px solid var(--blue-600);outline-offset:1px;}
+.patient-search svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--slate-500);pointer-events:none;}
+
+.patient-results{display:flex;flex-direction:column;gap:2px;margin-top:10px;}
+.patient-row{
+  display:flex;align-items:center;gap:12px;padding:10px 8px;border-radius:10px;
+  transition:background .12s ease;
+}
+.patient-row:hover{background:var(--slate-100);}
+.patient-row .sched-avatar{background:var(--purple-50);color:var(--purple-700);}
+.patient-row .t{margin:0;font-size:14px;font-weight:600;color:var(--navy-950);}
+.patient-row .s{margin:2px 0 0;font-size:12.5px;color:var(--slate-500);}
+.patient-row .panel-link{margin-left:auto;flex:0 0 auto;font-size:13px;font-weight:600;}
+
+.empty-state{padding:24px 4px;text-align:center;color:var(--slate-500);font-size:13.5px;}
+
+/* ---- active treatment plans ---- */
+.plan-list{display:flex;flex-direction:column;gap:2px;}
+.plan-item{padding:12px 4px;border-bottom:1px solid var(--slate-100);}
+.plan-item:last-child{border-bottom:none;}
+.plan-item-head{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.plan-item .t{margin:0;font-size:14px;font-weight:600;color:var(--navy-950);}
+.plan-item .s{margin:4px 0 0;font-size:12.5px;color:var(--slate-500);line-height:1.5;}
+.plan-item .cost{font-size:12.5px;font-weight:700;color:var(--navy-950);white-space:nowrap;}
+
+/* ---- recent diagnoses ---- */
+.diagnosis-list{display:flex;flex-direction:column;gap:2px;}
+.diagnosis-item{padding:12px 4px;border-bottom:1px solid var(--slate-100);}
+.diagnosis-item:last-child{border-bottom:none;}
+.diagnosis-item-head{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.diagnosis-item .t{margin:0;font-size:14px;font-weight:600;color:var(--navy-950);}
+.diagnosis-item .s{margin:4px 0 0;font-size:12.5px;color:var(--slate-500);line-height:1.5;}
+.diagnosis-item .when{font-size:11.5px;color:var(--slate-500);white-space:nowrap;}
+.diagnosis-tooth-pill{
+  font-size:10.5px;font-weight:700;color:var(--blue-600);background:var(--blue-50);
+  border-radius:100px;padding:2px 8px;margin-right:4px;display:inline-block;margin-top:6px;
+}

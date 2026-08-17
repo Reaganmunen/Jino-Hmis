@@ -1,5 +1,13 @@
 const { createBill, findBillById, findBillsByPatient, findBillsByStatus, voidBill } = require('../models/billModel');
 
+const STAFF = ['admin', 'dentist', 'receptionist'];
+
+const canAccessBill = (user, bill) => {
+  if (STAFF.includes(user.role)) return true;
+  if (user.role === 'patient') return user.patient_id === bill.patient_id;
+  return false;
+};
+
 const addBill = (req, res, next) => {
   const data = { ...req.body, created_by: req.user.id };
   createBill(data, (err, bill) => {
@@ -12,6 +20,9 @@ const getBill = (req, res, next) => {
   findBillById(req.params.id, (err, bill) => {
     if (err) return next(err);
     if (!bill) return res.status(404).json({ message: 'Bill not found' });
+    if (!canAccessBill(req.user, bill)) {
+      return res.status(403).json({ message: 'You do not have permission to access this resource' });
+    }
     res.json(bill);
   });
 };

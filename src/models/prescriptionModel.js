@@ -23,4 +23,17 @@ const findPrescriptionsByPatient = (patient_id, callback) => {
   });
 };
 
-module.exports = { createPrescription, findPrescriptionsByPatient };
+// Powers the dentist overview: prescriptions this dentist wrote within a date range.
+const findPrescriptionsByDentist = (dentist_id, from, to, callback) => {
+  const query = `
+    SELECT * FROM "Prescription"
+    WHERE dentist_id = $1 AND created_at >= $2 AND created_at < $3
+    ORDER BY created_at DESC
+  `;
+  pool.query(query, [dentist_id, from, to], (err, result) => {
+    if (err) return callback(err);
+    callback(null, result.rows);
+  });
+};
+
+module.exports = { createPrescription, findPrescriptionsByPatient, findPrescriptionsByDentist };

@@ -27,6 +27,17 @@ const findItemsByPlan = (treatment_plan_id, callback) => {
   });
 };
 
+// Needed to resolve an item's parent plan (and therefore its owning patient)
+// before allowing a status change — TreatmentPlanItem has no patient_id of
+// its own to check against.
+const findTreatmentPlanItemById = (id, callback) => {
+  const query = `SELECT * FROM "TreatmentPlanItem" WHERE id = $1`;
+  pool.query(query, [id], (err, result) => {
+    if (err) return callback(err);
+    callback(null, result.rows[0]);
+  });
+};
+
 const updateItemStatus = (id, status, completed_appointment_id, callback) => {
   const query = `
     UPDATE "TreatmentPlanItem"
@@ -40,4 +51,6 @@ const updateItemStatus = (id, status, completed_appointment_id, callback) => {
   });
 };
 
-module.exports = { addTreatmentPlanItem, findItemsByPlan, updateItemStatus };
+module.exports = {
+  addTreatmentPlanItem, findItemsByPlan, findTreatmentPlanItemById, updateItemStatus,
+};

@@ -39,4 +39,30 @@ const allowSelfOrStaff = (staffRoles, getPatientIdFromReq) => {
   };
 };
 
-module.exports = { authorizeRoles, allowSelfOrStaff };
+// Same shape as allowSelfOrStaff but for resources owned by a dentist via
+// dentist_id, which references User.id directly (dentists don't have a
+// separate profile table the way patients do via Patient.id).
+// Usage: router.get('/appointments/dentist/:dentistId', verifyToken,
+//          allowDentistSelfOrStaff(STAFF, (req) => req.params.dentistId), getDentistAppointments);
+const allowDentistSelfOrStaff = (staffRoles, getDentistIdFromReq) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    if (staffRoles.includes(req.user.role)) {
+      return next();
+    }
+
+    if (req.user.role === 'dentist') {
+      const requestedDentistId = getDentistIdFromReq(req);
+      if (requestedDentistId && req.user.id === requestedDentistId) {
+        return next();
+      }
+    }
+
+    return res.status(403).json({ message: 'You do not have permission to access this resource' });
+  };
+};
+
+module.exports = { authorizeRoles, allowSelfOrStaff, allowDentistSelfOrStaff };

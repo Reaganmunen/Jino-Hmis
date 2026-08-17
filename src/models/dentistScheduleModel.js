@@ -25,6 +25,16 @@ const findScheduleByDentist = (dentist_id, callback) => {
   });
 };
 
+// Needed so edit/delete can confirm the requesting dentist owns this slot
+// before an admin-or-dentist role check is allowed to modify it.
+const findScheduleSlotById = (id, callback) => {
+  const query = `SELECT * FROM "DentistSchedule" WHERE id = $1`;
+  pool.query(query, [id], (err, result) => {
+    if (err) return callback(err);
+    callback(null, result.rows[0]);
+  });
+};
+
 const updateScheduleSlot = (id, data, callback) => {
   const { start_time, end_time, is_active } = data;
   const query = `
@@ -50,6 +60,7 @@ const deleteScheduleSlot = (id, callback) => {
 module.exports = {
   createScheduleSlot,
   findScheduleByDentist,
+  findScheduleSlotById,
   updateScheduleSlot,
   deleteScheduleSlot,
 };

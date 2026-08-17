@@ -1,12 +1,28 @@
 const express = require('express');
 const router = express.Router();
-const { addPrescription, getPatientPrescriptions } = require('../controllers/prescriptionController');
+const {
+  addPrescription, getPatientPrescriptions, getDentistPrescriptions,
+} = require('../controllers/prescriptionController');
 const verifyToken = require('../middleware/authMiddleware');
-const { authorizeRoles } = require('../middleware/roleMiddleware');
+const { authorizeRoles, allowSelfOrStaff, allowDentistSelfOrStaff } = require('../middleware/roleMiddleware');
 
 router.use(verifyToken);
 
+const STAFF = ['admin', 'dentist', 'receptionist'];
+
 router.post('/', authorizeRoles('dentist'), addPrescription);
-router.get('/patient/:patientId', getPatientPrescriptions);
+
+// Powers the dentist overview stat card — a dentist's own prescriptions in a date range.
+router.get(
+  '/dentist/:dentistId',
+  allowDentistSelfOrStaff(['admin'], (req) => req.params.dentistId),
+  getDentistPrescriptions,
+);
+
+router.get(
+  '/patient/:patientId',
+  allowSelfOrStaff(STAFF, (req) => req.params.patientId),
+  getPatientPrescriptions,
+);
 
 module.exports = router;
