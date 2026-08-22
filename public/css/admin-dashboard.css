@@ -1,0 +1,101 @@
+/* ============================================================
+   ADMIN OVERVIEW PAGE — additive styles only.
+   Loaded after dashboard.css; reuses its tokens (--navy-*, --blue-*,
+   --slate-*, --radius-*, --shadow-*) and its .panel / .badge /
+   .stat-card / .stat-ic / .quick-btn / .panel-link classes unchanged.
+   Self-contained (doesn't assume dentist-dashboard.css is loaded).
+   ============================================================ */
+:root{
+  --purple-700:#7C4FE0;
+  --purple-50:#F3EEFF;
+}
+.stat-ic-purple{background:var(--purple-50);color:var(--purple-700);}
+
+/* ---- shared row/list primitives (mirrors dentist portal's .sched-item) ---- */
+.sched-list{display:flex;flex-direction:column;gap:2px;max-height:420px;overflow-y:auto;}
+.sched-item{
+  display:flex;align-items:center;gap:14px;padding:12px 4px;
+  border-bottom:1px solid var(--slate-100);
+}
+.sched-item:last-child{border-bottom:none;}
+.sched-time{
+  flex:0 0 64px;font-family:'IBM Plex Mono',ui-monospace,monospace;
+  font-size:12.5px;font-weight:600;color:var(--slate-700);
+}
+.sched-avatar{
+  flex:0 0 auto;width:36px;height:36px;border-radius:100px;
+  background:var(--blue-100);color:var(--blue-600);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12.5px;font-weight:700;
+}
+.sched-mid{flex:1;min-width:0;}
+.sched-mid .t{margin:0;font-size:14px;font-weight:600;color:var(--navy-950);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sched-mid .s{margin:2px 0 0;font-size:12.5px;color:var(--slate-500);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sched-flags{display:flex;align-items:center;gap:6px;flex:0 0 auto;}
+
+.badge{display:inline-block;font-size:11px;font-weight:700;border-radius:100px;padding:3px 9px;white-space:nowrap;}
+.badge-booked{background:var(--blue-100);color:var(--blue-600);}
+.badge-confirmed{background:var(--blue-100);color:var(--blue-600);}
+.badge-completed{background:var(--green-50);color:var(--green-700);}
+.badge-cancelled{background:var(--red-50);color:var(--red-700);}
+.badge-no_show{background:var(--red-50);color:var(--red-700);}
+
+.empty-state{padding:24px 4px;text-align:center;color:var(--slate-500);font-size:13.5px;}
+
+/* ---- revenue trend (lightweight CSS bar chart, no chart lib dependency) ---- */
+.rev-chart{
+  display:flex;align-items:flex-end;gap:6px;height:180px;padding:8px 4px 0;
+}
+.rev-bar-col{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;
+  min-width:0;
+}
+.rev-bar{
+  width:100%;max-width:26px;border-radius:5px 5px 2px 2px;background:var(--blue-500);
+  transition:background .12s ease;position:relative;
+}
+.rev-bar-col:hover .rev-bar{background:var(--blue-600);}
+.rev-bar-value{
+  font-size:10px;font-weight:700;color:var(--navy-950);margin-bottom:4px;white-space:nowrap;
+}
+.rev-bar-label{
+  margin-top:8px;font-size:10px;color:var(--slate-500);font-weight:600;white-space:nowrap;
+}
+
+/* ---- alerts (low stock / outstanding balance / other flags) ---- */
+.alert-list{display:flex;flex-direction:column;gap:10px;}
+.alert-row{
+  display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--slate-200);
+  border-radius:var(--radius-md);background:var(--white);
+}
+.alert-ic{
+  flex:0 0 auto;width:34px;height:34px;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;
+}
+.alert-ic-amber{background:var(--amber-50);color:var(--amber-700);}
+.alert-ic-red{background:var(--red-50);color:var(--red-700);}
+.alert-mid{flex:1;min-width:0;}
+.alert-mid .t{margin:0;font-size:13.5px;font-weight:600;color:var(--navy-950);}
+.alert-mid .s{margin:2px 0 0;font-size:12px;color:var(--slate-500);}
+
+/* ---- top services list ---- */
+.svc-list{display:flex;flex-direction:column;gap:2px;}
+.svc-item{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:12px 4px;border-bottom:1px solid var(--slate-100);
+}
+.svc-item:last-child{border-bottom:none;}
+.svc-item .name{margin:0;font-size:13.5px;font-weight:600;color:var(--navy-950);}
+.svc-item .vol{margin:2px 0 0;font-size:12px;color:var(--slate-500);}
+.svc-item .rev{font-size:13.5px;font-weight:700;color:var(--navy-950);white-space:nowrap;}
+
+/* ---- staff workload list ---- */
+.workload-list{display:flex;flex-direction:column;gap:2px;}
+.workload-item{
+  display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--slate-100);
+}
+.workload-item:last-child{border-bottom:none;}
+.workload-item .name{flex:1;margin:0;font-size:13.5px;font-weight:600;color:var(--navy-950);}
+.workload-bar-track{flex:0 0 90px;height:6px;border-radius:100px;background:var(--slate-100);overflow:hidden;}
+.workload-bar-fill{height:100%;background:var(--blue-500);border-radius:100px;}
+.workload-count{flex:0 0 22px;text-align:right;font-size:12.5px;font-weight:700;color:var(--navy-950);}

@@ -16,6 +16,21 @@ const recordInventoryUsage = (data, callback) => {
   });
 };
 
+// Client-bound variant for use inside a transaction (BEGIN/COMMIT/ROLLBACK) —
+// the controller needs this to log usage and decrement stock atomically.
+const recordInventoryUsageWithClient = (client, data, callback) => {
+  const { inventory_item_id, appointment_id, quantity_used, recorded_by } = data;
+  const query = `
+    INSERT INTO "InventoryUsage" (inventory_item_id, appointment_id, quantity_used, recorded_by)
+    VALUES ($1, $2, $3, $4)
+    RETURNING *
+  `;
+  client.query(query, [inventory_item_id, appointment_id, quantity_used, recorded_by], (err, result) => {
+    if (err) return callback(err);
+    callback(null, result.rows[0]);
+  });
+};
+
 const findUsageByAppointment = (appointment_id, callback) => {
   const query = `SELECT * FROM "InventoryUsage" WHERE appointment_id = $1`;
   pool.query(query, [appointment_id], (err, result) => {
@@ -34,4 +49,4 @@ const findUsageByItem = (inventory_item_id, callback) => {
   });
 };
 
-module.exports = { recordInventoryUsage, findUsageByAppointment, findUsageByItem };
+module.exports = { recordInventoryUsage, recordInventoryUsageWithClient, findUsageByAppointment, findUsageByItem };

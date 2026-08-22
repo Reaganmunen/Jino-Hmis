@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prescriptions — Jino Dentist Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/dashboard.css">
+<link rel="stylesheet" href="../css/dentist-dashboard.css">
+<link rel="stylesheet" href="../css/dentist-prescriptions.css">
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="side-top">
+      <div class="brand">
+        <span class="brand-mark">J</span>
+        <span class="brand-name">Jino</span>
+      </div>
+      <button class="side-close" id="sideClose" aria-label="Close menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <nav class="side-nav">
+      <p class="side-label">Care</p>
+      <a href="overview.html" class="side-link" data-page="overview">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.7"/><rect x="14" y="3" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.7"/><rect x="3" y="14" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.7"/><rect x="14" y="14" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.7"/></svg>
+        Overview
+      </a>
+      <a href="dentist-patients.html" class="side-link" data-page="patients">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.4" stroke="currentColor" stroke-width="1.7"/><path d="M3 20c.6-3.8 3-5.8 6-5.8s5.4 2 6 5.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="17.5" cy="8.5" r="2.6" stroke="currentColor" stroke-width="1.7"/><path d="M15.7 13.6c2.6.3 4.4 2.1 4.9 5.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        Patients
+      </a>
+      <a href="dentist-diagnosis.html" class="side-link" data-page="diagnosis">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3c-2.5 0-4 2-4 4.5 0 1.8.8 2.7 1.5 3.5.6.7 1 1.2 1 2.3V17M12 3c2.5 0 4 2 4 4.5 0 1.8-.8 2.7-1.5 3.5-.6.7-1 1.2-1 2.3V17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 17.5c0 2 1.3 3.5 3 3.5s3-1.5 3-3.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        Diagnosis
+      </a>
+      <a href="dentist-schedule.html" class="side-link" data-page="schedule">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2.2" stroke="currentColor" stroke-width="1.7"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        My Schedule
+      </a>
+      <a href="dentist-treatment-plans.html" class="side-link" data-page="treatments">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 19V5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8 12h8M8 16h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        Treatment Plans
+      </a>
+      <a href="dentist-prescriptions.html" class="side-link is-active" data-page="prescriptions">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M7 3h10M9 3v5.5L4.6 16a2.6 2.6 0 0 0 2.2 4h10.4a2.6 2.6 0 0 0 2.2-4L15 8.5V3" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M6.5 14.5h11" stroke="currentColor" stroke-width="1.7"/></svg>
+        Prescriptions
+      </a>
+      <a href="dentist-billing.html" class="side-link" data-page="billing">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 8h6M9 12h6M9 16h3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        Billing
+      </a>
+
+      <p class="side-label">Account</p>
+      <a href="dentist-profile.html" class="side-link" data-page="profile">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.6" stroke="currentColor" stroke-width="1.7"/><path d="M4.5 20c.8-4 3.8-6 7.5-6s6.7 2 7.5 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        Profile &amp; Settings
+      </a>
+    </nav>
+
+    <div class="side-bottom">
+      <a href="../login.html" class="side-link side-logout" id="logoutLink">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 17l5-5-5-5M20 12H9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 19H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        Log Out
+      </a>
+    </div>
+  </aside>
+
+  <div class="scrim" id="scrim"></div>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main">
+
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="side-open" id="sideOpen" aria-label="Open menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+        <div>
+          <p class="topbar-kicker">Dentist Portal</p>
+          <h1 class="topbar-title">Prescriptions</h1>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="avatar" id="avatarInitials">DR</div>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <!-- ---- Patient picker (always visible, so you can switch patients) ---- -->
+      <section class="panel" id="patientPickerPanel">
+        <div class="panel-head">
+          <h2>Select a patient</h2>
+          <span class="panel-sub" id="patientPickerCount"></span>
+        </div>
+        <input
+          class="field-input rx-search-input"
+          type="text"
+          id="patientSearchInput"
+          placeholder="Search patients by name…"
+          autocomplete="off"
+        >
+        <div class="sched-list" id="patientPickerList"><!-- rendered by JS --></div>
+      </section>
+
+      <!-- ---- New prescription — hidden until a patient is selected ---- -->
+      <section class="panel" id="rxFormPanel" style="display:none;">
+        <div class="panel-head">
+          <h2>New prescription <span id="rxPatientName" class="charting-patient-name"></span></h2>
+          <button class="panel-link" id="switchPatientBtn" type="button">Switch patient</button>
+        </div>
+
+        <div class="rx-form-grid">
+          <div>
+            <label class="field-label" for="rxDrugName">Drug name</label>
+            <input class="field-input" type="text" id="rxDrugName" placeholder="e.g. Amoxicillin">
+          </div>
+          <div>
+            <label class="field-label" for="rxDosage">Dosage</label>
+            <input class="field-input" type="text" id="rxDosage" placeholder="e.g. 500mg">
+          </div>
+          <div>
+            <label class="field-label" for="rxFrequency">Frequency</label>
+            <input class="field-input" type="text" id="rxFrequency" placeholder="e.g. 3 times daily">
+          </div>
+          <div>
+            <label class="field-label" for="rxDuration">Duration</label>
+            <input class="field-input" type="text" id="rxDuration" placeholder="e.g. 7 days">
+          </div>
+        </div>
+
+        <div style="margin-top:14px;">
+          <label class="field-label" for="rxDiagnosisSelect">Link to diagnosis (optional)</label>
+          <select class="field-input" id="rxDiagnosisSelect">
+            <option value="">No diagnosis link</option>
+          </select>
+        </div>
+
+        <div style="margin-top:14px;">
+          <label class="field-label" for="rxNotes">Notes</label>
+          <textarea class="field-input" id="rxNotes" rows="3" placeholder="Instructions for the patient, precautions, etc…"></textarea>
+        </div>
+
+        <div class="modal-foot" style="justify-content:flex-end; margin-top:16px;">
+          <button class="btn btn-primary" id="rxSaveBtn" type="button">Save prescription</button>
+        </div>
+      </section>
+
+      <!-- ---- Prescription history — hidden until a patient is selected ---- -->
+      <section class="panel" id="rxHistoryPanel" style="display:none;">
+        <div class="panel-head">
+          <h2>Prescription history</h2>
+        </div>
+        <div class="timeline" id="rxTimeline"><!-- rendered by JS --></div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!--
+  api.js must load first — it defines fetchMethod / getStoredUser / clearSession.
+  Adjust the paths below to wherever these actually live in your public/ folder.
+-->
+<script src="../js/api.js"></script>
+<script src="../js/dentistPrescriptions.js"></script>
+</body>
+</html>

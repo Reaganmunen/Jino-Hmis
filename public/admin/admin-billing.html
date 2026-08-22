@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Billing &amp; Reports — Jino Admin Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/dashboard.css">
+<link rel="stylesheet" href="../css/admin-dashboard.css">
+<link rel="stylesheet" href="../css/admin-billing.css">
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="side-top">
+      <div class="brand">
+        <span class="brand-mark">J</span>
+        <span class="brand-name">Jino</span>
+      </div>
+      <button class="side-close" id="sideClose" aria-label="Close menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <nav class="side-nav">
+      <p class="side-label">Clinic</p>
+      <a href="dashboard.html" class="side-link" data-page="overview">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.7"/><rect x="14" y="3" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.7"/><rect x="3" y="14" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.7"/><rect x="14" y="14" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.7"/></svg>
+        Overview
+      </a>
+      <a href="admin-patients.html" class="side-link" data-page="patients">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.4" stroke="currentColor" stroke-width="1.7"/><path d="M3 20c.6-3.8 3-5.8 6-5.8s5.4 2 6 5.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="17.5" cy="8.5" r="2.6" stroke="currentColor" stroke-width="1.7"/><path d="M15.7 13.6c2.6.3 4.4 2.1 4.9 5.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        Patients
+      </a>
+      <a href="admin-staff.html" class="side-link" data-page="staff">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.6" stroke="currentColor" stroke-width="1.7"/><path d="M4.5 20c.8-4 3.8-6 7.5-6s6.7 2 7.5 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        Staff
+      </a>
+      <a href="admin-billing.html" class="side-link is-active" data-page="billing">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 8h6M9 12h6M9 16h3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        Billing &amp; Reports
+      </a>
+      <a href="admin-inventory.html" class="side-link" data-page="inventory">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 8l9-5 9 5-9 5-9-5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M3 8v9l9 5 9-5V8" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+        Inventory
+      </a>
+
+      <p class="side-label">Account</p>
+      <a href="admin-profile.html" class="side-link" data-page="profile">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.6" stroke="currentColor" stroke-width="1.7"/><path d="M4.5 20c.8-4 3.8-6 7.5-6s6.7 2 7.5 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        Profile &amp; Settings
+      </a>
+    </nav>
+
+    <div class="side-bottom">
+      <a href="../login.html" class="side-link side-logout" id="logoutLink">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 17l5-5-5-5M20 12H9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 19H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        Log Out
+      </a>
+    </div>
+  </aside>
+
+  <div class="scrim" id="scrim"></div>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main">
+
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="side-open" id="sideOpen" aria-label="Open menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+        <div>
+          <p class="topbar-kicker">Admin Portal</p>
+          <h1 class="topbar-title">Billing &amp; Reports</h1>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="icon-btn" aria-label="Notifications">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M6 9a6 6 0 1 1 12 0c0 4.2 1 5.6 1.6 6.4.3.4 0 1-.5 1H4.9c-.5 0-.8-.6-.5-1C5 14.6 6 13.2 6 9Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9.5 19a2.5 2.5 0 0 0 5 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          <span class="icon-dot" id="alertDot" style="display:none;"></span>
+        </button>
+        <div class="avatar" id="avatarInitials">AD</div>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <!-- ---- Stat cards ---- -->
+      <section class="stat-grid" id="statGrid" aria-label="Billing summary">
+        <div class="stat-card">
+          <div class="stat-ic stat-ic-red">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="2.3" stroke="currentColor" stroke-width="1.7"/><path d="M3 10h18" stroke="currentColor" stroke-width="1.7"/><circle cx="7" cy="14.5" r="1" fill="currentColor"/></svg>
+          </div>
+          <div>
+            <p class="stat-value" id="statOutstanding">KSh 0</p>
+            <p class="stat-label">Outstanding across all bills</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-ic stat-ic-green">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 8h6M9 12h6M9 16h3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          </div>
+          <div>
+            <p class="stat-value" id="statCollected">KSh 0</p>
+            <p class="stat-label">Collected to date</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-ic stat-ic-amber">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2.2" stroke="currentColor" stroke-width="1.7"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          </div>
+          <div>
+            <p class="stat-value" id="statUnpaid">0</p>
+            <p class="stat-label">Unpaid / partial bills</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-ic stat-ic-blue">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" stroke-width="1.7"/><path d="M8 12h8M12 8v8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          </div>
+          <div>
+            <p class="stat-value" id="statTotalBills">0</p>
+            <p class="stat-label">Total bills on record</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---- Bills ---- -->
+      <section class="panel">
+        <div class="panel-head">
+          <h2>All bills</h2>
+          <button class="btn btn-primary btn-sm" id="newBillBtn">+ New bill</button>
+        </div>
+        <p class="panel-sub">Create bills, record manual payments, trigger M-Pesa STK pushes, and manage line items.</p>
+
+        <div class="billing-toolbar">
+          <div class="filter-tabs" id="statusTabs">
+            <button class="filter-tab is-active" data-status="all">All</button>
+            <button class="filter-tab" data-status="unpaid">Unpaid</button>
+            <button class="filter-tab" data-status="partial">Partial</button>
+            <button class="filter-tab" data-status="paid">Paid</button>
+            <button class="filter-tab" data-status="void">Void</button>
+          </div>
+          <div class="search" style="width:auto;flex:0 0 260px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <input type="text" id="billSearch" placeholder="Search patient or bill ID">
+          </div>
+        </div>
+
+        <div class="bill-list" id="billList"><!-- rendered by JS --></div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ============ NEW BILL MODAL ============ -->
+<div class="modal-scrim" id="newBillModalScrim">
+  <div class="modal" style="max-width:560px;" role="dialog" aria-modal="true" aria-labelledby="newBillTitle">
+    <div class="modal-head">
+      <div>
+        <p class="modal-kicker">New Bill</p>
+        <h2 id="newBillTitle">Open a bill for a patient</h2>
+      </div>
+      <button class="icon-btn" id="newBillClose" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <label class="field-label" for="newBillPatient">Patient</label>
+    <select id="newBillPatient" class="field-input" style="margin-bottom:16px;"></select>
+
+    <label class="field-label" for="newBillAppointment">Linked appointment ID (optional)</label>
+    <input type="text" id="newBillAppointment" class="field-input" placeholder="Leave blank if not tied to a visit" style="margin-bottom:16px;">
+
+    <p class="field-label" style="margin-bottom:8px;">Line items</p>
+    <div id="newBillItems"><!-- item rows rendered by JS --></div>
+    <button class="btn btn-outline btn-sm" id="newBillAddItemRow" type="button" style="margin-top:4px;">+ Add item</button>
+
+    <div class="modal-foot">
+      <button class="btn btn-outline" id="newBillCancel">Cancel</button>
+      <button class="btn btn-primary" id="newBillSubmit">Create bill</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ RECORD PAYMENT MODAL ============ -->
+<div class="modal-scrim" id="recordPayModalScrim">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="recordPayTitle">
+    <div class="modal-head">
+      <div>
+        <p class="modal-kicker">Manual Payment</p>
+        <h2 id="recordPayTitle">Record a payment</h2>
+      </div>
+      <button class="icon-btn" id="recordPayClose" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <div class="pay-summary" id="recordPaySummary"><!-- JS --></div>
+
+    <label class="field-label" for="recordPayMethod">Method</label>
+    <select id="recordPayMethod" class="field-input" style="margin-bottom:16px;">
+      <option value="cash">Cash</option>
+      <option value="card">Card</option>
+      <option value="bank_transfer">Bank transfer</option>
+      <option value="insurance">Insurance</option>
+    </select>
+
+    <label class="field-label" for="recordPayAmount">Amount (KSh)</label>
+    <input type="number" id="recordPayAmount" class="field-input" min="1" step="1" style="margin-bottom:16px;">
+
+    <label class="field-label" for="recordPayReference">Reference (optional)</label>
+    <input type="text" id="recordPayReference" class="field-input" placeholder="Receipt #, transfer ref, etc.">
+
+    <div class="modal-foot">
+      <button class="btn btn-outline" id="recordPayCancel">Cancel</button>
+      <button class="btn btn-primary" id="recordPaySubmit">Record payment</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ STK PUSH MODAL (Safaricom themed) ============ -->
+<div class="modal-scrim" id="stkModalScrim">
+  <div class="modal modal-mpesa" role="dialog" aria-modal="true" aria-labelledby="stkModalTitle">
+
+    <div id="stkFormView">
+      <div class="modal-head">
+        <div class="mpesa-head">
+          <span class="mpesa-badge">M-PESA</span>
+          <div>
+            <p class="modal-kicker mpesa-kicker">Lipa Na M-Pesa</p>
+            <h2 id="stkModalTitle">Send STK push</h2>
+          </div>
+        </div>
+        <button class="icon-btn" id="stkModalClose" aria-label="Close">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+      <div class="pay-summary mpesa-summary" id="stkSummary"><!-- JS --></div>
+
+      <label class="field-label" for="stkPhone">Patient's M-Pesa phone number</label>
+      <input type="tel" id="stkPhone" class="field-input mpesa-input" placeholder="07XX XXX XXX" style="margin-bottom:16px;">
+
+      <label class="field-label" for="stkAmount">Amount to charge (KSh)</label>
+      <input type="number" id="stkAmount" class="field-input mpesa-input" min="1" step="1">
+
+      <div class="modal-foot">
+        <button class="btn btn-outline" id="stkCancel">Cancel</button>
+        <button class="btn btn-mpesa" id="stkSubmit">Send STK push</button>
+      </div>
+    </div>
+
+    <div id="stkWaitingView" style="display:none;">
+      <div class="modal-head">
+        <div class="mpesa-head">
+          <span class="mpesa-badge">M-PESA</span>
+          <div>
+            <p class="modal-kicker mpesa-kicker">Lipa Na M-Pesa</p>
+            <h2>Prompt sent</h2>
+          </div>
+        </div>
+      </div>
+      <div class="mpesa-waiting">
+        <div class="mpesa-spinner mpesa-spinner-green"></div>
+        <p id="stkWaitingHeadline">Waiting for confirmation…</p>
+        <span id="stkWaitingSub">Ask the patient to enter their M-Pesa PIN on the prompt sent to their phone.</span>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-outline" id="stkWaitingCancel">Close</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!--
+  api.js must load first — it defines fetchMethod / getStoredUser / clearSession.
+-->
+<script src="../js/api.js"></script>
+<script src="../js/adminBilling.js"></script>
+</body>
+</html>

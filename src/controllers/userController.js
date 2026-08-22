@@ -1,10 +1,20 @@
 const bcrypt = require('bcrypt');
 const {
-  findUserById, findUsersByRole, updateUser, updatePassword, softDeleteUser,
+  findUserById, findUsersByRole, updateUser, updatePassword, updateProfilePicture, softDeleteUser,
 } = require('../models/userModel');
 
 const getUser = (req, res, next) => {
   findUserById(req.params.id, (err, user) => {
+    if (err) return next(err);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json(user);
+  });
+};
+
+// Self-service — any authenticated user fetches their own record
+// (includes profile_picture_url, which isn't in the login session payload).
+const getOwnProfile = (req, res, next) => {
+  findUserById(req.user.id, (err, user) => {
     if (err) return next(err);
     if (!user) return res.status(404).json({ message: 'User not found' });
     res.json(user);
@@ -64,4 +74,16 @@ const deactivateUser = (req, res, next) => {
   });
 };
 
-module.exports = { getUser, getUsersByRole, updateUserDetails, changePassword, deactivateUser };
+// Self-service — any authenticated user updates their own avatar.
+const updateOwnPhoto = (req, res, next) => {
+  const { profile_picture_url } = req.body;
+  if (!profile_picture_url) {
+    return res.status(400).json({ message: 'profile_picture_url is required' });
+  }
+  updateProfilePicture(req.user.id, profile_picture_url, (err, user) => {
+    if (err) return next(err);
+    res.json(user);
+  });
+};
+
+module.exports = { getUser, getOwnProfile, getUsersByRole, updateUserDetails, changePassword, updateOwnPhoto, deactivateUser };

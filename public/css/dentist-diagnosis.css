@@ -1,0 +1,88 @@
+/* ============================================================
+   DENTIST DIAGNOSIS PAGE — additive styles only.
+   Loaded after dashboard.css and dentist-dashboard.css; reuses
+   .panel / .sched-list / .modal / .field-input / .timeline /
+   .odontogram-* / .tooth-svg / .cond-* / .legend classes.
+   ============================================================ */
+
+.charting-patient-name{font-weight:400;color:var(--slate-500);font-size:14px;margin-left:4px;}
+
+#switchPatientBtn{background:none;border:none;cursor:pointer;font:inherit;}
+
+.chart-subhead{margin:24px 0 4px;font-size:14.5px;font-weight:700;color:var(--navy-950);}
+
+/* ---- appointment picker rows: reuse .sched-item look, add selectable state ---- */
+.sched-item.is-selectable{cursor:pointer;}
+.sched-item.is-selectable:hover{background:var(--slate-100);border-radius:10px;}
+.sched-item.is-active-appt{background:var(--blue-50);border-radius:10px;}
+
+/* ---- odontogram teeth (placeholder shapes, real .tooth-svg classes) ---- */
+.odontogram-col svg{padding:10px;}
+.tooth-svg text{
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:8px;font-weight:600;
+  fill:var(--slate-500);pointer-events:none;user-select:none;
+}
+.tooth-svg.is-selected .tooth-outline{stroke:var(--navy-900);stroke-width:2.5;}
+
+.tooth-detail-list{display:flex;flex-direction:column;gap:2px;}
+.tooth-detail-list .timeline{margin-top:2px;}
+.tooth-add-btn{
+  margin-top:10px;display:inline-flex;align-items:center;gap:6px;
+  font-size:13px;font-weight:600;color:var(--blue-600);background:none;border:none;cursor:pointer;padding:0;
+}
+.tooth-add-btn:hover{text-decoration:underline;}
+
+/* ---- tooth finding modal ---- */
+.tooth-fdi-badge{
+  flex:0 0 auto;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:12px;font-weight:700;
+  color:var(--blue-600);background:var(--blue-50);border:1px solid var(--blue-100);
+  border-radius:8px;padding:5px 10px;white-space:nowrap;
+}
+
+textarea.field-input{font-family:inherit;}
+/* ============================================================
+   ADDENDUM for dentist-diagnosis.css — append this block.
+   Pulled straight from tooth-chart.css so the Medical/Cosmetic
+   toggle and cosmetic tooth color match the patient-side page
+   exactly. Skip any rule below that's already defined elsewhere
+   in your CSS (e.g. if dashboard.css already has --purple-700).
+   ============================================================ */
+:root{
+  --purple-700:#7C4FE0;
+  --purple-50:#F3EEFF;
+}
+
+/* ---- panel header with the Medical/Cosmetic toggle ---- */
+.panel-head-with-toggle{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;
+}
+
+/* ---- segmented control ---- */
+.segmented{
+  display:inline-flex;background:var(--slate-100);border-radius:100px;padding:3px;flex:0 0 auto;
+}
+.segmented-opt{
+  padding:8px 16px;border-radius:100px;border:none;background:none;cursor:pointer;
+  font-family:inherit;font-size:13px;font-weight:600;color:var(--slate-500);
+  transition:background .12s ease, color .12s ease, box-shadow .12s ease;
+}
+.segmented-opt:hover{color:var(--navy-900);}
+.segmented-opt.is-active{background:var(--white);color:var(--navy-950);box-shadow:var(--shadow-soft);}
+
+/* ---- cosmetic tooth condition (mirrors the cond-* pattern already
+   used for caries/filled/missing/crown) ---- */
+.tooth-svg.cond-cosmetic .tooth-outline{stroke:var(--purple-700);}
+.tooth-svg.cond-cosmetic .tooth-fill{fill:var(--purple-50);opacity:1;}
+.tooth-svg.cond-cosmetic .tooth-highlight{stroke:var(--purple-700);}
+
+.dot-cosmetic{background:var(--purple-700);}
+
+/* ---- Oral Checkup form grid ---- */
+.checkup-grid{
+  display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:14px;
+}
+
+@media (max-width:600px){
+  .panel-head-with-toggle{flex-direction:column;align-items:stretch;}
+  .segmented{align-self:flex-start;}
+}

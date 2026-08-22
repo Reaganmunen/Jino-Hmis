@@ -1,0 +1,98 @@
+/* ============================================================
+   DENTIST TREATMENT PLANS PAGE — additive styles only.
+   Loaded after dashboard.css; reuses its tokens (--navy-*, --blue-*,
+   --slate-*, --radius-*, --shadow-*, --white) and its .panel / .btn /
+   .field-label / .field-input / .modal-* / .sched-list / .toast
+   classes unchanged.
+   ============================================================ */
+:root{
+  --green-700:#1E9E63;
+  --green-50:#E8FAF1;
+  --amber-700:#B9770E;
+  --amber-50:#FEF6E7;
+  --red-700:#D2434C;
+  --red-50:#FDEDEE;
+  --purple-700:#7C4FE0;
+  --purple-50:#F3EEFF;
+}
+
+/* ---- Active plans overview grid ---- */
+.plan-grid{
+  display:grid;grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));gap:12px;
+}
+.plan-grid:empty::after,
+.plan-grid.is-empty::after{
+  content:'No active treatment plans right now.';
+  font-size:13px;color:var(--slate-500);
+}
+
+/* ---- Plan card (used both in the overview grid and the patient's own list) ---- */
+.plan-card{
+  border:1px solid var(--slate-100);border-radius:var(--radius-md, 10px);
+  padding:14px 16px;background:var(--white);box-shadow:var(--shadow-soft);
+}
+.plan-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+.plan-patient-name{font-size:12.5px;font-weight:700;color:var(--blue-600);}
+.plan-description{font-size:14px;font-weight:600;color:var(--navy-950);margin-top:2px;}
+.plan-meta-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px;}
+.plan-cost{font-size:12.5px;font-weight:700;color:var(--navy-950);}
+.plan-date{font-size:11.5px;color:var(--slate-500);}
+
+.status-badge{
+  font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:100px;white-space:nowrap;color:#fff;
+}
+.status-proposed .status-badge, .status-pending .status-badge{background:var(--amber-700);}
+.status-approved .status-badge{background:var(--purple-700);}
+.status-inprogress .status-badge{background:var(--blue-600);}
+.status-completed .status-badge{background:var(--green-700);}
+.status-cancelled .status-badge{background:var(--slate-500);}
+.status-default .status-badge{background:var(--slate-500);}
+
+.plan-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+.plan-action-btn{
+  font-family:inherit;font-size:11.5px;font-weight:700;border-radius:100px;padding:5px 12px;
+  border:1px solid var(--slate-100);background:var(--white);color:var(--navy-950);cursor:pointer;
+  transition:background .12s ease;
+}
+.plan-action-btn:hover{background:var(--slate-100);}
+.plan-action-btn.start{border-color:var(--blue-600);color:var(--blue-600);}
+.plan-action-btn.approve{border-color:var(--purple-700);color:var(--purple-700);}
+.plan-action-btn.complete{border-color:var(--green-700);color:var(--green-700);}
+.plan-action-btn.cancel{border-color:var(--red-700);color:var(--red-700);}
+.plan-action-btn.expand{margin-left:auto;}
+
+/* ---- Patient-specific plan list ---- */
+#patientPlansList{display:flex;flex-direction:column;gap:12px;}
+
+/* ---- Items within an expanded plan ---- */
+.plan-items{margin-top:14px;border-top:1px solid var(--slate-100);padding-top:12px;}
+.plan-item-row{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:8px 0;border-bottom:1px dashed var(--slate-100);
+}
+.plan-item-row:last-child{border-bottom:none;}
+.plan-item-main{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.plan-item-name{font-size:13px;font-weight:600;color:var(--navy-950);}
+.plan-item-tooth{
+  font-size:10.5px;font-weight:700;color:var(--blue-600);background:var(--blue-50);
+  border-radius:100px;padding:2px 8px;white-space:nowrap;
+}
+.plan-item-cost{font-size:12px;color:var(--slate-500);}
+.plan-item-actions{display:flex;gap:6px;flex-shrink:0;}
+.plan-item-action-btn{
+  font-family:inherit;font-size:11px;font-weight:700;border-radius:100px;padding:3px 10px;
+  border:1px solid var(--slate-100);background:var(--white);cursor:pointer;
+}
+.plan-item-action-btn.complete{border-color:var(--green-700);color:var(--green-700);}
+.plan-item-action-btn.cancel{border-color:var(--red-700);color:var(--red-700);}
+
+.plan-items-empty{font-size:12.5px;color:var(--slate-500);opacity:.7;}
+.add-item-btn{
+  margin-top:10px;font-family:inherit;font-size:12px;font-weight:700;color:var(--blue-600);
+  background:none;border:none;cursor:pointer;padding:0;
+}
+.add-item-btn:hover{text-decoration:underline;}
+
+@media (max-width:600px){
+  .plan-grid{grid-template-columns:1fr;}
+}

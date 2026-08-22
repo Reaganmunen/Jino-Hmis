@@ -22,7 +22,12 @@ const createPatient = (data, callback) => {
 };
 
 const findPatientById = (id, callback) => {
-  const query = `SELECT * FROM "Patient" WHERE id = $1 AND deleted_at IS NULL`;
+  const query = `
+    SELECT p.*, u.profile_picture_url
+    FROM "Patient" p
+    LEFT JOIN "User" u ON u.id = p.user_id
+    WHERE p.id = $1 AND p.deleted_at IS NULL
+  `;
   pool.query(query, [id], (err, result) => {
     if (err) return callback(err);
     callback(null, result.rows[0]);
@@ -30,7 +35,12 @@ const findPatientById = (id, callback) => {
 };
 
 const findPatientByUserId = (user_id, callback) => {
-  const query = `SELECT * FROM "Patient" WHERE user_id = $1 AND deleted_at IS NULL`;
+  const query = `
+    SELECT p.*, u.profile_picture_url
+    FROM "Patient" p
+    LEFT JOIN "User" u ON u.id = p.user_id
+    WHERE p.user_id = $1 AND p.deleted_at IS NULL
+  `;
   pool.query(query, [user_id], (err, result) => {
     if (err) return callback(err);
     callback(null, result.rows[0]);
@@ -39,10 +49,12 @@ const findPatientByUserId = (user_id, callback) => {
 
 const searchPatients = (searchTerm, callback) => {
   const query = `
-    SELECT * FROM "Patient"
-    WHERE deleted_at IS NULL
-      AND (first_name ILIKE $1 OR last_name ILIKE $1 OR national_id ILIKE $1 OR phone ILIKE $1)
-    ORDER BY first_name
+    SELECT p.*, u.profile_picture_url
+    FROM "Patient" p
+    LEFT JOIN "User" u ON u.id = p.user_id
+    WHERE p.deleted_at IS NULL
+      AND (p.first_name ILIKE $1 OR p.last_name ILIKE $1 OR p.national_id ILIKE $1 OR p.phone ILIKE $1)
+    ORDER BY p.first_name
     LIMIT 50
   `;
   pool.query(query, [`%${searchTerm}%`], (err, result) => {
@@ -52,7 +64,13 @@ const searchPatients = (searchTerm, callback) => {
 };
 
 const listPatients = (callback) => {
-  const query = `SELECT * FROM "Patient" WHERE deleted_at IS NULL ORDER BY created_at DESC`;
+  const query = `
+    SELECT p.*, u.profile_picture_url
+    FROM "Patient" p
+    LEFT JOIN "User" u ON u.id = p.user_id
+    WHERE p.deleted_at IS NULL
+    ORDER BY p.created_at DESC
+  `;
   pool.query(query, (err, result) => {
     if (err) return callback(err);
     callback(null, result.rows);

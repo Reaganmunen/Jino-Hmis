@@ -1,0 +1,69 @@
+/* ============================================================
+   DENTIST PATIENTS PAGE — additive styles only.
+   Loaded after dashboard.css and dentist-dashboard.css; reuses
+   their tokens and .panel / .patient-search / .badge classes.
+   ============================================================ */
+
+/* ---- filter row under the search bar ---- */
+.roster-filter-row{display:flex;gap:8px;margin-top:12px;}
+
+/* ---- roster count in panel head ---- */
+.roster-count{font-weight:600;}
+
+/* ---- roster rows ---- */
+.roster-list{display:flex;flex-direction:column;gap:2px;margin-top:6px;}
+.roster-row{
+  display:flex;align-items:center;gap:14px;padding:13px 6px;
+  border-bottom:1px solid var(--slate-100);border-radius:10px;
+  cursor:pointer;transition:background .12s ease;
+}
+.roster-row:hover{background:var(--slate-100);}
+.roster-row:last-child{border-bottom:none;}
+
+.roster-avatar{
+  flex:0 0 auto;width:40px;height:40px;border-radius:100px;
+  background:var(--blue-100);color:var(--blue-600);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;
+  overflow:hidden;position:relative;
+}
+.roster-avatar img{
+  width:100%;height:100%;object-fit:cover;display:block;
+}
+.roster-mid{flex:1;min-width:0;}
+.roster-mid .t{margin:0;font-size:14.5px;font-weight:600;color:var(--navy-950);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.roster-mid .s{margin:2px 0 0;font-size:12.5px;color:var(--slate-500);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+.roster-flags{display:flex;align-items:center;gap:8px;flex:0 0 auto;}
+.badge-allergy{background:var(--red-50);color:var(--red-700);}
+
+.roster-chevron{flex:0 0 auto;color:var(--slate-500);}
+
+/* skeleton loading rows */
+.roster-skel-row{display:flex;align-items:center;gap:14px;padding:13px 6px;}
+.roster-skel-avatar,.roster-skel-line{background:var(--slate-100);border-radius:8px;animation:pulse 1.3s ease-in-out infinite;}
+.roster-skel-avatar{width:40px;height:40px;border-radius:100px;flex:0 0 auto;}
+.roster-skel-line{height:11px;flex:1;max-width:220px;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.45;}}
+
+/* ============================================================
+   PATIENT RECORDS MODAL
+   ============================================================ */
+.modal-lg{max-width:680px;}
+
+.records-modal-meta{margin:2px 0 0;font-size:12.5px;color:var(--slate-500);}
+
+.allergy-banner{
+  display:flex;align-items:center;gap:8px;margin-top:14px;padding:10px 14px;
+  background:var(--red-50);color:var(--red-700);border-radius:var(--radius-sm);
+  font-size:13px;font-weight:600;
+}
+
+.records-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 4px;}
+
+.records-tab-body{margin-top:14px;min-height:120px;}
+.records-tab-panel{display:none;}
+.records-tab-panel.is-active{display:block;}
+
+.records-loading{padding:34px 12px;text-align:center;color:var(--slate-500);font-size:13.5px;}
+.records-loading .mpesa-spinner{margin:0 auto 14px;}

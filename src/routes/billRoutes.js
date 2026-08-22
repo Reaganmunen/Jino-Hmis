@@ -8,7 +8,9 @@ router.use(verifyToken);
 
 const STAFF = ['admin', 'dentist', 'receptionist'];
 
-router.post('/', authorizeRoles('admin', 'receptionist'), addBill);
+// Dentists can open a bill for a visit (billing for services ordered);
+// only admin/receptionist handle payment status changes below.
+router.post('/', authorizeRoles('admin', 'receptionist', 'dentist'), addBill);
 router.get('/status/:status', authorizeRoles('admin', 'receptionist'), getBillsByStatus);
 router.get(
   '/patient/:patientId',

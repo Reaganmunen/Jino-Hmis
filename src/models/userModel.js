@@ -48,7 +48,7 @@ const findUserByIdWithHash = (id, callback) => {
 
 const findUsersByRole = (role, callback) => {
   const query = `
-    SELECT id, role, first_name, last_name, email, phone, is_active
+    SELECT id, role, first_name, last_name, email, phone, is_active, profile_picture_url
     FROM "User" WHERE role = $1 AND deleted_at IS NULL
     ORDER BY first_name
   `;
@@ -81,6 +81,21 @@ const updatePassword = (id, password_hash, callback) => {
   });
 };
 
+// Self-service avatar update — used by PUT /users/me/photo.
+// Excludes password_hash from the returned row, same as updateUser.
+const updateProfilePicture = (id, profile_picture_url, callback) => {
+  const query = `
+    UPDATE "User"
+    SET profile_picture_url = $1
+    WHERE id = $2 AND deleted_at IS NULL
+    RETURNING id, role, first_name, last_name, email, phone, is_active, profile_picture_url
+  `;
+  pool.query(query, [profile_picture_url, id], (err, result) => {
+    if (err) return callback(err);
+    callback(null, result.rows[0]);
+  });
+};
+
 const softDeleteUser = (id, callback) => {
   const query = `UPDATE "User" SET deleted_at = now(), is_active = FALSE WHERE id = $1`;
   pool.query(query, [id], (err, result) => {
@@ -97,5 +112,6 @@ module.exports = {
   findUsersByRole,
   updateUser,
   updatePassword,
+  updateProfilePicture,
   softDeleteUser,
 };

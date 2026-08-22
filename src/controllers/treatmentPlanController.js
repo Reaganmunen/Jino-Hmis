@@ -38,8 +38,22 @@ const getPatientPlans = (req, res, next) => {
 };
 
 // Body: { status: 'approved' | 'in_progress' | 'completed' | 'cancelled' }
-// Patients hit this to approve their own plan before starting treatment;
-// ownership must be checked here since the route has no patientId param.
+//
+// Patients approve or cancel their own plan themselves. Staff
+// (dentist/admin/receptionist) can also set 'approved' -- e.g. when a
+// patient can't log in to approve it themselves -- plus move it through
+// the clinical progress states a patient shouldn't be able to touch.
+// This is an explicit allow-list per role rather than "anything a
+// non-patient sends goes through", so it's clear in one place exactly
+// who is permitted to set which status, and adding a new status or role
+// later doesn't silently open up more than intended.
+const ALLOWED_STATUSES_BY_ROLE = {
+  patient: ['approved', 'cancelled'],
+  dentist: ['approved', 'in_progress', 'completed', 'cancelled'],
+  admin: ['approved', 'in_progress', 'completed', 'cancelled'],
+  receptionist: ['approved', 'in_progress', 'completed', 'cancelled'],
+};
+
 const setStatus = (req, res, next) => {
   const { status } = req.body;
   if (!status) return res.status(400).json({ message: 'status is required' });
@@ -50,10 +64,10 @@ const setStatus = (req, res, next) => {
     if (!canAccessPlan(req.user, plan)) {
       return res.status(403).json({ message: 'You do not have permission to modify this resource' });
     }
-    // A patient may only ever move their plan to 'approved' or 'cancelled' —
-    // progress states like 'in_progress'/'completed' are a clinical call.
-    if (req.user.role === 'patient' && !['approved', 'cancelled'].includes(status)) {
-      return res.status(403).json({ message: 'Patients may only approve or cancel a treatment plan' });
+
+    const allowedStatuses = ALLOWED_STATUSES_BY_ROLE[req.user.role] || [];
+    if (!allowedStatuses.includes(status)) {
+      return res.status(403).json({ message: `Your role is not permitted to set status "${status}"` });
     }
 
     updateTreatmentPlanStatus(req.params.id, status, (err, updated) => {

@@ -9,11 +9,14 @@ const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(generalLimiter);
 
-// public/ sits one level up from src/, as a sibling — not nested inside it
+// Serve frontend assets without API rate limiting
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
+// Rate-limit API requests only
+app.use('/api', generalLimiter);
+
+// API routes
 app.use('/api', mainRoutes);
 
 app.use(notFound);

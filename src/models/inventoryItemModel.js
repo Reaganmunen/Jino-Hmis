@@ -68,6 +68,20 @@ const adjustQuantity = (id, delta, callback) => {
   });
 };
 
+// Client-bound variant for use inside a transaction — the usage controller
+// needs this so the stock decrement commits/rolls back together with the
+// InventoryUsage insert, never independently of it.
+const adjustQuantityWithClient = (client, id, delta, callback) => {
+  const query = `
+    UPDATE "InventoryItem" SET quantity = quantity + $1 WHERE id = $2
+    RETURNING *
+  `;
+  client.query(query, [delta, id], (err, result) => {
+    if (err) return callback(err);
+    callback(null, result.rows[0]);
+  });
+};
+
 module.exports = {
   createInventoryItem,
   findInventoryItemById,
@@ -75,4 +89,5 @@ module.exports = {
   findLowStockItems,
   updateInventoryItem,
   adjustQuantity,
+  adjustQuantityWithClient,
 };

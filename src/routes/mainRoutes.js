@@ -26,5 +26,6 @@ router.use('/claim-status-history', require('./claimStatusHistoryRoutes'));
 router.use('/referrals', require('./referralRoutes'));
 router.use('/recall-reminders', require('./recallReminderRoutes'));
 router.use('/audit-log', require('./auditLogRoutes'));
+router.use('/admin', require('./adminRoutes')); // NEW — admin overview stats + clinic-wide schedule
 
 module.exports = router;

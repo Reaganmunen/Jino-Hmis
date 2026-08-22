@@ -1,0 +1,124 @@
+/* ============================================================
+   DENTIST SCHEDULE PAGE — additive styles only.
+   Loaded after dashboard.css; reuses its tokens (--navy-*, --blue-*,
+   --slate-*, --radius-*, --shadow-*, --white) and its .panel / .btn /
+   .field-label / .field-input / .modal-* / .toast classes unchanged.
+   ============================================================ */
+:root{
+  --green-700:#1E9E63;
+  --green-50:#E8FAF1;
+  --amber-700:#B9770E;
+  --amber-50:#FEF6E7;
+  --red-700:#D2434C;
+  --red-50:#FDEDEE;
+}
+
+/* ---- toolbar: Today / prev / next / date label · count / Day-Week toggle ---- */
+.sched-toolbar{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  margin-bottom:18px;
+}
+.sched-toolbar-left{display:flex;align-items:center;gap:8px;}
+.sched-toolbar-right{display:flex;align-items:center;gap:14px;}
+
+.sched-today-btn{padding:8px 16px;font-size:13px;}
+
+.sched-nav-btn{
+  width:32px;height:32px;border-radius:100px;border:1px solid var(--slate-100);
+  background:var(--white);color:var(--slate-700);display:inline-flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:background .12s ease, border-color .12s ease;
+}
+.sched-nav-btn:hover{background:var(--slate-100);}
+
+.sched-date-label{font-size:15px;font-weight:700;color:var(--navy-950);margin-left:6px;}
+
+.sched-count{font-size:12.5px;font-weight:600;color:var(--slate-500);white-space:nowrap;}
+
+/* ---- segmented control (Day / Week) ---- */
+.segmented{
+  display:inline-flex;background:var(--slate-100);border-radius:100px;padding:3px;flex:0 0 auto;
+}
+.segmented-opt{
+  padding:8px 16px;border-radius:100px;border:none;background:none;cursor:pointer;
+  font-family:inherit;font-size:13px;font-weight:600;color:var(--slate-500);
+  transition:background .12s ease, color .12s ease, box-shadow .12s ease;
+}
+.segmented-opt:hover{color:var(--navy-900);}
+.segmented-opt.is-active{background:var(--white);color:var(--navy-950);box-shadow:var(--shadow-soft);}
+
+/* ---- Day view: vertical hour rows ---- */
+.day-timeline{display:flex;flex-direction:column;}
+
+.hour-row{
+  display:grid;grid-template-columns:64px 1fr;gap:14px;
+  border-top:1px solid var(--slate-100);padding:12px 0;min-height:56px;
+}
+.hour-row:first-child{border-top:none;}
+
+.hour-label{font-size:12px;font-weight:700;color:var(--slate-500);padding-top:2px;}
+
+.hour-cards{display:flex;flex-direction:column;gap:8px;}
+
+.hour-empty{font-size:12.5px;color:var(--slate-500);opacity:.5;padding-top:2px;}
+
+/* ---- Appointment card ---- */
+.appt-card{
+  border:1px solid var(--slate-100);border-left-width:4px;border-radius:var(--radius-md, 10px);
+  padding:10px 14px;background:var(--white);box-shadow:var(--shadow-soft);
+}
+.appt-card.status-pending{border-left-color:var(--amber-700);background:var(--amber-50);}
+.appt-card.status-confirmed{border-left-color:var(--blue-600);background:var(--blue-50);}
+.appt-card.status-completed{border-left-color:var(--green-700);background:var(--green-50);}
+.appt-card.status-cancelled{border-left-color:var(--slate-500);background:var(--slate-100);opacity:.65;}
+.appt-card.status-default{border-left-color:var(--slate-500);}
+
+.appt-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+.appt-patient-name{font-size:14px;font-weight:700;color:var(--navy-950);}
+.appt-time{font-size:12px;color:var(--slate-500);margin-top:2px;}
+
+.appt-status-badge{
+  font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:100px;white-space:nowrap;
+}
+.status-pending .appt-status-badge{background:var(--amber-700);color:#fff;}
+.status-confirmed .appt-status-badge{background:var(--blue-600);color:#fff;}
+.status-completed .appt-status-badge{background:var(--green-700);color:#fff;}
+.status-cancelled .appt-status-badge{background:var(--slate-500);color:#fff;}
+.status-default .appt-status-badge{background:var(--slate-500);color:#fff;}
+
+.appt-reason-chip{
+  display:inline-block;margin-top:8px;font-size:11px;font-weight:600;color:var(--navy-900);
+  background:var(--white);border:1px solid var(--slate-100);border-radius:100px;padding:3px 10px;
+}
+
+.appt-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.appt-action-btn{
+  font-family:inherit;font-size:11.5px;font-weight:700;border-radius:100px;padding:5px 12px;
+  border:1px solid var(--slate-100);background:var(--white);color:var(--navy-950);cursor:pointer;
+  transition:background .12s ease;
+}
+.appt-action-btn:hover{background:var(--slate-100);}
+.appt-action-btn.confirm{border-color:var(--blue-600);color:var(--blue-600);}
+.appt-action-btn.cancel{border-color:var(--red-700);color:var(--red-700);}
+
+/* ---- Week view: 7 compact columns ---- */
+.week-grid{
+  display:grid;grid-template-columns:repeat(7, minmax(140px, 1fr));gap:10px;overflow-x:auto;
+}
+.week-day-col{border:1px solid var(--slate-100);border-radius:var(--radius-md, 10px);padding:10px;min-height:120px;}
+.week-day-head{font-size:11.5px;font-weight:700;color:var(--slate-500);margin-bottom:8px;}
+.week-day-head.is-today{color:var(--blue-600);}
+.week-appt-chip{
+  font-size:11px;font-weight:600;border-radius:8px;padding:6px 8px;margin-bottom:6px;
+  border-left:3px solid var(--slate-500);background:var(--slate-100);
+}
+.week-appt-chip.status-pending{border-left-color:var(--amber-700);background:var(--amber-50);}
+.week-appt-chip.status-confirmed{border-left-color:var(--blue-600);background:var(--blue-50);}
+.week-appt-chip.status-completed{border-left-color:var(--green-700);background:var(--green-50);}
+.week-appt-chip.status-cancelled{border-left-color:var(--slate-500);opacity:.6;}
+.week-day-empty{font-size:11px;color:var(--slate-500);opacity:.5;}
+
+@media (max-width:700px){
+  .sched-toolbar{flex-direction:column;align-items:stretch;}
+  .sched-toolbar-right{justify-content:space-between;}
+  .week-grid{grid-template-columns:repeat(7, minmax(120px, 1fr));}
+}

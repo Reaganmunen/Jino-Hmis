@@ -36,7 +36,10 @@
 
   async function loadDocuments() {
     try {
-      const patient = await fetchMethod('/patients/me', 'GET', null, true);
+      const [patient, user] = await Promise.all([
+        fetchMethod('/patients/me', 'GET', null, true),
+        fetchMethod('/users/me', 'GET', null, true),
+      ]);
       state.patientId = patient.id;
 
       const [files, appointments] = await Promise.all([
@@ -47,13 +50,8 @@
       state.files = files.sort((a, b) => new Date(b.uploaded_at) - new Date(a.uploaded_at));
       state.appointments = appointments;
 
-      // Reuse the files already fetched above instead of a second request —
-      // file_type is a Postgres enum without a 'profile_picture' value, so
-      // the profile photo is file_type: 'photo' + description: 'Profile Picture'.
-      const profilePhoto = state.files
-        .filter((f) => f.file_type === 'photo' && f.description === 'Profile Picture')
-        .sort((a, b) => new Date(b.uploaded_at) - new Date(a.uploaded_at))[0];
-      renderTopbarAvatar(`${patient.first_name} ${patient.last_name}`, profilePhoto ? profilePhoto.file_url : null);
+      // Single source of truth for photos across every role — see avatar.js.
+      Avatar.renderAvatarInto(document.getElementById('avatarInitials'), `${patient.first_name} ${patient.last_name}`, user.profile_picture_url || null);
 
       try { renderStats(); } catch (e) { console.error('renderStats failed', e); }
       try { renderTabs(); } catch (e) { console.error('renderTabs failed', e); }
@@ -285,14 +283,5 @@
 
   function escapeAttr(str) {
     return escapeHtml(str).replace(/"/g, '&quot;');
-  }
-
-  function renderTopbarAvatar(name, photoUrl) {
-    const el = document.getElementById('avatarInitials');
-    if (photoUrl) {
-      el.innerHTML = `<img src="${escapeAttr(photoUrl)}" alt="Profile photo">`;
-    } else {
-      el.textContent = initialsOf(name);
-    }
   }
 })();

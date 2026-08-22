@@ -3,12 +3,11 @@
 
   /* ============================================================
      AUTH GUARD
-     Same pattern as billing.js / treatmentPlan.js / prescriptions.js / etc.
      ============================================================ */
   const LOGIN_PATH = '../login.html';
 
   const sessionUser = getStoredUser();
-  if (!sessionUser || sessionUser.role !== 'patient') {
+  if (!sessionUser || sessionUser.role !== 'dentist') {
     window.location.href = LOGIN_PATH;
     return;
   }
@@ -17,11 +16,10 @@
      STATE
      ============================================================ */
   const state = {
-    patientId: null,
     profilePictureUrl: null,
   };
 
-  const MAX_PHOTO_DIMENSION = 320; // px — resized client-side before upload
+  const MAX_PHOTO_DIMENSION = 320; // px — resized client-side before upload, same as patient side
   const PHOTO_JPEG_QUALITY = 0.82;
 
   /* ============================================================
@@ -30,24 +28,15 @@
   document.addEventListener('DOMContentLoaded', () => {
     initSidebar();
     initPhotoUpload();
-    initProfileForm();
     initPasswordForm();
     loadProfile();
   });
 
   async function loadProfile() {
     try {
-      const [patient, user] = await Promise.all([
-        fetchMethod('/patients/me', 'GET', null, true),
-        fetchMethod('/users/me', 'GET', null, true),
-      ]);
-      state.patientId = patient.id;
-
-      fillForm(patient);
-
-      // Single source of truth for photos across every role — see avatar.js.
+      const user = await fetchMethod('/users/me', 'GET', null, true);
       state.profilePictureUrl = user.profile_picture_url || null;
-      renderAvatar(patient);
+      renderAvatar(user);
     } catch (err) {
       handleLoadError(err);
     }
@@ -63,21 +52,8 @@
     showToast(err.message || 'Could not load your profile. Please refresh.');
   }
 
-  function fillForm(patient) {
-    document.getElementById('firstName').value = patient.first_name || '';
-    document.getElementById('lastName').value = patient.last_name || '';
-    document.getElementById('dob').value = patient.date_of_birth ? String(patient.date_of_birth).slice(0, 10) : '';
-    document.getElementById('phone').value = patient.phone || '';
-    document.getElementById('email').value = patient.email || '';
-    document.getElementById('nationalId').value = patient.national_id || '';
-    document.getElementById('address').value = patient.address || '';
-    document.getElementById('nokName').value = patient.next_of_kin_name || '';
-    document.getElementById('nokPhone').value = patient.next_of_kin_phone || '';
-    document.getElementById('allergies').value = patient.allergies || '';
-  }
-
-  function renderAvatar(patient) {
-    const name = `${patient.first_name} ${patient.last_name}`;
+  function renderAvatar(user) {
+    const name = `Dr. ${user.first_name} ${user.last_name}`;
     Avatar.renderAvatarInto(document.getElementById('avatarPreview'), name, state.profilePictureUrl);
     Avatar.renderAvatarInto(document.getElementById('avatarInitials'), name, state.profilePictureUrl);
   }
@@ -85,10 +61,10 @@
   /* ============================================================
      PROFILE PICTURE
      No object storage wired up on the backend, so the photo is resized
-     down client-side and stored as a base64 data URI on User.profile_picture_url
-     — the same column and endpoint the dentist/staff side uses (see
-     dentistProfile.js). This is what makes the photo visible everywhere:
-     one column, one endpoint, one shared render helper (avatar.js).
+     down client-side and stored as a base64 data URI directly on
+     User.profile_picture_url — same approach as the patient side's
+     profile.js, just a different column instead of a PatientFile row
+     (dentists don't have a Patient record to attach a file to).
      ============================================================ */
   function initPhotoUpload() {
     document.getElementById('changePhotoBtn').addEventListener('click', () => {
@@ -154,45 +130,6 @@
   }
 
   /* ============================================================
-     PROFILE DETAILS FORM
-     ============================================================ */
-  function initProfileForm() {
-    document.getElementById('profileForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      if (!state.patientId) return;
-
-      const saveBtn = document.getElementById('saveProfileBtn');
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'Saving…';
-
-      const payload = {
-        first_name: document.getElementById('firstName').value.trim(),
-        last_name: document.getElementById('lastName').value.trim(),
-        date_of_birth: document.getElementById('dob').value || null,
-        phone: document.getElementById('phone').value.trim(),
-        email: document.getElementById('email').value.trim(),
-        national_id: document.getElementById('nationalId').value.trim(),
-        address: document.getElementById('address').value.trim(),
-        next_of_kin_name: document.getElementById('nokName').value.trim(),
-        next_of_kin_phone: document.getElementById('nokPhone').value.trim(),
-        allergies: document.getElementById('allergies').value.trim(),
-      };
-
-      try {
-        const updated = await fetchMethod(`/patients/${state.patientId}`, 'PUT', payload, true);
-        fillForm(updated);
-        renderAvatar(updated);
-        showToast('Profile updated');
-      } catch (err) {
-        showToast(err.message || 'Could not save changes. Please try again.');
-      } finally {
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Save changes';
-      }
-    });
-  }
-
-  /* ============================================================
      CHANGE PASSWORD FORM
      ============================================================ */
   function initPasswordForm() {
@@ -211,7 +148,7 @@
       saveBtn.textContent = 'Updating…';
 
       try {
-        await fetchMethod('/auth/change-password', 'PUT', {
+        await fetchMethod('/users/me/password', 'PUT', {
           current_password: current,
           new_password: next,
         }, true);
@@ -228,36 +165,21 @@
   }
 
   /* ============================================================
-     SIDEBAR
+     SIDEBAR (mobile open/close)
      ============================================================ */
   function initSidebar() {
     const sidebar = document.getElementById('sidebar');
     const scrim = document.getElementById('scrim');
+    const openBtn = document.getElementById('sideOpen');
+    const closeBtn = document.getElementById('sideClose');
+    if (!sidebar || !openBtn) return;
 
-    document.getElementById('sideOpen').addEventListener('click', () => {
-      sidebar.classList.add('is-open');
-      scrim.classList.add('is-open');
-    });
-    document.getElementById('sideClose').addEventListener('click', closeSidebar);
-    scrim.addEventListener('click', closeSidebar);
+    const open = () => { sidebar.classList.add('is-open'); scrim.style.display = 'block'; };
+    const close = () => { sidebar.classList.remove('is-open'); scrim.style.display = 'none'; };
 
-    function closeSidebar() {
-      sidebar.classList.remove('is-open');
-      scrim.classList.remove('is-open');
-    }
-
-    document.querySelectorAll('.side-logout').forEach((link) => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        clearSession();
-        window.location.href = LOGIN_PATH;
-      });
-    });
-
-    document.querySelectorAll('[data-page]').forEach((link) => {
-      const hasRealHref = link.tagName === 'A' && link.getAttribute('href') && link.getAttribute('href') !== '#';
-      if (hasRealHref) link.addEventListener('click', closeSidebar);
-    });
+    openBtn.addEventListener('click', open);
+    closeBtn.addEventListener('click', close);
+    scrim.addEventListener('click', close);
   }
 
   /* ============================================================
@@ -272,7 +194,7 @@
   }
 
   function initialsOf(name) {
-    return name.trim().split(/\s+/).map((p) => p[0]).join('').slice(0, 2).toUpperCase();
+    return name.replace('Dr. ', '').trim().split(/\s+/).map((p) => p[0]).join('').slice(0, 2).toUpperCase();
   }
 
   function escapeHtml(str) {

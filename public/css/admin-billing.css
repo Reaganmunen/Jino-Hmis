@@ -1,0 +1,97 @@
+/* ============================================================
+   ADMIN BILLING PAGE — additive styles only.
+   Loaded after dashboard.css and admin-dashboard.css; reuses their
+   tokens (--navy-*, --blue-*, --slate-*, --radius-*, --shadow-*) and
+   the .panel / .badge / .bill-list / .bill-card / .bill-body /
+   .pay-summary / .modal / .field-input / .filter-tab classes
+   unchanged. Self-contained.
+   ============================================================ */
+
+/* ---- Safaricom brand palette, scoped to the M-Pesa modal only ---- */
+:root{
+  --mpesa-green:#00A651;
+  --mpesa-green-dark:#00793D;
+  --mpesa-green-darker:#00522A;
+  --mpesa-green-light:#E9F8EF;
+  --mpesa-green-line:#B7EACC;
+}
+
+/* ---- toolbar: status tabs + search ---- */
+.billing-toolbar{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  flex-wrap:wrap;margin:14px 0 4px;
+}
+.billing-toolbar .filter-tabs{margin:0;}
+
+/* ---- admin bill row: patient / dentist attribution line ---- */
+.bill-mid .staff-line{margin:3px 0 0;font-size:11.5px;color:var(--slate-500);}
+.bill-mid .staff-line b{color:var(--slate-700);font-weight:600;}
+
+/* ---- inline "add line item" row inside an open bill ---- */
+.additem-row{
+  display:grid;grid-template-columns:1.6fr .6fr .8fr auto;gap:8px;align-items:center;
+  margin-top:10px;
+}
+.additem-row .field-input{padding:8px 10px;font-size:12.5px;}
+@media (max-width:560px){.additem-row{grid-template-columns:1fr 1fr;}}
+
+.line-row .item-remove{
+  flex:0 0 auto;width:24px;height:24px;border-radius:6px;border:1px solid var(--slate-200);
+  background:var(--white);color:var(--red-700);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;margin-left:10px;
+}
+.line-row .item-remove:hover{border-color:var(--red-700);background:var(--red-50);}
+.line-row{display:flex;align-items:center;}
+.line-row .desc{flex:1;}
+
+.bill-actions{flex-wrap:wrap;}
+.bill-actions .btn-danger-outline{
+  background:var(--white);color:var(--red-700);border:1px solid var(--slate-200);
+}
+.bill-actions .btn-danger-outline:hover{border-color:var(--red-700);background:var(--red-50);}
+
+/* ---- New Bill modal: dynamic item rows ---- */
+.newbill-item-row{
+  display:grid;grid-template-columns:1.6fr .6fr .8fr auto;gap:8px;align-items:center;margin-bottom:8px;
+}
+.newbill-item-row .field-input{padding:9px 10px;font-size:13px;}
+.newbill-item-row .item-remove{
+  width:32px;height:32px;border-radius:8px;border:1px solid var(--slate-200);background:var(--white);
+  color:var(--red-700);display:flex;align-items:center;justify-content:center;cursor:pointer;
+}
+.newbill-item-row .item-remove:hover{border-color:var(--red-700);background:var(--red-50);}
+@media (max-width:520px){.newbill-item-row{grid-template-columns:1fr 1fr;}}
+
+/* ============================================================
+   M-PESA STK PUSH MODAL — Safaricom green theme.
+   Only .modal-mpesa and its children are restyled; the base
+   .modal / .modal-scrim / .btn / .field-input rules still apply
+   for layout, so this stays purely a palette override.
+   ============================================================ */
+.modal-mpesa{border-top:4px solid var(--mpesa-green);}
+
+.mpesa-head{display:flex;align-items:center;gap:12px;}
+.mpesa-badge{
+  flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  width:44px;height:44px;border-radius:11px;background:var(--mpesa-green);color:#fff;
+  font-size:10px;font-weight:800;letter-spacing:.02em;text-align:center;line-height:1.15;
+  box-shadow:0 6px 14px -6px rgba(0,166,81,0.55);
+}
+.mpesa-kicker{color:var(--mpesa-green-dark) !important;}
+
+.mpesa-summary{background:var(--mpesa-green-light);border:1px solid var(--mpesa-green-line);}
+.mpesa-summary .pay-summary-row{color:var(--mpesa-green-darker);}
+.mpesa-summary .pay-summary-row b{color:var(--mpesa-green-dark);}
+
+.mpesa-input:focus{border-color:var(--mpesa-green) !important;}
+
+.btn-mpesa{
+  background:var(--mpesa-green);color:#fff;box-shadow:0 6px 16px -6px rgba(0,166,81,0.5);
+}
+.btn-mpesa:hover{background:var(--mpesa-green-dark);}
+.btn-mpesa:disabled{background:var(--mpesa-green);opacity:.6;cursor:default;}
+
+.mpesa-spinner-green{
+  border:3px solid var(--mpesa-green-light);border-top-color:var(--mpesa-green);
+}
+.mpesa-waiting #stkWaitingHeadline{color:var(--mpesa-green-darker);}

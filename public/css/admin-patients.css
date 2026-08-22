@@ -1,0 +1,185 @@
+/* ============================================================
+   ADMIN PATIENTS PAGE — additive styles only.
+   Loaded after dashboard.css and admin-dashboard.css; reuses their
+   tokens (--navy-*, --blue-*, --slate-*, --red-*, --green-*,
+   --amber-*, --purple-*, --radius-*, --shadow-*) and their .panel /
+   .badge / .badge-confirmed / .badge-completed / .badge-cancelled /
+   .badge-no_show / .empty-state classes unchanged — not redefined
+   here. Covers the roster list, the add-patient form, and the
+   patient detail modal (overview / appointments / bills), which
+   have no equivalent on the overview page.
+   ============================================================ */
+
+/* ---- toolbar: search + filter tabs + add button ---- */
+.roster-toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;}
+
+.roster-search{position:relative;flex:1;min-width:220px;max-width:360px;}
+.roster-search input{
+  width:100%;padding:10px 14px 10px 38px;border-radius:11px;border:1px solid var(--slate-300);
+  font-size:14px;font-family:inherit;color:var(--navy-950);background:var(--white);
+}
+.roster-search input:focus-visible{outline:2px solid var(--blue-600);outline-offset:1px;}
+.roster-search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--slate-500);pointer-events:none;}
+
+.filter-tabs{display:flex;gap:4px;background:var(--slate-100);padding:4px;border-radius:var(--radius-md, 10px);}
+.filter-tab{
+  border:none;background:transparent;padding:7px 14px;border-radius:calc(var(--radius-md, 10px) - 2px);
+  font-family:inherit;font-size:13.5px;font-weight:600;color:var(--slate-500);cursor:pointer;
+  transition:background .12s ease,color .12s ease;
+}
+.filter-tab.is-active{background:var(--white);color:var(--navy-950);box-shadow:var(--shadow-sm, 0 1px 3px rgba(15,23,42,.12));}
+
+.btn-primary{
+  display:inline-flex;align-items:center;gap:8px;background:var(--navy-950);color:var(--white);
+  border:none;border-radius:var(--radius-md, 10px);padding:10px 18px;font-family:inherit;
+  font-size:14px;font-weight:600;cursor:pointer;transition:background .12s ease;
+}
+.btn-primary:hover{background:var(--navy-900, #1e335c);}
+.btn-primary:disabled{opacity:.6;cursor:not-allowed;}
+
+.btn-secondary{
+  background:var(--white);color:var(--navy-950);border:1px solid var(--slate-300);
+  border-radius:var(--radius-md, 10px);padding:10px 18px;font-family:inherit;font-size:14px;
+  font-weight:600;cursor:pointer;transition:background .12s ease;
+}
+.btn-secondary:hover{background:var(--slate-100);}
+
+.btn-danger{
+  background:var(--white);color:var(--red-700);border:1px solid var(--red-50);
+  border-radius:var(--radius-md, 10px);padding:10px 18px;font-family:inherit;font-size:14px;
+  font-weight:600;cursor:pointer;transition:background .12s ease;
+}
+.btn-danger:hover{background:var(--red-50);}
+.btn-danger:disabled{opacity:.6;cursor:not-allowed;}
+
+.roster-count{font-size:13px;color:var(--slate-500);margin:0 0 10px;}
+
+/* ---- roster rows ---- */
+.roster-row{
+  display:flex;align-items:center;gap:14px;padding:13px 8px;border-radius:var(--radius-md, 10px);
+  cursor:pointer;transition:background .12s ease;
+}
+.roster-row:hover{background:var(--slate-100);}
+.roster-avatar{
+  flex:0 0 auto;width:42px;height:42px;border-radius:100px;background:var(--blue-100);color:var(--blue-600);
+  display:flex;align-items:center;justify-content:center;font-size:13.5px;font-weight:700;overflow:hidden;
+}
+.roster-avatar img{width:100%;height:100%;object-fit:cover;}
+.roster-mid{flex:1;min-width:0;}
+.roster-mid .t{margin:0;font-size:14.5px;font-weight:600;color:var(--navy-950);}
+.roster-mid .s{margin:2px 0 0;font-size:13px;color:var(--slate-500);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.roster-flags{display:flex;align-items:center;gap:6px;flex:0 0 auto;}
+.roster-chevron{color:var(--slate-300);flex:0 0 auto;}
+
+.roster-skel-row{display:flex;align-items:center;gap:14px;padding:13px 8px;}
+.roster-skel-avatar{width:42px;height:42px;border-radius:100px;background:var(--slate-100);animation:admpat-pulse 1.4s ease-in-out infinite;}
+.roster-skel-line{flex:1;height:14px;border-radius:6px;background:var(--slate-100);animation:admpat-pulse 1.4s ease-in-out infinite;}
+@keyframes admpat-pulse{0%,100%{opacity:1;}50%{opacity:.5;}}
+
+/* ---- badges not already covered by admin-dashboard.css ---- */
+.badge-allergy{background:var(--red-50);color:var(--red-700);}
+.badge-inactive{background:var(--slate-100);color:var(--slate-500);}
+.badge-paid{background:var(--green-50);color:var(--green-700);}
+.badge-partial{background:var(--amber-50);color:var(--amber-700);}
+.badge-pending{background:var(--amber-50);color:var(--amber-700);}
+.badge-unpaid{background:var(--red-50);color:var(--red-700);}
+.badge-void{background:var(--red-50);color:var(--red-700);}
+
+/* ---- modal scaffolding (add-patient + patient detail) ---- */
+.modal-scrim{
+  position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;
+  align-items:flex-start;justify-content:center;padding:40px 16px;z-index:200;overflow-y:auto;
+}
+.modal-scrim.is-open{display:flex;}
+.modal-box{
+  width:100%;max-width:560px;background:var(--white);border-radius:var(--radius-lg, 16px);
+  box-shadow:var(--shadow-lg, 0 20px 60px rgba(15,23,42,.25));
+}
+.modal-box.modal-wide{max-width:680px;}
+.modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:20px 22px;border-bottom:1px solid var(--slate-100);}
+.modal-title{margin:0;font-size:17px;font-weight:700;color:var(--navy-950);}
+.modal-close{
+  flex:0 0 auto;width:30px;height:30px;border:none;border-radius:8px;background:var(--slate-100);
+  color:var(--slate-500);display:flex;align-items:center;justify-content:center;cursor:pointer;
+}
+.modal-close:hover{background:var(--slate-200);}
+.modal-body{padding:20px 22px;max-height:70vh;overflow-y:auto;}
+.modal-foot{display:flex;justify-content:flex-end;gap:10px;padding:16px 22px;border-top:1px solid var(--slate-100);}
+
+/* ---- add-patient form ---- */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-grid .span-2{grid-column:1 / -1;}
+.field label{display:block;margin-bottom:6px;font-size:12.5px;font-weight:600;color:var(--slate-500);}
+.field input,.field textarea{
+  width:100%;padding:10px 12px;border-radius:9px;border:1px solid var(--slate-300);
+  font-family:inherit;font-size:14px;color:var(--navy-950);background:var(--white);
+}
+.field input:focus-visible,.field textarea:focus-visible{outline:2px solid var(--blue-600);outline-offset:1px;}
+.field-hint{margin:5px 0 0;font-size:11.5px;color:var(--slate-500);}
+.form-error{
+  display:none;margin-bottom:14px;padding:10px 12px;border-radius:9px;
+  background:var(--red-50);color:var(--red-700);font-size:13px;font-weight:600;
+}
+
+/* ---- patient detail modal ---- */
+.detail-head-row{display:flex;align-items:center;gap:14px;}
+.detail-avatar{
+  flex:0 0 auto;width:48px;height:48px;border-radius:100px;background:var(--blue-100);color:var(--blue-600);
+  display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;overflow:hidden;
+}
+.detail-avatar img{width:100%;height:100%;object-fit:cover;}
+
+.allergy-banner{
+  display:none;align-items:center;gap:10px;margin:16px 22px 0;padding:10px 12px;border-radius:var(--radius-md, 10px);
+  background:var(--red-50);color:var(--red-700);font-size:13px;font-weight:600;
+}
+#detailTabs.filter-tabs{margin:16px 22px 0;width:fit-content;}
+
+.detail-tab-panel{display:none;}
+.detail-tab-panel.is-active{display:block;}
+
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.detail-cell .label{margin:0 0 4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--slate-500);}
+.detail-cell .value{margin:0;font-size:14px;color:var(--navy-950);}
+
+.records-loading{display:flex;align-items:center;gap:10px;padding:24px 4px;color:var(--slate-500);font-size:13.5px;}
+.spinner{width:16px;height:16px;border:2px solid var(--slate-200);border-top-color:var(--blue-600);border-radius:100px;animation:admpat-spin .7s linear infinite;}
+@keyframes admpat-spin{to{transform:rotate(360deg);}}
+
+/* ---- appointments tab ---- */
+.appt-item{display:flex;align-items:center;gap:14px;padding:12px 4px;border-bottom:1px solid var(--slate-100);}
+.appt-item:last-child{border-bottom:none;}
+.appt-date{flex:0 0 42px;text-align:center;}
+.appt-date .d{font-size:16px;font-weight:700;line-height:1.1;color:var(--navy-950);}
+.appt-date .m{font-size:11px;text-transform:uppercase;color:var(--slate-500);}
+.appt-mid{flex:1;min-width:0;}
+.appt-mid .t{margin:0;font-size:14px;font-weight:600;color:var(--navy-950);}
+.appt-mid .s{margin:2px 0 0;font-size:12.5px;color:var(--slate-500);}
+.appt-actions{flex:0 0 auto;}
+
+/* ---- bills tab ---- */
+.bill-card{margin-bottom:10px;border:1px solid var(--slate-200);border-radius:var(--radius-md, 12px);overflow:hidden;}
+.bill-head{display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;}
+.bill-ic{
+  flex:0 0 auto;width:34px;height:34px;border-radius:9px;background:var(--slate-100);color:var(--navy-950);
+  display:flex;align-items:center;justify-content:center;
+}
+.bill-mid{flex:1;min-width:0;}
+.bill-mid .t{margin:0;font-size:14px;font-weight:600;color:var(--navy-950);}
+.bill-mid .s{margin:2px 0 0;font-size:12.5px;color:var(--slate-500);}
+.bill-amounts{text-align:right;}
+.bill-amounts .total{margin:0 0 3px;font-size:14px;font-weight:700;color:var(--navy-950);}
+.bill-amounts .sub{margin:0;}
+.bill-chevron{flex:0 0 auto;color:var(--slate-300);transition:transform .12s ease;}
+.bill-card.is-open .bill-chevron{transform:rotate(90deg);}
+.bill-body{display:none;padding:0 14px 14px;}
+.bill-card.is-open .bill-body{display:block;}
+.bill-item-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid var(--slate-100);}
+.bill-item-mid .t{margin:0 0 2px;font-size:13.5px;color:var(--navy-950);}
+.bill-item-mid .s{margin:0;font-size:12px;color:var(--slate-500);}
+.bill-item-amt{font-size:13.5px;font-weight:600;color:var(--navy-950);}
+
+@media (max-width:560px){
+  .form-grid{grid-template-columns:1fr;}
+  .detail-grid{grid-template-columns:1fr;}
+}

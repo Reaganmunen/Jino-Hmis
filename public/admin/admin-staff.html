@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Staff — Jino Admin Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/dashboard.css">
+<link rel="stylesheet" href="../css/admin-dashboard.css">
+<link rel="stylesheet" href="../css/admin-staff.css">
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="side-top">
+      <div class="brand">
+        <span class="brand-mark">J</span>
+        <span class="brand-name">Jino</span>
+      </div>
+      <button class="side-close" id="sideClose" aria-label="Close menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <nav class="side-nav">
+      <p class="side-label">Clinic</p>
+      <a href="dashboard.html" class="side-link" data-page="overview">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.7"/><rect x="14" y="3" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.7"/><rect x="3" y="14" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.7"/><rect x="14" y="14" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.7"/></svg>
+        Overview
+      </a>
+      <a href="admin-patients.html" class="side-link" data-page="patients">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.4" stroke="currentColor" stroke-width="1.7"/><path d="M3 20c.6-3.8 3-5.8 6-5.8s5.4 2 6 5.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="17.5" cy="8.5" r="2.6" stroke="currentColor" stroke-width="1.7"/><path d="M15.7 13.6c2.6.3 4.4 2.1 4.9 5.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        Patients
+      </a>
+      <a href="admin-staff.html" class="side-link is-active" data-page="staff">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.6" stroke="currentColor" stroke-width="1.7"/><path d="M4.5 20c.8-4 3.8-6 7.5-6s6.7 2 7.5 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        Staff
+      </a>
+      <a href="admin-billing.html" class="side-link" data-page="billing">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 8h6M9 12h6M9 16h3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        Billing &amp; Reports
+      </a>
+      <a href="admin-inventory.html" class="side-link" data-page="inventory">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 8l9-5 9 5-9 5-9-5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M3 8v9l9 5 9-5V8" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+        Inventory
+      </a>
+
+      <p class="side-label">Account</p>
+      <a href="admin-profile.html" class="side-link" data-page="profile">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.6" stroke="currentColor" stroke-width="1.7"/><path d="M4.5 20c.8-4 3.8-6 7.5-6s6.7 2 7.5 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        Profile &amp; Settings
+      </a>
+    </nav>
+
+    <div class="side-bottom">
+      <a href="../login.html" class="side-link side-logout" id="logoutLink">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 17l5-5-5-5M20 12H9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 19H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        Log Out
+      </a>
+    </div>
+  </aside>
+
+  <div class="scrim" id="scrim"></div>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main">
+
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="side-open" id="sideOpen" aria-label="Open menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+        <div>
+          <p class="topbar-kicker">Admin Portal</p>
+          <h1 class="topbar-title">Staff</h1>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="avatar" id="avatarInitials">AD</div>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <section class="panel">
+        <div class="roster-toolbar">
+          <div class="roster-search">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="m20 20-3.2-3.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <input type="text" id="rosterSearchInput" placeholder="Search by name, phone, or email…">
+          </div>
+          <div class="filter-tabs" id="rosterFilterTabs">
+            <button class="filter-tab is-active" data-filter="all">All</button>
+            <button class="filter-tab" data-filter="dentist">Dentists</button>
+            <button class="filter-tab" data-filter="receptionist">Receptionists</button>
+            <button class="filter-tab" data-filter="admin">Admins</button>
+          </div>
+          <button class="btn-primary" id="openAddStaffBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            Add staff
+          </button>
+        </div>
+
+        <p class="roster-count" id="rosterCount"></p>
+        <div id="rosterList"><!-- rendered by JS --></div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ============ ADD STAFF MODAL ============ -->
+<div class="modal-scrim" id="addStaffScrim">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2 class="modal-title">Add staff</h2>
+      <button class="modal-close" id="addStaffClose" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <form id="addStaffForm">
+      <div class="modal-body">
+        <div class="form-error" id="addStaffError"></div>
+        <div class="form-grid">
+          <div class="field span-2">
+            <label for="asRole">Role</label>
+            <select id="asRole" required>
+              <option value="" disabled selected>Select a role…</option>
+              <option value="dentist">Dentist</option>
+              <option value="receptionist">Receptionist</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="asFirstName">First name</label>
+            <input type="text" id="asFirstName" required>
+          </div>
+          <div class="field">
+            <label for="asLastName">Last name</label>
+            <input type="text" id="asLastName" required>
+          </div>
+          <div class="field span-2">
+            <label for="asEmail">Email</label>
+            <input type="email" id="asEmail" required>
+          </div>
+          <div class="field">
+            <label for="asPhone">Phone</label>
+            <input type="tel" id="asPhone" placeholder="07xx xxx xxx">
+          </div>
+          <div class="field">
+            <label for="asPassword">Password</label>
+            <input type="password" id="asPassword" required minlength="8">
+            <p class="field-hint">At least 8 characters. Share this with the staff member directly.</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn-secondary" id="addStaffCancelBtn">Cancel</button>
+        <button type="submit" class="btn-primary" id="addStaffSubmitBtn">Create staff account</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ STAFF DETAIL MODAL ============ -->
+<div class="modal-scrim" id="detailModalScrim">
+  <div class="modal-box">
+    <div class="modal-head">
+      <div class="detail-head-row">
+        <div class="detail-avatar" id="detailModalAvatar"></div>
+        <div>
+          <h2 class="modal-title" id="detailModalName">—</h2>
+          <p class="roster-count" id="detailModalMeta" style="margin:2px 0 0;"></p>
+        </div>
+      </div>
+      <button class="modal-close" id="detailModalClose" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Overview (read-only) -->
+      <div id="overviewPanel">
+        <div class="detail-grid" id="overviewGrid"><!-- rendered by JS --></div>
+      </div>
+
+      <!-- Edit (hidden until "Edit" is clicked) -->
+      <div id="editPanel" style="display:none;">
+        <form id="editStaffForm">
+          <div class="form-error" id="editStaffError"></div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="esFirstName">First name</label>
+              <input type="text" id="esFirstName" required>
+            </div>
+            <div class="field">
+              <label for="esLastName">Last name</label>
+              <input type="text" id="esLastName" required>
+            </div>
+            <div class="field span-2">
+              <label for="esPhone">Phone</label>
+              <input type="tel" id="esPhone" placeholder="07xx xxx xxx">
+            </div>
+          </div>
+          <div class="modal-foot" style="padding:16px 0 0;">
+            <button type="button" class="btn-secondary" id="cancelEditBtn">Cancel</button>
+            <button type="submit" class="btn-primary" id="saveEditBtn">Save changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="modal-foot">
+      <button class="btn-secondary" id="editStaffBtn">Edit details</button>
+      <button class="btn-danger" id="deactivateStaffBtn">Deactivate staff member</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!--
+  Load order matters: api.js defines fetchMethod/getStoredUser/clearSession,
+  avatar.js defines the shared Avatar helper used by the roster + modal.
+  Adjust paths below to match your public/ folder if it differs.
+-->
+<script src="../js/api.js"></script>
+<script src="../js/avatar.js"></script>
+<script src="../js/adminStaff.js"></script>
+</body>
+</html>

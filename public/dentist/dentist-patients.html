@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Overview — Jino Dentist Portal</title>
+<title>Patients — Jino Dentist Portal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../css/dashboard.css">
 <link rel="stylesheet" href="../css/dentist-dashboard.css">
+<link rel="stylesheet" href="../css/dentist-patients.css">
 </head>
 <body>
 
@@ -28,11 +29,11 @@
 
     <nav class="side-nav">
       <p class="side-label">Care</p>
-      <a href="overview.html" class="side-link is-active" data-page="overview">
+      <a href="overview.html" class="side-link" data-page="overview">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.7"/><rect x="14" y="3" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.7"/><rect x="3" y="14" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.7"/><rect x="14" y="14" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.7"/></svg>
         Overview
       </a>
-      <a href="dentist-patients.html" class="side-link" data-page="patients">
+      <a href="dentist-patients.html" class="side-link is-active" data-page="patients">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.4" stroke="currentColor" stroke-width="1.7"/><path d="M3 20c.6-3.8 3-5.8 6-5.8s5.4 2 6 5.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="17.5" cy="8.5" r="2.6" stroke="currentColor" stroke-width="1.7"/><path d="M15.7 13.6c2.6.3 4.4 2.1 4.9 5.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
         Patients
       </a>
@@ -84,7 +85,7 @@
         </button>
         <div>
           <p class="topbar-kicker">Dentist Portal</p>
-          <h1 class="topbar-title">Good morning, <span id="dentistName">Doctor</span></h1>
+          <h1 class="topbar-title">Patients</h1>
         </div>
       </div>
       <div class="topbar-right">
@@ -98,110 +99,71 @@
 
     <main class="content">
 
-      <!-- Patient search — the primary way in, so it sits above everything else -->
+      <!-- Search + filter -->
       <section class="panel patient-search-panel">
         <div class="patient-search">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="m21 21-4.3-4.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-          <input type="text" id="patientSearchInput" placeholder="Find a patient by name, phone, or national ID…">
+          <input type="text" id="rosterSearchInput" placeholder="Search by name, phone, or national ID…">
         </div>
-        <div class="patient-results" id="patientResults"><!-- rendered by JS --></div>
-      </section>
-
-      <!-- ---- Stat cards ---- -->
-      <section class="stat-grid" id="statGrid" aria-label="Today's summary">
-        <div class="stat-card">
-          <div class="stat-ic stat-ic-blue">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2.2" stroke="currentColor" stroke-width="1.7"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-          </div>
-          <div>
-            <p class="stat-value" id="statTodayAppts">0</p>
-            <p class="stat-label">Today's appointments</p>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-ic stat-ic-green">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.4" stroke="currentColor" stroke-width="1.7"/><path d="M3 20c.6-3.8 3-5.8 6-5.8s5.4 2 6 5.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="17.5" cy="8.5" r="2.6" stroke="currentColor" stroke-width="1.7"/><path d="M15.7 13.6c2.6.3 4.4 2.1 4.9 5.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-          </div>
-          <div>
-            <p class="stat-value" id="statPatientsSeen">0</p>
-            <p class="stat-label">Patients seen today</p>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-ic stat-ic-amber">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 19V5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8 12h8M8 16h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-          </div>
-          <div>
-            <p class="stat-value" id="statPendingNotes">0</p>
-            <p class="stat-label">Pending diagnoses/notes</p>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-ic stat-ic-purple">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M7 3h10M9 3v5.5L4.6 16a2.6 2.6 0 0 0 2.2 4h10.4a2.6 2.6 0 0 0 2.2-4L15 8.5V3" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M6.5 14.5h11" stroke="currentColor" stroke-width="1.7"/></svg>
-          </div>
-          <div>
-            <p class="stat-value" id="statPrescriptions">0</p>
-            <p class="stat-label">Prescriptions written today</p>
-          </div>
+        <div class="roster-filter-row">
+          <button class="filter-tab is-active" data-filter="all" type="button">All patients</button>
+          <button class="filter-tab" data-filter="allergies" type="button">Has allergies</button>
         </div>
       </section>
 
-      <!-- ---- Two column body ---- -->
-      <section class="body-grid">
-
-        <!-- Today's schedule -->
-        <div class="panel">
-          <div class="panel-head">
-            <h2>Today's schedule</h2>
-            <a href="dentist-schedule.html" class="panel-link">View all</a>
-          </div>
-          <div class="sched-list" id="schedList"><!-- rendered by JS --></div>
+      <!-- Roster -->
+      <section class="panel">
+        <div class="panel-head">
+          <h2>All patients</h2>
+          <span class="panel-sub roster-count" id="rosterCount">Loading…</span>
         </div>
-
-        <!-- Quick actions -->
-        <div class="panel quick-panel">
-          <h2>Quick actions</h2>
-          <a class="quick-btn" href="dentist-schedule.html">
-            <span class="quick-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="2.3" stroke="currentColor" stroke-width="1.7"/><path d="M3 10h18" stroke="currentColor" stroke-width="1.7"/></svg></span>
-            Manage my schedule
-          </a>
-          <a class="quick-btn" href="dentist-patients.html">
-            <span class="quick-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 19c.6-3.3 3-5 5.5-5s4.9 1.7 5.5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
-            View all patients
-          </a>
-          <a class="quick-btn" href="dentist-prescriptions.html">
-            <span class="quick-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M8.5 14.5l2.2 2.2L16 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/></svg></span>
-            Write a prescription
-          </a>
-          <a class="quick-btn" href="dentist-billing.html">
-            <span class="quick-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 8h6M9 12h6M9 16h3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
-            Bill a patient
-          </a>
-        </div>
-      </section>
-
-      <!-- Active treatment plans + recent diagnoses -->
-      <section class="body-grid">
-
-        <div class="panel">
-          <div class="panel-head">
-            <h2>Active treatment plans</h2>
-            <a href="dentist-treatment-plans.html" class="panel-link">View all</a>
-          </div>
-          <div class="plan-list" id="planList"><!-- rendered by JS --></div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-head">
-            <h2>Recent diagnoses</h2>
-          </div>
-          <div class="diagnosis-list" id="diagnosisList"><!-- rendered by JS --></div>
-        </div>
-
+        <div class="roster-list" id="rosterList"><!-- rendered by JS --></div>
       </section>
 
     </main>
+  </div>
+</div>
+
+<!-- ============ PATIENT RECORDS MODAL ============ -->
+<div class="modal-scrim" id="recordsModalScrim">
+  <div class="modal modal-lg">
+    <div class="modal-head">
+      <div>
+        <p class="modal-kicker">Patient record</p>
+        <h2 id="recordsModalName">—</h2>
+        <p class="records-modal-meta" id="recordsModalMeta">—</p>
+      </div>
+      <button class="icon-link-btn" id="recordsModalClose" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <div id="recordsModalAllergyBanner" class="allergy-banner" style="display:none;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 16.5v.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M10.4 3.9 2.7 18a1.8 1.8 0 0 0 1.6 2.7h15.4a1.8 1.8 0 0 0 1.6-2.7L13.6 3.9a1.8 1.8 0 0 0-3.2 0Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+      <span id="recordsModalAllergyText"></span>
+    </div>
+
+    <div class="records-tabs" id="recordsTabs">
+      <button class="filter-tab is-active" data-tab="diagnoses" type="button">Diagnoses</button>
+      <button class="filter-tab" data-tab="plans" type="button">Treatment plans</button>
+      <button class="filter-tab" data-tab="prescriptions" type="button">Prescriptions</button>
+      <button class="filter-tab" data-tab="appointments" type="button">Appointments</button>
+    </div>
+
+    <div class="records-tab-body">
+      <div class="records-tab-panel is-active" data-tab-panel="diagnoses">
+        <div class="timeline" id="modalDiagnosisTimeline"></div>
+      </div>
+      <div class="records-tab-panel" data-tab-panel="plans">
+        <div class="plan-list" id="modalPlanList"></div>
+      </div>
+      <div class="records-tab-panel" data-tab-panel="prescriptions">
+        <div class="rx-list" id="modalRxList"></div>
+      </div>
+      <div class="records-tab-panel" data-tab-panel="appointments">
+        <div class="appt-list" id="modalApptList"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -212,6 +174,7 @@
   Adjust the paths below to wherever these actually live in your public/ folder.
 -->
 <script src="../js/api.js"></script>
-<script src="../js/dentistDashboard.js"></script>
+<script src="../js/avatar.js"></script>
+<script src="../js/dentistPatients.js"></script>
 </body>
 </html>
