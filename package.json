@@ -4,9 +4,13 @@
   "description": "Dental clinic management system backend - Node/Express/PostgreSQL",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
-  },
+  "start": "node server.js",
+  "dev": "nodemon server.js",
+  "migrate": "npx node-pg-migrate",
+  "migrate:up": "npx node-pg-migrate up",
+  "migrate:down": "npx node-pg-migrate down",
+  "migrate:create": "npx node-pg-migrate create"
+},
   "dependencies": {
     "axios": "^1.7.9",
     "bcrypt": "^5.1.1",
@@ -19,6 +23,7 @@
     "twilio": "^6.1.0"
   },
   "devDependencies": {
+    "node-pg-migrate": "^9.0.0",
     "nodemon": "^3.1.9"
   },
   "engines": {
