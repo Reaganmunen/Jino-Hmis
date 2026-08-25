@@ -31,8 +31,16 @@ const findBillsByPatient = (patient_id, callback) => {
   });
 };
 
+// Joined so the receptionist billing panel (and the M-Pesa prompt, which
+// needs a phone number to push to) don't require a second lookup per bill.
 const findBillsByStatus = (status, callback) => {
-  const query = `SELECT * FROM "Bill" WHERE status = $1 ORDER BY created_at DESC`;
+  const query = `
+    SELECT b.*, p.first_name AS patient_first_name, p.last_name AS patient_last_name, p.phone AS patient_phone
+    FROM "Bill" b
+    JOIN "Patient" p ON p.id = b.patient_id
+    WHERE b.status = $1
+    ORDER BY b.created_at DESC
+  `;
   pool.query(query, [status], (err, result) => {
     if (err) return callback(err);
     callback(null, result.rows);

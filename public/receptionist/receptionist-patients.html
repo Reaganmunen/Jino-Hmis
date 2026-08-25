@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Patients — Jino Reception Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/dashboard.css">
+<link rel="stylesheet" href="../css/receptionist-dashboard.css">
+<link rel="stylesheet" href="../css/receptionist-patients.css">
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="side-top">
+      <div class="brand">
+        <span class="brand-mark">J</span>
+        <span class="brand-name">Jino</span>
+      </div>
+      <button class="side-close" id="sideClose" aria-label="Close menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <nav class="side-nav">
+      <p class="side-label">Front Desk</p>
+      <a href="dashboard.html" class="side-link" data-page="overview">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.7"/><rect x="14" y="3" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.7"/><rect x="3" y="14" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.7"/><rect x="14" y="14" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.7"/></svg>
+        Overview
+      </a>
+      <a href="receptionist-patients.html" class="side-link is-active" data-page="patients">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.4" stroke="currentColor" stroke-width="1.7"/><path d="M3 20c.6-3.8 3-5.8 6-5.8s5.4 2 6 5.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="17.5" cy="8.5" r="2.6" stroke="currentColor" stroke-width="1.7"/><path d="M15.7 13.6c2.6.3 4.4 2.1 4.9 5.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        Patients
+      </a>
+      <a href="receptionist-schedule.html" class="side-link" data-page="schedule">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2.2" stroke="currentColor" stroke-width="1.7"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        Schedule
+      </a>
+      <a href="receptionist-billing.html" class="side-link" data-page="billing">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 8h6M9 12h6M9 16h3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        Billing &amp; Payments
+      </a>
+
+      <p class="side-label">Account</p>
+      <a href="receptionist-profile.html" class="side-link" data-page="profile">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.6" stroke="currentColor" stroke-width="1.7"/><path d="M4.5 20c.8-4 3.8-6 7.5-6s6.7 2 7.5 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        Profile &amp; Settings
+      </a>
+    </nav>
+
+    <div class="side-bottom">
+      <a href="../login.html" class="side-link side-logout" id="logoutLink">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 17l5-5-5-5M20 12H9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 19H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        Log Out
+      </a>
+    </div>
+  </aside>
+
+  <div class="scrim" id="scrim"></div>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main">
+
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="side-open" id="sideOpen" aria-label="Open menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+        <div>
+          <p class="topbar-kicker">Reception Portal</p>
+          <h1 class="topbar-title">Patients</h1>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <div class="avatar" id="avatarInitials">RC</div>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>All patients</h2>
+          <button class="btn btn-primary btn-sm" id="openAddPatientBtn" type="button">+ Register patient</button>
+        </div>
+        <p class="panel-sub" id="rosterCount"></p>
+
+        <div class="roster-toolbar">
+          <div class="filter-tabs" id="rosterFilterTabs">
+            <button class="filter-tab is-active" data-filter="all">All</button>
+            <button class="filter-tab" data-filter="allergies">Has allergies</button>
+          </div>
+          <div class="roster-search">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <input type="text" id="rosterSearchInput" placeholder="Search name, phone, ID, or email…" autocomplete="off">
+          </div>
+        </div>
+
+        <div class="roster-list" id="rosterList"><!-- rendered by JS --></div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ============ REGISTER WALK-IN PATIENT MODAL ============ -->
+<div class="modal-scrim" id="addPatientScrim">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <p class="modal-kicker">Walk-in registration</p>
+        <h2>Register a new patient</h2>
+      </div>
+      <button class="icon-link-btn" id="addPatientClose" aria-label="Close" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <form id="addPatientForm">
+      <div class="form-grid" style="margin-top:18px;">
+        <div>
+          <label class="field-label">First name</label>
+          <input type="text" class="field-input" id="npFirstName" required>
+        </div>
+        <div>
+          <label class="field-label">Last name</label>
+          <input type="text" class="field-input" id="npLastName" required>
+        </div>
+        <div>
+          <label class="field-label">Phone</label>
+          <input type="text" class="field-input" id="npPhone" placeholder="07XXXXXXXX" required>
+        </div>
+        <div>
+          <label class="field-label">National ID (optional)</label>
+          <input type="text" class="field-input" id="npNationalId">
+        </div>
+        <div>
+          <label class="field-label">Date of birth</label>
+          <input type="date" class="field-input" id="npDob">
+        </div>
+        <div>
+          <label class="field-label">Email (optional)</label>
+          <input type="email" class="field-input" id="npEmail">
+        </div>
+        <div class="full">
+          <label class="field-label">Address (optional)</label>
+          <input type="text" class="field-input" id="npAddress">
+        </div>
+        <div>
+          <label class="field-label">Next of kin name (optional)</label>
+          <input type="text" class="field-input" id="npKinName">
+        </div>
+        <div>
+          <label class="field-label">Next of kin phone (optional)</label>
+          <input type="text" class="field-input" id="npKinPhone">
+        </div>
+        <div class="full">
+          <label class="field-label">Allergies (optional)</label>
+          <textarea class="field-input" id="npAllergies" rows="2"></textarea>
+        </div>
+      </div>
+
+      <p id="addPatientError" style="display:none;color:var(--red-700);font-size:12.5px;margin:0 0 12px;"></p>
+
+      <div class="modal-foot">
+        <button class="btn btn-outline" id="addPatientCancelBtn" type="button">Cancel</button>
+        <button class="btn btn-primary" id="addPatientSubmitBtn" type="submit">Register patient</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ PATIENT QUICK VIEW / EDIT MODAL ============ -->
+<div class="modal-scrim" id="detailModalScrim">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-head">
+      <div class="detail-hero">
+        <div class="avatar-xl" id="detailAvatar">--</div>
+        <div>
+          <h2 class="detail-hero-name" id="detailName">Patient</h2>
+          <p class="detail-hero-sub" id="detailSub"></p>
+        </div>
+      </div>
+      <button class="icon-link-btn" id="detailModalClose" aria-label="Close" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <div id="detailAllergyAlert" style="display:none;"></div>
+
+    <!-- ---- view mode ---- -->
+    <div id="detailViewSection">
+      <div class="detail-info-grid" id="detailInfoGrid"><!-- rendered by JS --></div>
+
+      <p class="detail-section-label">Appointments</p>
+      <div class="sched-list sched-list-compact" id="detailApptList"><!-- rendered by JS --></div>
+    </div>
+
+    <!-- ---- edit mode ---- -->
+    <div id="detailEditSection" style="display:none;">
+      <div class="form-grid" style="margin-top:18px;">
+        <div>
+          <label class="field-label">First name</label>
+          <input type="text" class="field-input" id="deFirstName">
+        </div>
+        <div>
+          <label class="field-label">Last name</label>
+          <input type="text" class="field-input" id="deLastName">
+        </div>
+        <div>
+          <label class="field-label">Phone</label>
+          <input type="text" class="field-input" id="dePhone" placeholder="07XXXXXXXX">
+        </div>
+        <div>
+          <label class="field-label">National ID (optional)</label>
+          <input type="text" class="field-input" id="deNationalId">
+        </div>
+        <div>
+          <label class="field-label">Date of birth</label>
+          <input type="date" class="field-input" id="deDob">
+        </div>
+        <div>
+          <label class="field-label">Email (optional)</label>
+          <input type="email" class="field-input" id="deEmail">
+        </div>
+        <div class="full">
+          <label class="field-label">Address (optional)</label>
+          <input type="text" class="field-input" id="deAddress">
+        </div>
+        <div>
+          <label class="field-label">Next of kin name (optional)</label>
+          <input type="text" class="field-input" id="deKinName">
+        </div>
+        <div>
+          <label class="field-label">Next of kin phone (optional)</label>
+          <input type="text" class="field-input" id="deKinPhone">
+        </div>
+        <div class="full">
+          <label class="field-label">Allergies (optional)</label>
+          <textarea class="field-input" id="deAllergies" rows="2"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-foot" id="detailViewFoot">
+      <a class="btn btn-outline" id="detailOpenFullBtn" href="#">Open full record</a>
+      <button class="btn btn-primary" id="detailEditBtn" type="button">Edit details</button>
+    </div>
+    <div class="modal-foot" id="detailEditFoot" style="display:none;">
+      <button class="btn btn-outline" id="detailEditCancelBtn" type="button">Cancel</button>
+      <button class="btn btn-primary" id="detailEditSaveBtn" type="button">Save changes</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!--
+  api.js must load first — it defines fetchMethod / getStoredUser / clearSession.
+  avatar.js must load next — it defines the shared Avatar.* helpers.
+-->
+<script src="../js/api.js"></script>
+<script src="../js/avatar.js"></script>
+<script src="../js/receptionistPatients.js"></script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+/* ============================================================
+   RECEPTIONIST — PATIENT ROSTER — additive styles only.
+   Loaded after dashboard.css and receptionist-dashboard.css; reuses
+   their tokens (--navy-*, --blue-*, --slate-*, --red-*, --radius-*,
+   --shadow-*) and their .panel / .badge / .btn / .field-* /
+   .form-grid / .filter-tabs / .modal* / .empty-state classes
+   unchanged. Row layout mirrors .sched-item's shape but under new
+   "roster-*" names, matching the class names adminPatients.js
+   already uses for the same concept on the admin side.
+   ============================================================ */
+
+/* ---- toolbar: filter tabs + search, above the roster ---- */
+.roster-toolbar{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  margin:14px 0 4px;
+}
+.roster-toolbar .filter-tabs{margin:0;}
+.roster-search{
+  display:flex;align-items:center;gap:8px;
+  background:var(--white);border:1px solid var(--slate-200);border-radius:10px;
+  padding:9px 12px;width:280px;max-width:100%;color:var(--slate-500);
+}
+.roster-search input{border:none;outline:none;background:none;font-size:13.5px;color:var(--navy-900);width:100%;}
+.roster-search input::placeholder{color:var(--slate-500);}
+
+.roster-count{margin:0;font-size:13px;color:var(--slate-500);font-weight:500;}
+
+/* ---- roster list ---- */
+.roster-list{display:flex;flex-direction:column;gap:2px;margin-top:14px;}
+.roster-row{
+  display:flex;align-items:center;gap:14px;padding:13px 6px;
+  border-bottom:1px solid var(--slate-100);cursor:pointer;
+  transition:background .12s ease;border-radius:8px;
+}
+.roster-row:hover{background:var(--blue-50);}
+.roster-row:last-child{border-bottom:none;}
+
+.roster-avatar{
+  flex:0 0 auto;width:38px;height:38px;border-radius:100px;overflow:hidden;
+  background:var(--blue-100);color:var(--blue-600);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;
+}
+.roster-avatar img{width:100%;height:100%;object-fit:cover;}
+
+.roster-mid{flex:1;min-width:160px;}
+.roster-mid .t{margin:0;font-size:14px;font-weight:600;color:var(--navy-950);}
+.roster-mid .s{margin:2px 0 0;font-size:12.5px;color:var(--slate-500);}
+
+.roster-flags{display:flex;align-items:center;gap:6px;flex:0 0 auto;}
+.badge-allergy{background:var(--red-50);color:var(--red-700);}
+.badge-inactive{background:var(--slate-100);color:var(--slate-500);}
+
+.roster-chevron{flex:0 0 auto;color:var(--slate-500);}
+
+/* ---- loading skeleton ---- */
+.roster-skel-row{display:flex;align-items:center;gap:14px;padding:13px 6px;}
+.roster-skel-avatar{
+  flex:0 0 auto;width:38px;height:38px;border-radius:100px;background:var(--slate-100);
+  animation:rosterPulse 1.4s ease-in-out infinite;
+}
+.roster-skel-line{
+  flex:1;height:13px;border-radius:6px;background:var(--slate-100);max-width:280px;
+  animation:rosterPulse 1.4s ease-in-out infinite;
+}
+@keyframes rosterPulse{
+  0%,100%{opacity:1;}
+  50%{opacity:.45;}
+}
+
+/* ---- patient quick-view modal ---- */
+.detail-hero{display:flex;gap:14px;align-items:center;}
+.detail-hero-name{margin:0;font-size:18px;font-weight:800;color:var(--navy-950);}
+.detail-hero-sub{margin:4px 0 0;font-size:13px;color:var(--slate-500);}
+
+.detail-allergy{
+  margin-top:12px;padding:10px 14px;border-radius:10px;
+  background:var(--red-50);color:var(--red-700);
+  font-size:13px;font-weight:600;display:flex;align-items:flex-start;gap:8px;
+}
+.detail-allergy svg{flex:0 0 auto;margin-top:1px;}
+
+.detail-info-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+  gap:14px 20px;margin:18px 0;padding:16px 0;
+  border-top:1px solid var(--slate-100);border-bottom:1px solid var(--slate-100);
+}
+.detail-info-grid .k{margin:0;font-size:11px;font-weight:700;letter-spacing:.02em;
+  text-transform:uppercase;color:var(--slate-500);}
+.detail-info-grid .v{margin:4px 0 0;font-size:13.5px;font-weight:600;color:var(--navy-950);
+  word-break:break-word;}
+.detail-info-grid .v.is-empty{color:var(--slate-500);font-weight:500;font-style:italic;}
+
+.detail-section-label{
+  font-size:11.5px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;
+  color:var(--slate-500);margin:0 0 8px;
+}
+
+/* .sched-list / .sched-item come from receptionist-dashboard.css (also
+   loaded on this page); this just caps the modal's list height. */
+.sched-list-compact{max-height:260px;}

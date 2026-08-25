@@ -34,8 +34,22 @@ const getPatientBills = (req, res, next) => {
   });
 };
 
+const VALID_BILL_STATUSES = ['draft', 'unpaid', 'partially_paid', 'paid', 'void'];
+// Accept a couple of common shorthand spellings from the frontend instead of
+// rejecting them, since the DB enum itself only knows the canonical labels.
+const STATUS_ALIASES = { partial: 'partially_paid', unpaid_partial: 'partially_paid' };
+
 const getBillsByStatus = (req, res, next) => {
-  findBillsByStatus(req.params.status, (err, bills) => {
+  const requested = req.params.status;
+  const status = STATUS_ALIASES[requested] || requested;
+
+  if (!VALID_BILL_STATUSES.includes(status)) {
+    return res.status(400).json({
+      message: `Invalid status "${requested}". Must be one of: ${VALID_BILL_STATUSES.join(', ')}`,
+    });
+  }
+
+  findBillsByStatus(status, (err, bills) => {
     if (err) return next(err);
     res.json(bills);
   });

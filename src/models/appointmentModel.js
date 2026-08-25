@@ -48,11 +48,19 @@ const findAppointmentsByDentist = (dentist_id, from, to, callback) => {
   });
 };
 
+// Joined so callers (e.g. the receptionist dashboard) get display-ready names
+// without a second round-trip per row. Mirrors the column naming already used
+// by the admin /admin/schedule endpoint (patient_first_name, dentist_last_name, ...).
 const findAppointmentsByStatus = (status, callback) => {
   const query = `
-    SELECT * FROM "Appointment"
-    WHERE status = $1 AND deleted_at IS NULL
-    ORDER BY scheduled_start
+    SELECT a.*,
+           p.first_name AS patient_first_name, p.last_name AS patient_last_name, p.phone AS patient_phone,
+           d.first_name AS dentist_first_name, d.last_name AS dentist_last_name
+    FROM "Appointment" a
+    JOIN "Patient" p ON p.id = a.patient_id
+    JOIN "User" d ON d.id = a.dentist_id
+    WHERE a.status = $1 AND a.deleted_at IS NULL
+    ORDER BY a.scheduled_start
   `;
   pool.query(query, [status], (err, result) => {
     if (err) return callback(err);

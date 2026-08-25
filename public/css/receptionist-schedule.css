@@ -1,0 +1,167 @@
+/* ============================================================
+   RECEPTIONIST SCHEDULE — multi-dentist calendar — additive styles.
+   Loaded after dashboard.css only; reuses its tokens (--navy-*,
+   --blue-*, --slate-*, --radius-*, --shadow-*, --white) and its
+   .panel / .btn / .field-input / .modal-* / .toast classes unchanged.
+
+   The appointment-card look (colored left border, status badge) is
+   intentionally the same system as dentist-schedule.css, duplicated
+   here rather than shared, so an appointment looks identical whether
+   viewed from the dentist portal or the front desk. Two statuses not
+   present on the dentist's own page — checked_in, no_show — get
+   their own colors here to match badge-checked_in/badge-no_show
+   already used elsewhere in the receptionist portal.
+   ============================================================ */
+:root{
+  --green-700:#1E9E63;
+  --green-50:#E8FAF1;
+  --amber-700:#B9770E;
+  --amber-50:#FEF6E7;
+  --red-700:#D2434C;
+  --red-50:#FDEDEE;
+}
+
+/* ---- toolbar: Today / prev / next / date label · dentist filter · Day-Week ---- */
+.sched-toolbar{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  margin-bottom:18px;
+}
+.sched-toolbar-left{display:flex;align-items:center;gap:8px;}
+.sched-toolbar-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+
+.sched-today-btn{padding:8px 16px;font-size:13px;}
+
+.sched-nav-btn{
+  width:32px;height:32px;border-radius:100px;border:1px solid var(--slate-100);
+  background:var(--white);color:var(--slate-700);display:inline-flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:background .12s ease, border-color .12s ease;
+}
+.sched-nav-btn:hover{background:var(--slate-100);}
+
+.sched-date-label{font-size:15px;font-weight:700;color:var(--navy-950);margin-left:6px;}
+.sched-count{font-size:12.5px;font-weight:600;color:var(--slate-500);white-space:nowrap;}
+
+.dentist-filter{width:auto;min-width:170px;padding:8px 30px 8px 12px;font-size:13px;font-weight:600;}
+
+.segmented{display:inline-flex;background:var(--slate-100);border-radius:100px;padding:3px;flex:0 0 auto;}
+.segmented-opt{
+  padding:8px 16px;border-radius:100px;border:none;background:none;cursor:pointer;
+  font-family:inherit;font-size:13px;font-weight:600;color:var(--slate-500);
+  transition:background .12s ease, color .12s ease, box-shadow .12s ease;
+}
+.segmented-opt:hover{color:var(--navy-900);}
+.segmented-opt.is-active{background:var(--white);color:var(--navy-950);box-shadow:var(--shadow-soft);}
+
+/* ---- multi-dentist day grid ---- */
+.msched-wrap{
+  overflow:auto;max-height:72vh;border:1px solid var(--slate-100);border-radius:var(--radius-md,10px);
+}
+.msched-grid{
+  display:grid;
+  grid-template-columns:70px repeat(var(--col-count,1), minmax(220px,1fr));
+}
+
+.msched-corner{
+  position:sticky;top:0;left:0;z-index:3;background:var(--white);
+  border-bottom:1px solid var(--slate-100);border-right:1px solid var(--slate-100);
+}
+
+.msched-dentist-head{
+  position:sticky;top:0;z-index:2;background:var(--white);
+  border-bottom:1px solid var(--slate-100);border-right:1px solid var(--slate-100);
+  padding:12px;display:flex;align-items:center;gap:10px;
+}
+.msched-dentist-avatar{
+  flex:0 0 auto;width:34px;height:34px;border-radius:100px;overflow:hidden;
+  background:var(--blue-100);color:var(--blue-600);
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;
+}
+.msched-dentist-avatar img{width:100%;height:100%;object-fit:cover;}
+.msched-dentist-name{margin:0;font-size:13px;font-weight:700;color:var(--navy-950);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.msched-dentist-meta{margin:2px 0 0;font-size:11px;color:var(--slate-500);white-space:nowrap;}
+
+.msched-hour-label{
+  position:sticky;left:0;z-index:1;background:var(--white);
+  border-right:1px solid var(--slate-100);border-bottom:1px solid var(--slate-100);
+  padding:10px 8px;font-size:12px;font-weight:700;color:var(--slate-500);
+}
+
+.msched-cell{
+  border-right:1px solid var(--slate-100);border-bottom:1px solid var(--slate-100);
+  padding:6px;min-height:64px;display:flex;flex-direction:column;gap:6px;
+}
+.msched-cell.not-available{
+  background:repeating-linear-gradient(45deg, var(--white), var(--white) 6px, var(--slate-100) 6px, var(--slate-100) 12px);
+  align-items:center;justify-content:center;
+}
+.msched-cell.not-available .na-label{font-size:10px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:var(--slate-500);}
+
+.msched-empty-state{padding:48px 12px;text-align:center;color:var(--slate-500);font-size:13.5px;}
+
+/* ---- Appointment card (matches dentist-schedule.css's system) ---- */
+.appt-card{
+  border:1px solid var(--slate-100);border-left-width:4px;border-radius:var(--radius-md, 10px);
+  padding:9px 11px;background:var(--white);box-shadow:var(--shadow-soft);
+}
+.appt-card.status-pending{border-left-color:var(--amber-700);background:var(--amber-50);}
+.appt-card.status-confirmed{border-left-color:var(--blue-600);background:var(--blue-50);}
+.appt-card.status-checked_in{border-left-color:var(--green-700);background:var(--green-50);}
+.appt-card.status-completed{border-left-color:var(--slate-700);background:var(--slate-100);}
+.appt-card.status-no_show{border-left-color:var(--red-700);background:var(--red-50);}
+.appt-card.status-cancelled{border-left-color:var(--slate-500);background:var(--slate-100);opacity:.65;}
+.appt-card.status-default{border-left-color:var(--slate-500);}
+
+.appt-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+.appt-patient-name{font-size:12.5px;font-weight:700;color:var(--navy-950);}
+.appt-time{font-size:11px;color:var(--slate-500);margin-top:1px;}
+
+.appt-status-badge{
+  font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:100px;white-space:nowrap;
+}
+.status-pending .appt-status-badge{background:var(--amber-700);color:#fff;}
+.status-confirmed .appt-status-badge{background:var(--blue-600);color:#fff;}
+.status-checked_in .appt-status-badge{background:var(--green-700);color:#fff;}
+.status-completed .appt-status-badge{background:var(--slate-700);color:#fff;}
+.status-no_show .appt-status-badge{background:var(--red-700);color:#fff;}
+.status-cancelled .appt-status-badge{background:var(--slate-500);color:#fff;}
+.status-default .appt-status-badge{background:var(--slate-500);color:#fff;}
+
+.appt-reason-chip{
+  display:inline-block;margin-top:6px;font-size:10.5px;font-weight:600;color:var(--navy-900);
+  background:var(--white);border:1px solid var(--slate-100);border-radius:100px;padding:2px 9px;
+}
+
+.appt-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+.appt-action-btn{
+  font-family:inherit;font-size:10.5px;font-weight:700;border-radius:100px;padding:4px 10px;
+  border:1px solid var(--slate-100);background:var(--white);color:var(--navy-950);cursor:pointer;
+  transition:background .12s ease;
+}
+.appt-action-btn:hover{background:var(--slate-100);}
+.appt-action-btn.checkin{border-color:var(--green-700);color:var(--green-700);}
+.appt-action-btn.cancel{border-color:var(--red-700);color:var(--red-700);}
+
+/* ---- single-dentist week view (shown when Week is active) ---- */
+.week-grid{
+  display:grid;grid-template-columns:repeat(7, minmax(140px, 1fr));gap:10px;overflow-x:auto;
+}
+.week-day-col{border:1px solid var(--slate-100);border-radius:var(--radius-md, 10px);padding:10px;min-height:120px;}
+.week-day-head{font-size:11.5px;font-weight:700;color:var(--slate-500);margin-bottom:8px;}
+.week-day-head.is-today{color:var(--blue-600);}
+.week-appt-chip{
+  font-size:11px;font-weight:600;border-radius:8px;padding:6px 8px;margin-bottom:6px;
+  border-left:3px solid var(--slate-500);background:var(--slate-100);
+}
+.week-appt-chip.status-pending{border-left-color:var(--amber-700);background:var(--amber-50);}
+.week-appt-chip.status-confirmed{border-left-color:var(--blue-600);background:var(--blue-50);}
+.week-appt-chip.status-checked_in{border-left-color:var(--green-700);background:var(--green-50);}
+.week-appt-chip.status-completed{border-left-color:var(--slate-700);background:var(--slate-100);}
+.week-appt-chip.status-no_show{border-left-color:var(--red-700);background:var(--red-50);}
+.week-appt-chip.status-cancelled{border-left-color:var(--slate-500);opacity:.6;}
+.week-day-empty{font-size:11px;color:var(--slate-500);opacity:.5;}
+
+@media (max-width:700px){
+  .sched-toolbar{flex-direction:column;align-items:stretch;}
+  .sched-toolbar-right{justify-content:space-between;}
+  .week-grid{grid-template-columns:repeat(7, minmax(120px, 1fr));}
+}

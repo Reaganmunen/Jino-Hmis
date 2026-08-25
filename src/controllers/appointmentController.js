@@ -3,7 +3,6 @@ const {
   findAppointmentsByDentist, findAppointmentsByStatus, updateAppointmentStatus,
   rescheduleAppointment, softDeleteAppointment,
 } = require('../models/appointmentModel');
-const { sendAppointmentWhatsApp } = require('../services/whatsappService');
 
 const STAFF = ['admin', 'dentist', 'receptionist'];
 
@@ -23,9 +22,6 @@ const bookAppointment = (req, res, next) => {
   createAppointment(data, (err, appointment) => {
     if (err) return next(err);
     res.status(201).json(appointment);
-    // appointment.status comes back from the DB default (e.g. 'pending') —
-    // sendAppointmentWhatsApp no-ops if there's no template for that status.
-    sendAppointmentWhatsApp(appointment, appointment.status);
   });
 };
 
@@ -83,8 +79,6 @@ const setStatus = (req, res, next) => {
     if (err) return next(err);
     if (!appointment) return res.status(404).json({ message: 'Appointment not found' });
     res.json(appointment);
-    // Fire-and-forget: don't let a slow/failed WhatsApp send affect this response.
-    sendAppointmentWhatsApp(appointment, appointment.status);
   });
 };
 
@@ -104,7 +98,6 @@ const reschedule = (req, res, next) => {
     rescheduleAppointment(req.params.id, scheduled_start, scheduled_end, (err, updated) => {
       if (err) return next(err);
       res.json(updated);
-      sendAppointmentWhatsApp(updated, 'rescheduled');
     });
   });
 };
@@ -121,9 +114,6 @@ const cancelAppointment = (req, res, next) => {
       if (err) return next(err);
       if (!rowCount) return res.status(404).json({ message: 'Appointment not found' });
       res.json({ message: 'Appointment cancelled' });
-      // appointment here is the pre-delete row fetched above — still has
-      // patient_id/dentist_id/scheduled_start, which softDeleteAppointment doesn't return.
-      sendAppointmentWhatsApp(appointment, 'cancelled');
     });
   });
 };

@@ -1,0 +1,72 @@
+/* ============================================================
+   RECEPTIONIST OVERVIEW PAGE — additive styles only.
+   Loaded after dashboard.css; reuses its tokens (--navy-*, --blue-*,
+   --slate-*, --radius-*, --shadow-*) and its .panel / .badge /
+   .stat-card / .stat-ic / .quick-btn / .modal* / .field-* / .dentist-opt /
+   .pay-summary / .mpesa-waiting / .btn classes unchanged.
+   ============================================================ */
+
+/* Front desk's badge-checked_in status has no equivalent elsewhere yet. */
+.badge-checked_in{background:var(--green-50);color:var(--green-700);}
+.badge-pending{background:var(--amber-50);color:var(--amber-700);}
+.badge-confirmed{background:var(--blue-100);color:var(--blue-600);}
+.badge-completed{background:var(--slate-100);color:var(--slate-500);}
+.badge-no_show{background:var(--red-50);color:var(--red-700);}
+.badge-cancelled{background:var(--red-50);color:var(--red-700);}
+
+/* ---- schedule list (today's schedule + upcoming), with inline actions ---- */
+.sched-list{display:flex;flex-direction:column;gap:2px;max-height:460px;overflow-y:auto;}
+.sched-item{
+  display:flex;align-items:center;gap:14px;padding:12px 4px;flex-wrap:wrap;
+  border-bottom:1px solid var(--slate-100);
+}
+.sched-item:last-child{border-bottom:none;}
+.sched-time{
+  flex:0 0 64px;font-family:'IBM Plex Mono',ui-monospace,monospace;
+  font-size:12.5px;font-weight:600;color:var(--slate-700);
+}
+.sched-avatar{
+  flex:0 0 auto;width:36px;height:36px;border-radius:100px;
+  background:var(--blue-100);color:var(--blue-600);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12.5px;font-weight:700;
+}
+.sched-mid{flex:1;min-width:160px;}
+.sched-mid .t{margin:0;font-size:14px;font-weight:600;color:var(--navy-950);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sched-mid .s{margin:2px 0 0;font-size:12.5px;color:var(--slate-500);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sched-flags{display:flex;align-items:center;gap:6px;flex:0 0 auto;}
+
+.sched-actions{display:flex;gap:6px;flex:1 0 100%;justify-content:flex-end;margin-top:6px;}
+.sched-action-btn{
+  padding:6px 12px;border-radius:8px;border:1px solid var(--slate-200);background:var(--white);
+  font-size:12px;font-weight:600;color:var(--navy-900);cursor:pointer;transition:border-color .12s ease;
+}
+.sched-action-btn:hover{border-color:var(--blue-500);color:var(--blue-600);}
+
+.empty-state{padding:24px 4px;text-align:center;color:var(--slate-500);font-size:13.5px;}
+
+/* ---- payments due list ---- */
+.pay-due-list{display:flex;flex-direction:column;gap:2px;max-height:460px;overflow-y:auto;}
+.pay-due-row{
+  display:flex;align-items:center;gap:14px;padding:14px 4px;flex-wrap:wrap;
+  border-bottom:1px solid var(--slate-100);
+}
+.pay-due-row:last-child{border-bottom:none;}
+.pay-due-actions{display:flex;gap:8px;flex:0 0 auto;}
+@media (max-width:520px){
+  .pay-due-actions{flex:1 0 100%;justify-content:flex-end;margin-top:8px;}
+}
+
+/* ---- top-bar patient search dropdown ---- */
+.topbar-right{position:relative;}
+.search-results{
+  display:none;position:absolute;top:calc(100% + 8px);right:96px;width:300px;max-height:340px;overflow-y:auto;
+  background:var(--white);border:1px solid var(--slate-200);border-radius:var(--radius-md);
+  box-shadow:var(--shadow-card);z-index:50;padding:6px;
+}
+.search-results.is-open{display:block;}
+.search-result-row{
+  display:flex;align-items:center;gap:12px;padding:8px;border-radius:8px;transition:background .12s ease;
+}
+.search-result-row:hover{background:var(--blue-50);}
+@media (max-width:1100px){.search-results{right:0;left:0;width:auto;margin:0 18px;}}

@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Overview — Jino Admin Portal</title>
+<title>Services — Jino Admin Portal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../css/dashboard.css">
 <link rel="stylesheet" href="../css/admin-dashboard.css">
+<link rel="stylesheet" href="../css/admin-services.css">
 </head>
 <body>
 
@@ -28,7 +29,7 @@
 
     <nav class="side-nav">
       <p class="side-label">Clinic</p>
-      <a href="dashboard.html" class="side-link is-active" data-page="overview">
+      <a href="dashboard.html" class="side-link" data-page="overview">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.7"/><rect x="14" y="3" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.7"/><rect x="3" y="14" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.7"/><rect x="14" y="14" width="7" height="7" rx="1.6" stroke="currentColor" stroke-width="1.7"/></svg>
         Overview
       </a>
@@ -48,7 +49,7 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 8l9-5 9 5-9 5-9-5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M3 8v9l9 5 9-5V8" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
         Inventory
       </a>
-      <a href="admin-services.html" class="side-link" data-page="services">
+      <a href="admin-services.html" class="side-link is-active" data-page="services">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="5" y="3" width="14" height="18" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M9 3v2a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V3" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8 11.5l2 2 4.5-4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 16.5h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
         Services
       </a>
@@ -80,14 +81,10 @@
         </button>
         <div>
           <p class="topbar-kicker">Admin Portal</p>
-          <h1 class="topbar-title">Good morning, <span id="adminName">Admin</span></h1>
+          <h1 class="topbar-title">Services</h1>
         </div>
       </div>
       <div class="topbar-right">
-        <button class="icon-btn" aria-label="Notifications">
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M6 9a6 6 0 1 1 12 0c0 4.2 1 5.6 1.6 6.4.3.4 0 1-.5 1H4.9c-.5 0-.8-.6-.5-1C5 14.6 6 13.2 6 9Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9.5 19a2.5 2.5 0 0 0 5 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-          <span class="icon-dot" id="alertDot" style="display:none;"></span>
-        </button>
         <div class="avatar" id="avatarInitials">AD</div>
       </div>
     </header>
@@ -95,14 +92,14 @@
     <main class="content">
 
       <!-- ---- Stat cards ---- -->
-      <section class="stat-grid" id="statGrid" aria-label="Clinic summary">
+      <section class="stat-grid" id="statGrid" aria-label="Service catalog summary">
         <div class="stat-card">
           <div class="stat-ic stat-ic-blue">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3.4" stroke="currentColor" stroke-width="1.7"/><path d="M3 20c.6-3.8 3-5.8 6-5.8s5.4 2 6 5.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="17.5" cy="8.5" r="2.6" stroke="currentColor" stroke-width="1.7"/><path d="M15.7 13.6c2.6.3 4.4 2.1 4.9 5.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="5" y="3" width="14" height="18" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M9 3v2a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V3" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8 11.5l2 2 4.5-4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 16.5h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
           </div>
           <div>
-            <p class="stat-value" id="statTotalPatients">0</p>
-            <p class="stat-label"><span id="statNewPatients">0</span> new this month</p>
+            <p class="stat-value" id="statTotalServices">0</p>
+            <p class="stat-label">Active services in the catalog</p>
           </div>
         </div>
         <div class="stat-card">
@@ -110,101 +107,60 @@
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 8h6M9 12h6M9 16h3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
           </div>
           <div>
-            <p class="stat-value" id="statRevenueToday">KSh 0</p>
-            <p class="stat-label">Revenue today · <span id="statRevenueMonth">KSh 0</span> this month</p>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-ic stat-ic-amber">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2.2" stroke="currentColor" stroke-width="1.7"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-          </div>
-          <div>
-            <p class="stat-value" id="statApptsToday">0</p>
-            <p class="stat-label"><span id="statApptsCompleted">0</span> completed · <span id="statApptsNoShow">0</span> no-show</p>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-ic stat-ic-purple">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.6" stroke="currentColor" stroke-width="1.7"/><path d="M4.5 20c.8-4 3.8-6 7.5-6s6.7 2 7.5 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-          </div>
-          <div>
-            <p class="stat-value" id="statActiveStaff">0</p>
-            <p class="stat-label">Active staff on the platform</p>
+            <p class="stat-value" id="statAvgPrice">KSh 0</p>
+            <p class="stat-label">Average price across services</p>
           </div>
         </div>
       </section>
 
-      <!-- ---- Schedule + Quick actions ---- -->
-      <section class="body-grid">
+      <!-- ---- Services ---- -->
+      <section class="panel">
+        <div class="panel-head">
+          <h2>Service catalog</h2>
+          <button class="btn btn-primary btn-sm" id="addServiceBtn">+ Add service</button>
+        </div>
+        <p class="panel-sub">The services offered by the clinic — used when adding line items to a bill.</p>
 
-        <div class="panel">
-          <div class="panel-head">
-            <h2>Today's clinic schedule</h2>
-            <a href="admin-billing.html" class="panel-link">View reports</a>
+        <div class="billing-toolbar">
+          <div class="search" style="width:auto;flex:0 0 280px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/><path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <input type="text" id="serviceSearch" placeholder="Search services">
           </div>
-          <div class="sched-list" id="schedList"><!-- rendered by JS --></div>
         </div>
 
-        <div class="panel quick-panel">
-          <h2>Quick actions</h2>
-          <a class="quick-btn" href="admin-staff.html">
-            <span class="quick-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 19c.6-3.3 3-5 5.5-5s4.9 1.7 5.5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
-            Add staff member
-          </a>
-          <a class="quick-btn" href="admin-inventory.html">
-            <span class="quick-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M3 8l9-5 9 5-9 5-9-5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></span>
-            Manage inventory
-          </a>
-          <a class="quick-btn" href="admin-billing.html">
-            <span class="quick-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></span>
-            View billing reports
-          </a>
-          <a class="quick-btn" href="admin-patients.html">
-            <span class="quick-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 19c.6-3.3 3-5 5.5-5s4.9 1.7 5.5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
-            View all patients
-          </a>
-        </div>
-      </section>
-
-      <!-- ---- Revenue trend + Alerts ---- -->
-      <section class="body-grid">
-
-        <div class="panel">
-          <div class="panel-head">
-            <h2>Revenue — last 14 days</h2>
-          </div>
-          <div class="rev-chart" id="revChart"><!-- rendered by JS --></div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-head">
-            <h2>Needs attention</h2>
-          </div>
-          <div class="alert-list" id="alertList"><!-- rendered by JS --></div>
-        </div>
-
-      </section>
-
-      <!-- ---- Top services + Staff workload ---- -->
-      <section class="body-grid">
-
-        <div class="panel">
-          <div class="panel-head">
-            <h2>Top services this period</h2>
-          </div>
-          <div class="svc-list" id="svcList"><!-- rendered by JS --></div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-head">
-            <h2>Dentist workload today</h2>
-          </div>
-          <div class="workload-list" id="workloadList"><!-- rendered by JS --></div>
-        </div>
-
+        <div class="svc-catalog-list" id="svcCatalogList"><!-- rendered by JS --></div>
       </section>
 
     </main>
+  </div>
+</div>
+
+<!-- ============ ADD / EDIT SERVICE MODAL ============ -->
+<div class="modal-scrim" id="serviceFormModalScrim">
+  <div class="modal" style="max-width:480px;" role="dialog" aria-modal="true" aria-labelledby="serviceFormTitle">
+    <div class="modal-head">
+      <div>
+        <p class="modal-kicker" id="serviceFormKicker">New Service</p>
+        <h2 id="serviceFormTitle">Add a service</h2>
+      </div>
+      <button class="icon-btn" id="serviceFormClose" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <label class="field-label" for="serviceName">Service name</label>
+    <input type="text" id="serviceName" class="field-input" placeholder="e.g. Tooth extraction" style="margin-bottom:16px;">
+
+    <label class="field-label" for="serviceDescription">Description (optional)</label>
+    <textarea id="serviceDescription" class="field-input" rows="3" placeholder="What this service covers" style="margin-bottom:16px;"></textarea>
+
+    <label class="field-label" for="servicePrice">Price (KSh)</label>
+    <input type="number" id="servicePrice" class="field-input" min="0" step="0.01">
+
+    <div class="modal-foot">
+      <button class="btn btn-outline" id="serviceFormCancel">Cancel</button>
+      <button class="btn btn-primary" id="serviceFormSubmit">Add service</button>
+    </div>
   </div>
 </div>
 
@@ -212,9 +168,8 @@
 
 <!--
   api.js must load first — it defines fetchMethod / getStoredUser / clearSession.
-  Adjust the paths below to wherever these actually live in your public/ folder.
 -->
 <script src="../js/api.js"></script>
-<script src="../js/adminDashboard.js"></script>
+<script src="../js/adminServices.js"></script>
 </body>
 </html>
