@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const {
   bookAppointment, getAppointment, getPatientAppointments, getDentistAppointments,
-  getAppointmentsByStatus, setStatus, reschedule, cancelAppointment,
+  getAppointmentsByStatus, setStatus, reschedule, editAppointment, cancelAppointment,
 } = require('../controllers/appointmentController');
 const verifyToken = require('../middleware/authMiddleware');
 const { authorizeRoles, allowSelfOrStaff } = require('../middleware/roleMiddleware');
@@ -22,6 +22,7 @@ router.get(
 router.get('/:id', getAppointment);
 router.put('/:id/status', authorizeRoles(...STAFF), setStatus);
 router.put('/:id/reschedule', reschedule); // patient or staff
+router.put('/:id', authorizeRoles(...STAFF), editAppointment); // staff-only: reassign dentist / edit room & reason alongside time
 router.delete('/:id', cancelAppointment);
 
 module.exports = router;

@@ -1,7 +1,7 @@
 const {
   createAppointment, findAppointmentById, findAppointmentsByPatient,
   findAppointmentsByDentist, findAppointmentsByStatus, updateAppointmentStatus,
-  rescheduleAppointment, softDeleteAppointment,
+  rescheduleAppointment, updateAppointment, softDeleteAppointment,
 } = require('../models/appointmentModel');
 
 const STAFF = ['admin', 'dentist', 'receptionist'];
@@ -102,6 +102,32 @@ const reschedule = (req, res, next) => {
   });
 };
 
+// Staff-only (see route: authorizeRoles(...STAFF)) full edit — reassign
+// dentist and/or reschedule + adjust room/reason together. This is what the
+// receptionist's "Edit appointment" action calls; distinct from `reschedule`
+// above, which only changes time and is also reachable by patients.
+const editAppointment = (req, res, next) => {
+  const { dentist_id, scheduled_start, scheduled_end, room, reason } = req.body;
+  if (!dentist_id || !scheduled_start || !scheduled_end) {
+    return res.status(400).json({ message: 'dentist_id, scheduled_start, and scheduled_end are required' });
+  }
+
+  findAppointmentById(req.params.id, (findErr, appointment) => {
+    if (findErr) return next(findErr);
+    if (!appointment) return res.status(404).json({ message: 'Appointment not found' });
+
+    updateAppointment(
+      req.params.id,
+      { dentist_id, scheduled_start, scheduled_end, room: room || null, reason: reason || null },
+      (err, updated) => {
+        if (err) return next(err);
+        if (!updated) return res.status(404).json({ message: 'Appointment not found' });
+        res.json(updated);
+      },
+    );
+  });
+};
+
 const cancelAppointment = (req, res, next) => {
   findAppointmentById(req.params.id, (findErr, appointment) => {
     if (findErr) return next(findErr);
@@ -120,5 +146,5 @@ const cancelAppointment = (req, res, next) => {
 
 module.exports = {
   bookAppointment, getAppointment, getPatientAppointments, getDentistAppointments,
-  getAppointmentsByStatus, setStatus, reschedule, cancelAppointment,
+  getAppointmentsByStatus, setStatus, reschedule, editAppointment, cancelAppointment,
 };

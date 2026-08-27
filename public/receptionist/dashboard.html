@@ -368,6 +368,52 @@
   </div>
 </div>
 
+<!-- ============ EDIT APPOINTMENT MODAL ============ -->
+<div class="modal-scrim" id="editApptModalScrim">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <p class="modal-kicker">Reschedule / reassign</p>
+        <h2>Edit appointment</h2>
+      </div>
+      <button class="icon-link-btn" id="editApptModalClose" aria-label="Close" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <div class="pay-summary" id="editApptSummary" style="margin-top:18px;"><!-- rendered by JS --></div>
+
+    <div style="margin-top:16px;">
+      <label class="field-label">Dentist</label>
+      <div class="dentist-grid" id="editApptDentistList"></div>
+    </div>
+
+    <div class="form-grid" style="margin-top:16px;">
+      <div>
+        <label class="field-label">Start time</label>
+        <input type="datetime-local" class="field-input" id="editApptStart">
+      </div>
+      <div>
+        <label class="field-label">End time</label>
+        <input type="datetime-local" class="field-input" id="editApptEnd">
+      </div>
+      <div class="full">
+        <label class="field-label">Room (optional)</label>
+        <input type="text" class="field-input" id="editApptRoom" placeholder="e.g. Room 2">
+      </div>
+      <div class="full">
+        <label class="field-label">Reason for visit</label>
+        <textarea class="field-input" id="editApptReason" rows="2" placeholder="e.g. Routine checkup, toothache…"></textarea>
+      </div>
+    </div>
+
+    <div class="modal-foot">
+      <button class="btn btn-outline" id="editApptCancelBtn" type="button">Cancel</button>
+      <button class="btn btn-primary" id="editApptSubmitBtn" type="button">Save changes</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="../js/api.js"></script>

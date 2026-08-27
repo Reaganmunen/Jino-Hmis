@@ -92,6 +92,30 @@ const rescheduleAppointment = (id, scheduled_start, scheduled_end, callback) => 
   });
 };
 
+// Full edit — used by staff (receptionist) to reassign dentist and/or
+// reschedule + adjust room/reason in one go. Kept separate from
+// rescheduleAppointment above (which only touches time and is also called
+// from the patient-facing reschedule flow) so patient behavior is untouched.
+// Deliberately does not touch `status` — editing a checked_in appointment's
+// room shouldn't silently revert it to 'confirmed'. Any overlapping-slot
+// violation for the new dentist_id/time is caught by the same DB exclusion
+// constraint that protects createAppointment (23P01, handled centrally by
+// errorMiddleware).
+const updateAppointment = (id, data, callback) => {
+  const { dentist_id, scheduled_start, scheduled_end, room, reason } = data;
+  const query = `
+    UPDATE "Appointment"
+    SET dentist_id = $1, scheduled_start = $2, scheduled_end = $3, room = $4, reason = $5
+    WHERE id = $6 AND deleted_at IS NULL
+    RETURNING *
+  `;
+  const values = [dentist_id, scheduled_start, scheduled_end, room, reason, id];
+  pool.query(query, values, (err, result) => {
+    if (err) return callback(err);
+    callback(null, result.rows[0]);
+  });
+};
+
 const softDeleteAppointment = (id, callback) => {
   const query = `UPDATE "Appointment" SET deleted_at = now(), status = 'cancelled' WHERE id = $1`;
   pool.query(query, [id], (err, result) => {
@@ -108,5 +132,6 @@ module.exports = {
   findAppointmentsByStatus,
   updateAppointmentStatus,
   rescheduleAppointment,
+  updateAppointment,
   softDeleteAppointment,
 };

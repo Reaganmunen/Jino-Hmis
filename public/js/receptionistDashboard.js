@@ -22,6 +22,7 @@
     bookSelectedPatient: null,
     activeBillForModal: null,
     activeMpesaTransaction: null,
+    activeApptForEdit: null,
   };
 
   // NOTE: there is no single "today's clinic-wide schedule" endpoint exposed
@@ -188,14 +189,17 @@
       </div>
     `;
 
-    if (withActions && !['completed', 'cancelled', 'no_show'].includes(appt.status)) {
+    if (!['completed', 'cancelled', 'no_show'].includes(appt.status)) {
       const actions = document.createElement('div');
       actions.className = 'sched-actions';
 
-      if (appt.status !== 'checked_in') {
+      if (withActions && appt.status !== 'checked_in') {
         actions.appendChild(makeActionBtn('Check in', () => setApptStatus(appt.id, 'checked_in')));
       }
-      actions.appendChild(makeActionBtn('No-show', () => setApptStatus(appt.id, 'no_show')));
+      if (withActions) {
+        actions.appendChild(makeActionBtn('No-show', () => setApptStatus(appt.id, 'no_show')));
+      }
+      actions.appendChild(makeActionBtn('Edit', () => openEditApptModal(appt)));
       actions.appendChild(makeActionBtn('Cancel', () => cancelAppt(appt.id)));
 
       row.appendChild(actions);
@@ -351,6 +355,7 @@
     bindModal('walkinModalScrim', 'btnWalkIn', 'walkinModalClose', 'walkinCancelBtn', resetWalkinModal);
     bindModal('mpesaModalScrim', null, 'mpesaModalClose', 'mpesaCancelBtn', resetMpesaModal);
     bindModal('paymentModalScrim', null, 'paymentModalClose', 'paymentCancelBtn', resetPaymentModal);
+    bindModal('editApptModalScrim', null, 'editApptModalClose', 'editApptCancelBtn', resetEditApptModal);
 
     document.getElementById('mpesaCloseWaitingBtn').addEventListener('click', () => closeModal('mpesaModalScrim'));
 
@@ -359,6 +364,7 @@
     document.getElementById('walkinSubmitBtn').addEventListener('click', submitWalkin);
     document.getElementById('mpesaSendBtn').addEventListener('click', submitMpesaPrompt);
     document.getElementById('paymentSubmitBtn').addEventListener('click', submitManualPayment);
+    document.getElementById('editApptSubmitBtn').addEventListener('click', submitApptEdit);
   }
 
   function bindModal(scrimId, openBtnId, closeBtnId, cancelBtnId, onClose) {
@@ -480,6 +486,94 @@
     document.getElementById('bookRoom').value = '';
     document.getElementById('bookReason').value = '';
     document.querySelectorAll('#bookDentistList .dentist-opt').forEach((el) => el.classList.remove('is-selected'));
+  }
+
+  /* ============================================================
+     MODAL: EDIT APPOINTMENT
+     (Reassign dentist and/or reschedule time for an existing
+     appointment — mirrors the Book modal's dentist grid, but
+     pre-selects the current dentist and pre-fills current times.
+     Requires a general PUT /appointments/:id route on the backend;
+     only /appointments/:id/status and DELETE /appointments/:id
+     exist today.)
+     ============================================================ */
+  function openEditApptModal(appt) {
+    state.activeApptForEdit = appt;
+    const patientName = `${appt.patient_first_name} ${appt.patient_last_name}`;
+
+    document.getElementById('editApptSummary').innerHTML = `
+      <div class="pay-summary-row"><span>Patient</span><b>${escapeHtml(patientName)}</b></div>
+      <div class="pay-summary-row"><span>Current</span><b>Dr. ${escapeHtml(appt.dentist_last_name)} · ${escapeHtml(new Date(appt.scheduled_start).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }))}</b></div>
+    `;
+
+    populateEditDentistList(appt.dentist_id);
+    document.getElementById('editApptStart').value = toDatetimeLocalValue(appt.scheduled_start);
+    document.getElementById('editApptEnd').value = toDatetimeLocalValue(appt.scheduled_end);
+    document.getElementById('editApptRoom').value = appt.room || '';
+    document.getElementById('editApptReason').value = appt.reason || '';
+
+    document.getElementById('editApptModalScrim').classList.add('is-open');
+  }
+
+  function populateEditDentistList(selectedDentistId) {
+    const container = document.getElementById('editApptDentistList');
+    container.innerHTML = '';
+    if (!state.dentists.length) {
+      container.innerHTML = '<div class="empty-state">No dentists on staff yet.</div>';
+      return;
+    }
+    state.dentists.forEach((d) => {
+      const opt = document.createElement('div');
+      opt.className = 'dentist-opt' + (String(d.id) === String(selectedDentistId) ? ' is-selected' : '');
+      opt.dataset.dentistId = d.id;
+      opt.innerHTML = `
+        <div class="dentist-avatar">${initialsOf(d.first_name + ' ' + d.last_name)}</div>
+        <div><p class="t">Dr. ${escapeHtml(d.first_name)} ${escapeHtml(d.last_name)}</p></div>
+      `;
+      opt.addEventListener('click', () => {
+        container.querySelectorAll('.dentist-opt').forEach((el) => el.classList.remove('is-selected'));
+        opt.classList.add('is-selected');
+      });
+      container.appendChild(opt);
+    });
+  }
+
+  async function submitApptEdit() {
+    const appt = state.activeApptForEdit;
+    const dentistOpt = document.querySelector('#editApptDentistList .dentist-opt.is-selected');
+    const start = document.getElementById('editApptStart').value;
+    const end = document.getElementById('editApptEnd').value;
+    const room = document.getElementById('editApptRoom').value.trim();
+    const reason = document.getElementById('editApptReason').value.trim();
+
+    if (!dentistOpt) return showToast('Select a dentist');
+    if (!start || !end) return showToast('Start and end time are required');
+    if (new Date(end) <= new Date(start)) return showToast('End time must be after start time');
+
+    try {
+      await fetchMethod(`/appointments/${appt.id}`, 'PUT', {
+        dentist_id: dentistOpt.dataset.dentistId,
+        scheduled_start: new Date(start).toISOString(),
+        scheduled_end: new Date(end).toISOString(),
+        room: room || null,
+        reason: reason || null,
+      }, true);
+      showToast('Appointment updated');
+      closeModal('editApptModalScrim');
+      resetEditApptModal();
+      loadDashboard();
+    } catch (err) {
+      showToast(err.message || 'Could not update appointment');
+    }
+  }
+
+  function resetEditApptModal() {
+    state.activeApptForEdit = null;
+    document.getElementById('editApptStart').value = '';
+    document.getElementById('editApptEnd').value = '';
+    document.getElementById('editApptRoom').value = '';
+    document.getElementById('editApptReason').value = '';
+    document.querySelectorAll('#editApptDentistList .dentist-opt').forEach((el) => el.classList.remove('is-selected'));
   }
 
   /* ============================================================
@@ -670,6 +764,14 @@
     if (hour < 12) return 'Good morning';
     if (hour < 17) return 'Good afternoon';
     return 'Good evening';
+  }
+
+  // datetime-local inputs need 'YYYY-MM-DDTHH:mm' in *local* time — toISOString()
+  // gives UTC, which would silently shift the displayed time for the receptionist.
+  function toDatetimeLocalValue(dateStr) {
+    const d = new Date(dateStr);
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
 
   function showToast(message) {
