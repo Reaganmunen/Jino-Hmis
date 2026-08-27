@@ -39,6 +39,7 @@
   async function loadDashboard() {
     try {
       document.getElementById('dentistName').textContent = `Dr. ${sessionUser.last_name}`;
+      document.getElementById('greetingText').textContent = getGreeting();
       renderTopbarAvatar(`Dr. ${sessionUser.first_name} ${sessionUser.last_name}`);
 
       const { from, to } = todayRangeIso();
@@ -309,6 +310,13 @@
   /* ============================================================
      UTILITIES
      ============================================================ */
+  function getGreeting() {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
+
   function todayRangeIso() {
     const now = new Date();
     const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());

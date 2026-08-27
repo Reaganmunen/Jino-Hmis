@@ -46,6 +46,7 @@
   async function loadDashboard() {
     try {
       document.getElementById('receptionistName').textContent = sessionUser.first_name;
+      document.getElementById('greetingText').textContent = getGreeting();
       renderTopbarAvatar(`${sessionUser.first_name} ${sessionUser.last_name}`);
 
       const [apptResults, draftBills, unpaidBills, partialBills, dentists] = await Promise.all([
@@ -662,6 +663,13 @@
      ============================================================ */
   function formatKsh(value) {
     return 'KSh ' + Number(value || 0).toLocaleString('en-KE');
+  }
+
+  function getGreeting() {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
   }
 
   function showToast(message) {

@@ -36,6 +36,7 @@
   async function loadDashboard() {
     try {
       document.getElementById('adminName').textContent = sessionUser.first_name;
+      document.getElementById('greetingText').textContent = getGreeting();
       renderTopbarAvatar(`${sessionUser.first_name} ${sessionUser.last_name}`);
 
       const { from, to } = todayRangeIso();
@@ -298,6 +299,13 @@
     const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
     return { from: start.toISOString(), to: end.toISOString() };
+  }
+
+  function getGreeting() {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
   }
 
   function formatKsh(value) {

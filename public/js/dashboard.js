@@ -51,6 +51,7 @@
       state.patientId = patient.id;
 
       document.getElementById('patientFirstName').textContent = patient.first_name;
+      document.getElementById('greetingText').textContent = getGreeting();
 
       const [appts, chart, dentistList, bills, plans, consentForms, files] = await Promise.all([
         fetchMethod(`/appointments/patient/${patient.id}`, 'GET', null, true),
@@ -566,6 +567,13 @@
   /* ============================================================
      UTILITIES
      ============================================================ */
+  function getGreeting() {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
+
   function showToast(message) {
     const toast = document.getElementById('toast');
     toast.textContent = message;
