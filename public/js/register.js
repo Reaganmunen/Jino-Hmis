@@ -44,7 +44,7 @@ registerForm.addEventListener('submit', async (event) => {
       first_name, last_name, email, phone, password,
     });
     saveSession(data);
-    window.location.href = 'patient-portal.html';
+    window.location.href = 'patient/patient-portal.html';
   } catch (err) {
     showError(err.message || 'Something went wrong. Please try again.');
   } finally {
