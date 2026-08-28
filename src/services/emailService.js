@@ -6,6 +6,7 @@ const transporter = nodemailer.createTransport({
     user: process.env.CLINIC_GMAIL_USER,
     pass: process.env.CLINIC_GMAIL_APP_PASSWORD,
   },
+  family: 4, // force IPv4 — Render's network can't route IPv6, causes ENETUNREACH
 });
 
 const sendEmail = ({ to, subject, html }) => {
