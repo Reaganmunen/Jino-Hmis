@@ -29,6 +29,7 @@
     renderTopbarAvatar(`Dr. ${sessionUser.first_name} ${sessionUser.last_name}`);
     document.getElementById('patientSearchInput').addEventListener('input', onSearchInput);
     document.getElementById('switchPatientBtn').addEventListener('click', showPatientPicker);
+    document.getElementById('downloadPatientRxBtn').addEventListener('click', downloadActivePatientRx);
     document.getElementById('rxSaveBtn').addEventListener('click', savePrescription);
     loadInitialData();
   });
@@ -243,6 +244,43 @@
     openBtn.addEventListener('click', open);
     closeBtn.addEventListener('click', close);
     scrim.addEventListener('click', close);
+  }
+
+  /* ============================================================
+     PDF DOWNLOAD
+     Same pattern used across the patient portal's billing/tooth-chart/
+     prescriptions pages — api.js exposes API_BASE and stores the JWT
+     under 'jino_token'. Backend defaults to today's date (Africa/Nairobi)
+     when no ?date= is passed, so this prints today's prescriptions for
+     the active patient.
+     ============================================================ */
+  async function downloadActivePatientRx() {
+    if (!state.activePatient) return;
+    await downloadPdf(
+      `/prescriptions/patient/${state.activePatient.id}/pdf`,
+      `prescription-${state.activePatient.last_name}.pdf`
+    );
+  }
+
+  async function downloadPdf(path, filename) {
+    try {
+      const token = localStorage.getItem('jino_token');
+      const res = await fetch(`${API_BASE}${path}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Could not generate the PDF. Please try again.');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      showToast(err.message || 'Could not download the PDF');
+    }
   }
 
   /* ============================================================

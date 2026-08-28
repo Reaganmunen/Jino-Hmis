@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { addEntry, getFullChart, getCurrentChart, getToothHistory } = require('../controllers/toothChartController');
+const {
+  addEntry, getFullChart, getCurrentChart, getToothHistory, downloadToothChartPdf,
+} = require('../controllers/toothChartController');
 const verifyToken = require('../middleware/authMiddleware');
 const { authorizeRoles, allowSelfOrStaff } = require('../middleware/roleMiddleware');
 
@@ -19,6 +21,11 @@ router.get(
   authorizeRoles('admin', 'dentist'), // unchanged — already staff-only
   getFullChart,
 );
+// Deliberately NOT staff-only like /history above — the patient's own
+// "download my full tooth chart" button needs this, so ownership is
+// checked in the controller instead (self-or-staff), same pattern as
+// /current and /tooth/:toothNumber below.
+router.get('/patient/:patientId/history/pdf', downloadToothChartPdf);
 router.get(
   '/patient/:patientId/tooth/:toothNumber',
   allowSelfOrStaff(STAFF, (req) => req.params.patientId),

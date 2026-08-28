@@ -2,7 +2,10 @@ const {
   createAppointment, findAppointmentById, findAppointmentsByPatient,
   findAppointmentsByDentist, findAppointmentsByStatus, updateAppointmentStatus,
   rescheduleAppointment, updateAppointment, softDeleteAppointment,
+  findAppointmentWithDetails,
 } = require('../models/appointmentModel');
+const { sendEmail } = require('../services/emailService');
+const { getAppointmentEmail } = require('../services/emailTemplates');
 
 const STAFF = ['admin', 'dentist', 'receptionist'];
 
@@ -15,6 +18,21 @@ const canAccessAppointment = (user, appointment) => {
   return false;
 };
 
+// Fire-and-forget: never awaited, never blocks the HTTP response, never
+// throws into the request cycle. If the email fails, the appointment action
+// itself has already succeeded and already responded to the client.
+const notifyPatient = (action, appointmentId) => {
+  findAppointmentWithDetails(appointmentId, (err, details) => {
+    if (err || !details) {
+      console.error(`notifyPatient(${action}) — couldn't load appointment ${appointmentId}`, err);
+      return;
+    }
+    const email = getAppointmentEmail(action, details);
+    if (!email) return; // e.g. a status with no template (checked_in, completed, etc.)
+    sendEmail({ to: details.patient_email, subject: email.subject, html: email.html });
+  });
+};
+
 // Postgres exclusion_violation (23P01) on overlapping dentist slots is caught
 // centrally by errorMiddleware.errorHandler — no special-casing needed here.
 const bookAppointment = (req, res, next) => {
@@ -22,6 +40,7 @@ const bookAppointment = (req, res, next) => {
   createAppointment(data, (err, appointment) => {
     if (err) return next(err);
     res.status(201).json(appointment);
+    notifyPatient('booked', appointment.id);
   });
 };
 
@@ -79,6 +98,7 @@ const setStatus = (req, res, next) => {
     if (err) return next(err);
     if (!appointment) return res.status(404).json({ message: 'Appointment not found' });
     res.json(appointment);
+    notifyPatient(status, appointment.id); // no-op for statuses with no template (checked_in, completed, ...)
   });
 };
 
@@ -98,6 +118,7 @@ const reschedule = (req, res, next) => {
     rescheduleAppointment(req.params.id, scheduled_start, scheduled_end, (err, updated) => {
       if (err) return next(err);
       res.json(updated);
+      notifyPatient('rescheduled', updated.id);
     });
   });
 };
@@ -106,6 +127,11 @@ const reschedule = (req, res, next) => {
 // dentist and/or reschedule + adjust room/reason together. This is what the
 // receptionist's "Edit appointment" action calls; distinct from `reschedule`
 // above, which only changes time and is also reachable by patients.
+//
+// Email policy: only notify the patient if the dentist or the appointment
+// time actually changed — those are the changes that affect the patient's
+// plans. A pure room/reason correction (e.g. fixing a typo) stays silent so
+// staff aren't spamming patients for internal housekeeping edits.
 const editAppointment = (req, res, next) => {
   const { dentist_id, scheduled_start, scheduled_end, room, reason } = req.body;
   if (!dentist_id || !scheduled_start || !scheduled_end) {
@@ -116,6 +142,11 @@ const editAppointment = (req, res, next) => {
     if (findErr) return next(findErr);
     if (!appointment) return res.status(404).json({ message: 'Appointment not found' });
 
+    const patientFacingChange =
+      String(appointment.dentist_id) !== String(dentist_id) ||
+      new Date(appointment.scheduled_start).getTime() !== new Date(scheduled_start).getTime() ||
+      new Date(appointment.scheduled_end).getTime() !== new Date(scheduled_end).getTime();
+
     updateAppointment(
       req.params.id,
       { dentist_id, scheduled_start, scheduled_end, room: room || null, reason: reason || null },
@@ -123,6 +154,7 @@ const editAppointment = (req, res, next) => {
         if (err) return next(err);
         if (!updated) return res.status(404).json({ message: 'Appointment not found' });
         res.json(updated);
+        if (patientFacingChange) notifyPatient('rescheduled', updated.id);
       },
     );
   });
@@ -140,6 +172,7 @@ const cancelAppointment = (req, res, next) => {
       if (err) return next(err);
       if (!rowCount) return res.status(404).json({ message: 'Appointment not found' });
       res.json({ message: 'Appointment cancelled' });
+      notifyPatient('cancelled', req.params.id);
     });
   });
 };

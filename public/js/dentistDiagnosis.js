@@ -66,6 +66,7 @@
     initCategoryToggle();
     renderLegend();
     document.getElementById('switchPatientBtn').addEventListener('click', showAppointmentPicker);
+    document.getElementById('downloadPatientToothChartBtn').addEventListener('click', downloadActivePatientToothChart);
     document.getElementById('checkupSaveBtn').addEventListener('click', saveCheckup);
     document.getElementById('diagnosisFileInput').addEventListener('change', onDiagnosisFileSelected);
     loadInitialData();
@@ -473,19 +474,30 @@
       /Type:\s*Oral Checkup/i.test(d.diagnosis_text || '');
   }
 
-  function composeCheckupText({ gums, bite, softTissue, hygiene, tmj, notes }) {
+  function composeCheckupText({ pc, hopc, pmhx, pdhx, txPlan, txDone, tca, gums, bite, softTissue, hygiene, tmj, notes }) {
     const parts = ['Type: Oral Checkup'];
+    if (pc) parts.push(`PC: ${pc}`);
+    if (hopc) parts.push(`HoPC: ${hopc}`);
+    if (pmhx) parts.push(`Pmhx: ${pmhx}`);
+    if (pdhx) parts.push(`Pdhx: ${pdhx}`);
     if (gums) parts.push(`Gums: ${gums}`);
     if (bite) parts.push(`Bite: ${bite}`);
     if (softTissue) parts.push(`Soft tissue: ${softTissue}`);
     if (hygiene) parts.push(`Hygiene: ${hygiene}`);
     if (tmj) parts.push(`TMJ: ${tmj}`);
+    if (txPlan) parts.push(`Tx plan: ${txPlan}`);
+    if (txDone) parts.push(`Tx done: ${txDone}`);
+    if (tca) parts.push(`Tca: ${tca}`);
     let text = parts.join(' · ');
     if (notes) text = `${text} — ${notes}`;
     return text;
   }
 
   function resetCheckupForm() {
+    ['checkupPC', 'checkupHoPC', 'checkupPmhx', 'checkupPdhx', 'checkupTxPlan', 'checkupTxDone'].forEach((id) => {
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('checkupTca').value = '';
     ['checkupGums', 'checkupBite', 'checkupSoftTissue', 'checkupHygiene', 'checkupTmj'].forEach((id) => {
       document.getElementById(id).value = '';
     });
@@ -512,6 +524,13 @@
   async function saveCheckup() {
     if (!state.activePatient || !state.activeAppointment) return;
 
+    const pc = document.getElementById('checkupPC').value.trim();
+    const hopc = document.getElementById('checkupHoPC').value.trim();
+    const pmhx = document.getElementById('checkupPmhx').value.trim();
+    const pdhx = document.getElementById('checkupPdhx').value.trim();
+    const txPlan = document.getElementById('checkupTxPlan').value.trim();
+    const txDone = document.getElementById('checkupTxDone').value.trim();
+    const tca = document.getElementById('checkupTca').value.trim();
     const gums = document.getElementById('checkupGums').value;
     const bite = document.getElementById('checkupBite').value;
     const softTissue = document.getElementById('checkupSoftTissue').value;
@@ -519,12 +538,15 @@
     const tmj = document.getElementById('checkupTmj').value;
     const notes = document.getElementById('checkupNotes').value.trim();
 
-    if (!gums && !bite && !softTissue && !hygiene && !tmj && !notes) {
-      showToast('Assess at least one area, or add a note, before saving.');
+    if (!pc && !hopc && !pmhx && !pdhx && !txPlan && !txDone && !tca &&
+        !gums && !bite && !softTissue && !hygiene && !tmj && !notes) {
+      showToast('Assess at least one area, fill in a note, or add a remark before saving.');
       return;
     }
 
-    const diagnosis_text = composeCheckupText({ gums, bite, softTissue, hygiene, tmj, notes });
+    const diagnosis_text = composeCheckupText({
+      pc, hopc, pmhx, pdhx, txPlan, txDone, tca, gums, bite, softTissue, hygiene, tmj, notes,
+    });
     const saveBtn = document.getElementById('checkupSaveBtn');
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving…';
@@ -776,6 +798,41 @@
     openBtn.addEventListener('click', open);
     closeBtn.addEventListener('click', close);
     scrim.addEventListener('click', close);
+  }
+
+  /* ============================================================
+     PDF DOWNLOAD
+     Same pattern used across the patient portal's billing/tooth-chart/
+     prescriptions pages — api.js exposes API_BASE and stores the JWT
+     under 'jino_token'.
+     ============================================================ */
+  async function downloadActivePatientToothChart() {
+    if (!state.activePatient) return;
+    await downloadPdf(
+      `/tooth-chart/patient/${state.activePatient.id}/history/pdf`,
+      `tooth-chart-${state.activePatient.last_name}.pdf`
+    );
+  }
+
+  async function downloadPdf(path, filename) {
+    try {
+      const token = localStorage.getItem('jino_token');
+      const res = await fetch(`${API_BASE}${path}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Could not generate the PDF. Please try again.');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      showToast(err.message || 'Could not download the PDF');
+    }
   }
 
   /* ============================================================

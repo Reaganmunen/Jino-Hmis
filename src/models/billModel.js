@@ -23,6 +23,22 @@ const findBillById = (id, callback) => {
   });
 };
 
+// Used for the invoice PDF — joins in patient name so the template doesn't
+// need a second round-trip. Mirrors the join style already used by
+// findBillsByStatus above.
+const findBillWithPatientDetails = (id, callback) => {
+  const query = `
+    SELECT b.*, p.first_name AS patient_first_name, p.last_name AS patient_last_name
+    FROM "Bill" b
+    JOIN "Patient" p ON p.id = b.patient_id
+    WHERE b.id = $1
+  `;
+  pool.query(query, [id], (err, result) => {
+    if (err) return callback(err);
+    callback(null, result.rows[0]);
+  });
+};
+
 const findBillsByPatient = (patient_id, callback) => {
   const query = `SELECT * FROM "Bill" WHERE patient_id = $1 ORDER BY created_at DESC`;
   pool.query(query, [patient_id], (err, result) => {
@@ -55,4 +71,6 @@ const voidBill = (id, callback) => {
   });
 };
 
-module.exports = { createBill, findBillById, findBillsByPatient, findBillsByStatus, voidBill };
+module.exports = {
+  createBill, findBillById, findBillWithPatientDetails, findBillsByPatient, findBillsByStatus, voidBill,
+};

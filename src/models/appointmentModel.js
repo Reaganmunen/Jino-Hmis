@@ -23,6 +23,26 @@ const findAppointmentById = (id, callback) => {
   });
 };
 
+// Used only for email notifications — joins in what the templates need
+// (patient name/email, dentist name). Deliberately has NO deleted_at filter
+// (unlike findAppointmentById) because we still need to email the patient
+// after a cancel, which sets deleted_at on the row.
+const findAppointmentWithDetails = (id, callback) => {
+  const query = `
+    SELECT a.*,
+           p.first_name AS patient_first_name, p.last_name AS patient_last_name, p.email AS patient_email,
+           d.first_name AS dentist_first_name, d.last_name AS dentist_last_name
+    FROM "Appointment" a
+    JOIN "Patient" p ON p.id = a.patient_id
+    JOIN "User" d ON d.id = a.dentist_id
+    WHERE a.id = $1
+  `;
+  pool.query(query, [id], (err, result) => {
+    if (err) return callback(err);
+    callback(null, result.rows[0]);
+  });
+};
+
 const findAppointmentsByPatient = (patient_id, callback) => {
   const query = `
     SELECT * FROM "Appointment"
@@ -127,6 +147,7 @@ const softDeleteAppointment = (id, callback) => {
 module.exports = {
   createAppointment,
   findAppointmentById,
+  findAppointmentWithDetails,
   findAppointmentsByPatient,
   findAppointmentsByDentist,
   findAppointmentsByStatus,

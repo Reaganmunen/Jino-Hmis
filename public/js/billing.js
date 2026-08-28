@@ -56,8 +56,53 @@
     initSidebar();
     initPayModal();
     initClaimModal();
+    initStatementButton();
     loadBilling();
   });
+
+  function initStatementButton() {
+    const btn = document.getElementById('downloadStatementBtn');
+    if (btn) btn.addEventListener('click', () => downloadStatementPdf());
+  }
+
+  async function downloadStatementPdf() {
+    if (!state.patientId) return;
+    await downloadPdf(`/bills/patient/${state.patientId}/statement/pdf`, `statement.pdf`);
+  }
+
+  async function downloadBillPdf(billId) {
+    await downloadPdf(`/bills/${billId}/pdf`, `invoice-${shortId(billId)}.pdf`);
+  }
+
+  // Shared PDF-download helper: fetchMethod isn't used here because it
+  // expects a JSON body, not a binary blob. This hits the API directly with
+  // the same bearer token fetchMethod uses, then triggers a normal browser
+  // "Save As" via a throwaway <a> — matches the "download then print" flow
+  // the receptionist asked for (patient's own browser/PDF viewer handles print).
+  //
+  // ASSUMPTION: reuses whatever token key api.js's fetchMethod reads from
+  // localStorage. If fetchMethod uses a different key or an auth header
+  // helper, swap the `localStorage.getItem('token')` line below to match.
+  async function downloadPdf(path, filename) {
+    try {
+      const token = localStorage.getItem('jino_token');
+      const res = await fetch(`${API_BASE}${path}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Could not generate the PDF. Please try again.');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      showToast(err.message || 'Could not download the PDF');
+    }
+  }
 
   async function loadBilling() {
     try {
@@ -290,8 +335,8 @@
       </div>
       ${txnHtml ? `<div class="bill-section"><p class="bill-section-title">M-Pesa activity</p>${txnHtml}</div>` : ''}
       ${claimHtml}
-      ${bill.status !== 'void' && balance > 0 ? `
-        <div class="bill-actions">
+      <div class="bill-actions">
+        ${bill.status !== 'void' && balance > 0 ? `
           <button class="btn btn-primary btn-sm" data-action="pay" data-id="${bill.id}"
             ${pendingTxn ? 'disabled title="A payment is already in progress for this bill"' : ''}>
             Pay ${formatMoney(balance)} via M-Pesa
@@ -301,8 +346,11 @@
               ${claim ? 'Submit a new claim' : 'Pay with insurance'}
             </button>
           ` : ''}
-        </div>
-      ` : ''}
+        ` : ''}
+        <button class="btn btn-outline btn-sm" data-action="print-bill" data-id="${bill.id}">
+          Download invoice
+        </button>
+      </div>
     `;
 
     const payBtn = body.querySelector('[data-action="pay"]');
@@ -310,6 +358,9 @@
 
     const claimBtn = body.querySelector('[data-action="claim"]');
     if (claimBtn) claimBtn.addEventListener('click', () => openClaimModal(bill.id));
+
+    const printBtn = body.querySelector('[data-action="print-bill"]');
+    if (printBtn) printBtn.addEventListener('click', () => downloadBillPdf(bill.id));
   }
 
   /* ============================================================

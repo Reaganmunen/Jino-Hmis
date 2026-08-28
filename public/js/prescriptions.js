@@ -29,8 +29,46 @@
      ============================================================ */
   document.addEventListener('DOMContentLoaded', () => {
     initSidebar();
+    initPrintButton();
     loadPrescriptions();
   });
+
+  function initPrintButton() {
+    const btn = document.getElementById('downloadTodayRxBtn');
+    if (btn) btn.addEventListener('click', downloadTodayPrescriptionPdf);
+  }
+
+  // "The day's prescription" — no date param sent, so the backend defaults
+  // to today (Africa/Nairobi). If a patient had more than one visit today
+  // this pulls every prescription from today, not just the latest.
+  async function downloadTodayPrescriptionPdf() {
+    if (!state.patientId) return;
+    await downloadPdf(`/prescriptions/patient/${state.patientId}/pdf`, 'prescription-today.pdf');
+  }
+
+  // Same pattern/assumptions as billing.js's downloadPdf — see the comment
+  // there. Duplicated rather than shared because these two pages don't
+  // currently share a common utilities file.
+  async function downloadPdf(path, filename) {
+    try {
+      const token = localStorage.getItem('jino_token');
+      const res = await fetch(`${API_BASE}${path}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Could not generate the PDF. Please try again.');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      showToast(err.message || 'Could not download the PDF');
+    }
+  }
 
   async function loadPrescriptions() {
     try {

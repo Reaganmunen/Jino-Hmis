@@ -57,8 +57,44 @@
   document.addEventListener('DOMContentLoaded', () => {
     initSidebar();
     initCategoryToggle();
+    initPrintButton();
     loadPage();
   });
+
+  function initPrintButton() {
+    const btn = document.getElementById('downloadToothHistoryBtn');
+    if (btn) btn.addEventListener('click', downloadToothHistoryPdf);
+  }
+
+  // Pulls the FULL ToothChart history (every recorded observation, every
+  // tooth) — same underlying query as the "history" endpoint, not just the
+  // current-condition snapshot the odontogram renders from.
+  async function downloadToothHistoryPdf() {
+    if (!state.patientId) return;
+    await downloadPdf(`/tooth-chart/patient/${state.patientId}/history/pdf`, 'tooth-chart-history.pdf');
+  }
+
+  // Same pattern/assumptions as billing.js's downloadPdf — see the comment there.
+  async function downloadPdf(path, filename) {
+    try {
+      const token = localStorage.getItem('jino_token');
+      const res = await fetch(`${API_BASE}${path}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Could not generate the PDF. Please try again.');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      showToast(err.message || 'Could not download the PDF');
+    }
+  }
 
   async function loadPage() {
     try {

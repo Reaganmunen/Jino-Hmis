@@ -113,6 +113,7 @@
               <button type="button" class="segmented-opt is-active" data-category="medical">Medical</button>
               <button type="button" class="segmented-opt" data-category="cosmetic">Cosmetic</button>
             </div>
+            <button class="btn btn-outline btn-sm" id="downloadPatientToothChartBtn" type="button">Download tooth chart</button>
             <button class="panel-link" id="switchPatientBtn" type="button">Switch patient</button>
           </div>
         </div>
@@ -150,6 +151,40 @@
         </div>
 
         <div class="checkup-grid">
+          <div>
+            <label class="field-label" for="checkupPC">PC (Presenting Complaint)</label>
+            <textarea class="field-input" id="checkupPC" rows="2" placeholder="What the patient came in for…"></textarea>
+          </div>
+          <div>
+            <label class="field-label" for="checkupHoPC">HoPC (History of Presenting Complaint)</label>
+            <textarea class="field-input" id="checkupHoPC" rows="2" placeholder="Onset, duration, triggers…"></textarea>
+          </div>
+          <div>
+            <label class="field-label" for="checkupPmhx">Pmhx (Past Medical History)</label>
+            <textarea class="field-input" id="checkupPmhx" rows="2" placeholder="Relevant medical conditions, medications, allergies…"></textarea>
+          </div>
+          <div>
+            <label class="field-label" for="checkupPdhx">Pdhx (Past Dental History)</label>
+            <textarea class="field-input" id="checkupPdhx" rows="2" placeholder="Previous dental treatment, extractions, etc…"></textarea>
+          </div>
+        </div>
+
+        <div class="checkup-grid" style="margin-top:14px;">
+          <div>
+            <label class="field-label" for="checkupTxPlan">Tx plan (Treatment plan)</label>
+            <textarea class="field-input" id="checkupTxPlan" rows="2" placeholder="Planned treatment for this patient…"></textarea>
+          </div>
+          <div>
+            <label class="field-label" for="checkupTxDone">Tx done (Treatment done)</label>
+            <textarea class="field-input" id="checkupTxDone" rows="2" placeholder="Treatment carried out this visit…"></textarea>
+          </div>
+          <div>
+            <label class="field-label" for="checkupTca">Tca (To Come Again)</label>
+            <input class="field-input" type="text" id="checkupTca" placeholder="e.g. 2 weeks, or a specific date">
+          </div>
+        </div>
+
+        <div class="checkup-grid" style="margin-top:14px;">
           <div>
             <label class="field-label" for="checkupGums">Gums / Periodontal</label>
             <select class="field-input" id="checkupGums">

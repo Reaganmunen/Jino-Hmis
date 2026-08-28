@@ -319,8 +319,11 @@
         <p class="bill-section-title">M-Pesa activity</p>
         ${txnHtml}
       </div>
-      ${!isVoid ? `
-        <div class="bill-actions">
+      <div class="bill-actions">
+        <button class="btn btn-outline btn-sm" data-action="print-invoice" data-id="${bill.id}">
+          Print invoice
+        </button>
+        ${!isVoid ? `
           <button class="btn btn-primary btn-sm" data-action="record-pay" data-id="${bill.id}" ${balance <= 0 ? 'disabled' : ''}>
             Record payment
           </button>
@@ -329,8 +332,8 @@
             ${pendingTxn ? 'title="A payment is already in progress for this bill"' : ''}>
             Send STK push
           </button>
-        </div>
-      ` : ''}
+        ` : ''}
+      </div>
     `;
 
     const addItemBtn = body.querySelector('[data-action="add-item"]');
@@ -339,6 +342,10 @@
     body.querySelectorAll('[data-action="remove-item"]').forEach((btn) => {
       btn.addEventListener('click', () => removeLineItem(btn.getAttribute('data-id'), bill.id));
     });
+
+    const printBtn = body.querySelector('[data-action="print-invoice"]');
+    if (printBtn) printBtn.addEventListener('click', () =>
+      downloadPdf(`/bills/${bill.id}/pdf`, `invoice-${shortId(bill.id)}.pdf`));
 
     const payBtn = body.querySelector('[data-action="record-pay"]');
     if (payBtn) payBtn.addEventListener('click', () => openRecordPayModal(bill.id));
@@ -723,6 +730,33 @@
         link.addEventListener('click', closeSidebar);
       }
     });
+  }
+
+  /* ============================================================
+     PDF DOWNLOAD
+     Same pattern used across the patient portal's billing/tooth-chart/
+     prescriptions pages — api.js exposes API_BASE and stores the JWT
+     under 'jino_token'.
+     ============================================================ */
+  async function downloadPdf(path, filename) {
+    try {
+      const token = localStorage.getItem('jino_token');
+      const res = await fetch(`${API_BASE}${path}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Could not generate the PDF. Please try again.');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      showToast(err.message || 'Could not download the PDF');
+    }
   }
 
   /* ============================================================
