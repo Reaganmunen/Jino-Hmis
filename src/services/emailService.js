@@ -1,12 +1,17 @@
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false, // STARTTLS — upgrades to encrypted after connecting, unlike port 465's implicit SSL
   auth: {
     user: process.env.CLINIC_GMAIL_USER,
     pass: process.env.CLINIC_GMAIL_APP_PASSWORD,
   },
-  family: 4, // force IPv4 — Render's network can't route IPv6, causes ENETUNREACH
+  family: 4, // force IPv4 — avoids ENETUNREACH on Render
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 10000,
 });
 
 const sendEmail = ({ to, subject, html }) => {
