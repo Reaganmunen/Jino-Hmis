@@ -25,6 +25,11 @@
   flex:0 0 64px;font-family:'IBM Plex Mono',ui-monospace,monospace;
   font-size:12.5px;font-weight:600;color:var(--slate-700);
 }
+/* Upcoming list rows carry "MMM D · h:mm AM" instead of just a time, since
+   they can span a month — needs more room than the 64px today-only column. */
+.sched-time-dated{
+  flex:0 0 92px;font-size:11.5px;white-space:nowrap;
+}
 .sched-avatar{
   flex:0 0 auto;width:36px;height:36px;border-radius:100px;
   background:var(--blue-100);color:var(--blue-600);

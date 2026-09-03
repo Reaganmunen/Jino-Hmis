@@ -152,16 +152,23 @@
     });
   }
 
+  // Shows the soonest upcoming appointments over the next month, capped at
+  // 10 rows so the panel doesn't grow unbounded on a busy clinic. Sorted
+  // soonest-first, so the slice keeps the nearest 10, not an arbitrary 10.
+  const UPCOMING_WINDOW_DAYS = 30;
+  const UPCOMING_MAX_ROWS = 10;
+
   function renderUpcoming() {
     const list = document.getElementById('upcomingList');
     list.innerHTML = '';
 
     const upcoming = state.appointments
-      .filter((a) => isWithinNextDays(a.scheduled_start, 3) && a.status !== 'cancelled')
-      .sort((a, b) => new Date(a.scheduled_start) - new Date(b.scheduled_start));
+      .filter((a) => isWithinNextDays(a.scheduled_start, UPCOMING_WINDOW_DAYS) && a.status !== 'cancelled')
+      .sort((a, b) => new Date(a.scheduled_start) - new Date(b.scheduled_start))
+      .slice(0, UPCOMING_MAX_ROWS);
 
     if (!upcoming.length) {
-      list.innerHTML = '<div class="empty-state">Nothing booked in the next 3 days.</div>';
+      list.innerHTML = '<div class="empty-state">Nothing booked in the next month.</div>';
       return;
     }
 

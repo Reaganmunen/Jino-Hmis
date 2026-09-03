@@ -305,6 +305,41 @@
     font-size:13px;color:var(--slate-500);
   }
 
+  /* ---------- Hero image carousel (large scrolling cards behind the mockups) ---------- */
+  .hero-rail{
+    position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;
+    border-radius:var(--radius-lg);
+    -webkit-mask-image:linear-gradient(to bottom, transparent, black 12%, black 88%, transparent);
+    mask-image:linear-gradient(to bottom, transparent, black 12%, black 88%, transparent);
+  }
+  .hero-rail-track{
+    display:flex;flex-direction:column;align-items:center;gap:26px;
+    padding:30px 6% 30px;
+    animation:heroRailScroll 26s linear infinite;
+    will-change:transform;
+  }
+  @keyframes heroRailScroll{
+    from{transform:translateY(0);}
+    to{transform:translateY(-50%);}
+  }
+  .hero-rail-tile{
+    position:relative;flex:none;width:100%;aspect-ratio:16/10;border-radius:var(--radius-lg);
+    overflow:hidden;box-shadow:var(--shadow-card);
+    background:conic-gradient(from 0deg, var(--blue-100), var(--white), var(--slate-200), var(--blue-50), var(--blue-100));
+    border:1px solid rgba(255,255,255,0.6);
+  }
+  .hero-rail-tile:nth-child(odd){transform:rotate(-1.6deg) translateX(-3%);}
+  .hero-rail-tile:nth-child(even){transform:rotate(1.6deg) translateX(3%);}
+  .hero-rail-tile img{width:100%;height:100%;object-fit:cover;position:relative;z-index:1;display:block;}
+  .hero-rail-tile::after{
+    content:"";position:absolute;inset:0;z-index:2;border-radius:inherit;
+    background:linear-gradient(155deg, rgba(255,255,255,0.38), rgba(255,255,255,0) 42%);
+    -webkit-backdrop-filter:blur(3px) saturate(130%);
+    backdrop-filter:blur(3px) saturate(130%);
+    border:1px solid rgba(255,255,255,0.35);
+  }
+  @media (prefers-reduced-motion:reduce){ .hero-rail-track{animation:none;} }
+
   [data-reveal]{opacity:0;transform:translateY(14px);transition:opacity .5s ease, transform .5s ease;}
   [data-reveal].in{opacity:1;transform:translateY(0);}
   @media (prefers-reduced-motion:reduce){
@@ -355,6 +390,18 @@
     </div>
 
     <div class="hero-visual">
+      <div class="hero-rail" aria-hidden="true">
+        <div class="hero-rail-track">
+          <div class="hero-rail-tile"><img src="assets/image1.jpg" alt=""></div>
+          <div class="hero-rail-tile"><img src="assets/image2.jpg" alt=""></div>
+          <div class="hero-rail-tile"><img src="assets/image3.jpg" alt=""></div>
+          <div class="hero-rail-tile"><img src="assets/image4.jpg" alt=""></div>
+          <div class="hero-rail-tile"><img src="assets/image1.jpg" alt=""></div>
+          <div class="hero-rail-tile"><img src="assets/image2.jpg" alt=""></div>
+          <div class="hero-rail-tile"><img src="assets/image3.jpg" alt=""></div>
+          <div class="hero-rail-tile"><img src="assets/image4.jpg" alt=""></div>
+        </div>
+      </div>
       <div class="mock-card mock-appt">
         <div class="mock-appt-head">
           <span class="t">Today's schedule</span>
