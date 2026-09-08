@@ -57,13 +57,18 @@
     files: [],             // patient files (X-rays, etc.) tagged to this appointment
     selectedTooth: null,  // currently open-in-modal tooth (FDI number as string)
     activeCategory: 'medical', // which category the odontogram/timeline are showing
+    pickerTab: 'today',    // 'today' | 'upcoming' | 'past' — ignored while pickerSearch is non-empty
+    pickerSearch: '',      // patient-name search, overrides the tab and searches the full fetched range
   };
+
+  const TAB_LABEL = { today: 'today', upcoming: 'upcoming', past: 'in the past' };
 
   document.addEventListener('DOMContentLoaded', () => {
     initSidebar();
     renderTopbarAvatar(`Dr. ${sessionUser.first_name} ${sessionUser.last_name}`);
     initToothModal();
     initCategoryToggle();
+    initAppointmentPickerControls();
     renderLegend();
     document.getElementById('switchPatientBtn').addEventListener('click', showAppointmentPicker);
     document.getElementById('downloadPatientToothChartBtn').addEventListener('click', downloadActivePatientToothChart);
@@ -77,7 +82,7 @@
      ============================================================ */
   async function loadInitialData() {
     try {
-      const { from, to } = todayRangeIso();
+      const { from, to } = pickerRangeIso();
       const [appointments, patients, services] = await Promise.all([
         fetchMethod(`/appointments/dentist/${state.dentistId}?from=${from}&to=${to}`, 'GET', null, true),
         fetchMethod('/patients', 'GET', null, true),
@@ -110,28 +115,104 @@
 
   /* ============================================================
      APPOINTMENT PICKER
+     ------------------------------------------------------------
+     state.appointments holds everything fetched for the wide
+     pickerRangeIso() window (past + future). Which subset is shown
+     is computed on every render from state.pickerTab / pickerSearch
+     rather than re-fetched — the backend already returned the full
+     range, so narrowing is just client-side filtering.
      ============================================================ */
+  function isSameDay(a, b) {
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  }
+
+  function getFilteredAppointments() {
+    const query = state.pickerSearch.trim().toLowerCase();
+
+    if (query) {
+      const matches = state.appointments.filter((appt) => {
+        const patient = state.patientsById[appt.patient_id];
+        const name = patient ? `${patient.first_name} ${patient.last_name}`.toLowerCase() : '';
+        return name.includes(query);
+      });
+      // Searching spans the whole fetched range (any date), so sort by
+      // closeness to now rather than status/tab — most clinically
+      // relevant appointment (nearest past or next upcoming) first.
+      const now = Date.now();
+      return [...matches].sort((a, b) =>
+        Math.abs(new Date(a.scheduled_start) - now) - Math.abs(new Date(b.scheduled_start) - now));
+    }
+
+    const now = new Date();
+    if (state.pickerTab === 'upcoming') {
+      return state.appointments
+        .filter((appt) => new Date(appt.scheduled_start) > now && !isSameDay(new Date(appt.scheduled_start), now))
+        .sort((a, b) => new Date(a.scheduled_start) - new Date(b.scheduled_start));
+    }
+    if (state.pickerTab === 'past') {
+      return state.appointments
+        .filter((appt) => new Date(appt.scheduled_start) < now && !isSameDay(new Date(appt.scheduled_start), now))
+        .sort((a, b) => new Date(b.scheduled_start) - new Date(a.scheduled_start)); // most recent past first
+    }
+    // 'today'
+    return state.appointments
+      .filter((appt) => isSameDay(new Date(appt.scheduled_start), now))
+      .sort((a, b) => new Date(a.scheduled_start) - new Date(b.scheduled_start));
+  }
+
+  function initAppointmentPickerControls() {
+    const tabToggle = document.getElementById('apptTabToggle');
+    if (tabToggle) {
+      tabToggle.querySelectorAll('.segmented-opt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const tab = btn.getAttribute('data-tab');
+          if (tab === state.pickerTab) return;
+          state.pickerTab = tab;
+          tabToggle.querySelectorAll('.segmented-opt').forEach((b) => b.classList.toggle('is-active', b === btn));
+          renderAppointmentPicker();
+        });
+      });
+    }
+
+    const searchInput = document.getElementById('apptSearchInput');
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        state.pickerSearch = searchInput.value;
+        renderAppointmentPicker();
+      });
+    }
+  }
+
   function renderAppointmentPicker() {
     const list = document.getElementById('apptPickerList');
-    document.getElementById('apptPickerCount').textContent =
-      `${state.appointments.length} appointment${state.appointments.length === 1 ? '' : 's'} today`;
+    const filtered = getFilteredAppointments();
+    const query = state.pickerSearch.trim();
 
-    if (!state.appointments.length) {
-      list.innerHTML = '<div class="empty-state">No appointments scheduled for today.</div>';
+    document.getElementById('apptPickerCount').textContent = query
+      ? `${filtered.length} match${filtered.length === 1 ? '' : 'es'} for "${query}"`
+      : `${filtered.length} appointment${filtered.length === 1 ? '' : 's'} ${TAB_LABEL[state.pickerTab]}`;
+
+    if (!filtered.length) {
+      list.innerHTML = `<div class="empty-state">${query ? 'No appointments match that name.' : 'Nothing in this range.'}</div>`;
       return;
     }
 
+    // Once we're outside the "today" tab (or searching across all
+    // dates), the time alone is ambiguous — show the date too.
+    const showDate = !!query || state.pickerTab !== 'today';
+
     list.innerHTML = '';
-    state.appointments.forEach((appt) => {
+    filtered.forEach((appt) => {
       const patient = state.patientsById[appt.patient_id];
       const patientName = patient ? `${patient.first_name} ${patient.last_name}` : 'Unknown patient';
       const time = new Date(appt.scheduled_start).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      const timeLabel = showDate ? `${formatDate(appt.scheduled_start)}<br>${time}` : time;
 
       const row = document.createElement('div');
       row.className = 'sched-item is-selectable';
       if (state.activeAppointment && state.activeAppointment.id === appt.id) row.classList.add('is-active-appt');
       row.innerHTML = `
-        <div class="sched-time">${escapeHtml(time)}</div>
+        <div class="sched-time">${timeLabel}</div>
         <div class="sched-avatar">${initialsOf(patientName)}</div>
         <div class="sched-mid">
           <p class="t">${escapeHtml(patientName)}</p>
@@ -838,11 +919,16 @@
   /* ============================================================
      UTILITIES
      ============================================================ */
-  function todayRangeIso() {
+  // Wide enough that "Past" and "Upcoming" (and cross-date search) have
+  // real data to show, without pulling the dentist's entire appointment
+  // history on every page load. Adjust the day counts if a clinic needs
+  // to look back further than a year.
+  function pickerRangeIso() {
     const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
-    return { from: start.toISOString(), to: end.toISOString() };
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const from = new Date(startOfToday.getTime() - 365 * 24 * 60 * 60 * 1000);
+    const to = new Date(startOfToday.getTime() + 91 * 24 * 60 * 60 * 1000);
+    return { from: from.toISOString(), to: to.toISOString() };
   }
 
   function formatDate(iso) {

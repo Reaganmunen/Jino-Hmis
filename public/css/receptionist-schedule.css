@@ -164,4 +164,62 @@
   .sched-toolbar{flex-direction:column;align-items:stretch;}
   .sched-toolbar-right{justify-content:space-between;}
   .week-grid{grid-template-columns:repeat(7, minmax(120px, 1fr));}
+  .month-day-cell{min-height:72px;padding:6px;}
+  .year-grid{grid-template-columns:1fr;}
 }
+
+/* ---- month view: calendar grid, click a day to drill into Day view ---- */
+.month-grid{
+  display:grid;grid-template-columns:repeat(7, 1fr);gap:1px;
+  background:var(--slate-100);border:1px solid var(--slate-100);border-radius:var(--radius-md,10px);
+  overflow:hidden;
+}
+.month-weekday{
+  background:var(--white);padding:8px 10px;font-size:11px;font-weight:700;letter-spacing:.03em;
+  text-transform:uppercase;color:var(--slate-500);text-align:center;
+}
+.month-day-cell{
+  background:var(--white);min-height:96px;padding:8px;display:flex;flex-direction:column;gap:4px;
+  border:none;text-align:left;cursor:pointer;font-family:inherit;transition:background .12s ease;
+}
+.month-day-cell:hover{background:var(--slate-100);}
+.month-day-cell.is-other-month{background:var(--slate-100);opacity:.55;}
+.month-day-num{font-size:12.5px;font-weight:700;color:var(--navy-950);}
+.month-day-cell.is-today .month-day-num{
+  display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;
+  border-radius:100px;background:var(--blue-600);color:#fff;
+}
+.month-day-appts{display:flex;flex-direction:column;gap:3px;}
+.month-appt-chip{
+  font-size:10px;font-weight:600;border-radius:6px;padding:3px 6px;
+  border-left:3px solid var(--slate-500);background:var(--slate-100);color:var(--navy-950);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.month-appt-chip.status-pending{border-left-color:var(--amber-700);background:var(--amber-50);}
+.month-appt-chip.status-confirmed{border-left-color:var(--blue-600);background:var(--blue-50);}
+.month-appt-chip.status-checked_in{border-left-color:var(--green-700);background:var(--green-50);}
+.month-appt-chip.status-completed{border-left-color:var(--slate-700);background:var(--slate-100);}
+.month-appt-chip.status-no_show{border-left-color:var(--red-700);background:var(--red-50);}
+.month-appt-chip.status-cancelled{border-left-color:var(--slate-500);opacity:.6;}
+.month-appt-more{font-size:9.5px;font-weight:700;color:var(--slate-500);padding-left:2px;}
+
+/* ---- year view: 12 mini-months, click one to drill into Month view ---- */
+.year-grid{
+  display:grid;grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));gap:14px;
+}
+.year-month-card{
+  border:1px solid var(--slate-100);border-radius:var(--radius-md,10px);background:var(--white);
+  padding:12px;text-align:left;cursor:pointer;font-family:inherit;box-shadow:var(--shadow-soft);
+  transition:border-color .12s ease;
+}
+.year-month-card:hover{border-color:var(--blue-600);}
+.year-month-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.year-month-name{font-size:13px;font-weight:700;color:var(--navy-950);}
+.year-month-count{font-size:11px;font-weight:700;color:var(--blue-600);background:var(--blue-100);border-radius:100px;padding:2px 8px;}
+.year-month-grid{display:grid;grid-template-columns:repeat(7, 1fr);gap:2px;}
+.year-day-cell{
+  font-size:9.5px;font-weight:600;color:var(--slate-500);text-align:center;padding:3px 0;border-radius:4px;
+}
+.year-day-cell.is-other-month{opacity:.25;}
+.year-day-cell.is-today{background:var(--blue-600);color:#fff;font-weight:700;}
+.year-day-cell.has-appts:not(.is-today){background:var(--blue-100);color:var(--blue-600);font-weight:700;}

@@ -163,6 +163,10 @@
             <span class="quick-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 19c.6-3.3 3-5 5.5-5s4.9 1.7 5.5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
             View all patients
           </a>
+          <button class="quick-btn" id="setAvailabilityBtn" type="button">
+            <span class="quick-ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2.2" stroke="currentColor" stroke-width="1.7"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+            Set dentist availability
+          </button>
         </div>
       </section>
 
@@ -205,6 +209,57 @@
       </section>
 
     </main>
+  </div>
+</div>
+
+<!-- ============ SET DENTIST AVAILABILITY MODAL ============ -->
+<div class="modal-scrim" id="availabilityModalScrim">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="availabilityModalTitle">
+    <div class="modal-head">
+      <div>
+        <p class="modal-kicker">Scheduling</p>
+        <h2 id="availabilityModalTitle">Set dentist availability</h2>
+      </div>
+      <button class="icon-link-btn" id="availabilityModalClose" type="button" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <div style="margin-top:18px;">
+      <label class="field-label" for="availDentistSelect">Dentist</label>
+      <select class="field-input" id="availDentistSelect"></select>
+    </div>
+
+    <div style="margin-top:16px;">
+      <label class="field-label">Working days</label>
+      <div class="day-checks" id="availDayChecks">
+        <label class="day-chip"><input type="checkbox" value="1"> Mon</label>
+        <label class="day-chip"><input type="checkbox" value="2"> Tue</label>
+        <label class="day-chip"><input type="checkbox" value="3"> Wed</label>
+        <label class="day-chip"><input type="checkbox" value="4"> Thu</label>
+        <label class="day-chip"><input type="checkbox" value="5"> Fri</label>
+        <label class="day-chip"><input type="checkbox" value="6"> Sat</label>
+        <label class="day-chip"><input type="checkbox" value="0"> Sun</label>
+      </div>
+    </div>
+
+    <div class="form-grid" style="margin-top:16px;margin-bottom:0;">
+      <div>
+        <label class="field-label" for="availStartTime">Start time</label>
+        <input class="field-input" type="time" id="availStartTime" value="09:00">
+      </div>
+      <div>
+        <label class="field-label" for="availEndTime">End time</label>
+        <input class="field-input" type="time" id="availEndTime" value="17:00">
+      </div>
+    </div>
+
+    <p class="field-hint">This repeats every week from now on — there's no separate month/year setting to pick.</p>
+
+    <div class="modal-foot">
+      <button class="btn btn-outline" id="availabilityCancelBtn" type="button">Cancel</button>
+      <button class="btn btn-primary" id="availabilitySaveBtn" type="button">Save availability</button>
+    </div>
   </div>
 </div>
 

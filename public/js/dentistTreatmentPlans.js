@@ -60,7 +60,7 @@
     dentistId: sessionUser.id,
     patientsById: {},
     services: [],
-    appointments: [],       // today's appointments, for the picker
+    appointments: [],       // everything in pickerRangeIso()'s window, for the picker
     activeAppointment: null,
     activePatient: null,
     activePlans: [],        // dentist-wide, approved/in_progress only
@@ -68,13 +68,18 @@
     planItemsByPlanId: {},  // lazily loaded per plan
     expandedPlanId: null,
     newItemPlanId: null,    // which plan the item modal is adding to
+    pickerTab: 'today',     // 'today' | 'upcoming' | 'past' — ignored while pickerSearch is non-empty
+    pickerSearch: '',       // patient-name search, overrides the tab and searches the full fetched range
   };
+
+  const TAB_LABEL = { today: 'today', upcoming: 'upcoming', past: 'in the past' };
 
   document.addEventListener('DOMContentLoaded', () => {
     initSidebar();
     renderTopbarAvatar(`Dr. ${sessionUser.first_name} ${sessionUser.last_name}`);
     initPlanModal();
     initItemModal();
+    initAppointmentPickerControls();
     populateToothSelect();
     document.getElementById('newPlanBtn').addEventListener('click', () => openPlanModal());
     loadInitialData();
@@ -85,7 +90,7 @@
      ============================================================ */
   async function loadInitialData() {
     try {
-      const { from, to } = todayRangeIso();
+      const { from, to } = pickerRangeIso();
       const [appointments, patients, services, activePlans] = await Promise.all([
         fetchMethod(`/appointments/dentist/${state.dentistId}?from=${from}&to=${to}`, 'GET', null, true),
         fetchMethod('/patients', 'GET', null, true),
@@ -178,21 +183,92 @@
   }
 
   /* ============================================================
-     APPOINTMENT PICKER (today's patients)
+     APPOINTMENT PICKER
+     ------------------------------------------------------------
+     state.appointments holds everything fetched for the wide
+     pickerRangeIso() window (past + future). Which subset is shown
+     is computed on every render from state.pickerTab / pickerSearch
+     rather than re-fetched — the backend already returned the full
+     range, so narrowing is just client-side filtering.
      ============================================================ */
+  function isSameDay(a, b) {
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  }
+
+  function getFilteredAppointments() {
+    const query = state.pickerSearch.trim().toLowerCase();
+
+    if (query) {
+      const matches = state.appointments.filter((a) => patientName(a.patient_id).toLowerCase().includes(query));
+      // Searching spans the whole fetched range (any date), so sort by
+      // closeness to now rather than status/tab — most clinically
+      // relevant appointment (nearest past or next upcoming) first.
+      const now = Date.now();
+      return [...matches].sort((a, b) =>
+        Math.abs(new Date(a.scheduled_start) - now) - Math.abs(new Date(b.scheduled_start) - now));
+    }
+
+    const now = new Date();
+    if (state.pickerTab === 'upcoming') {
+      return state.appointments
+        .filter((a) => new Date(a.scheduled_start) > now && !isSameDay(new Date(a.scheduled_start), now))
+        .sort((a, b) => new Date(a.scheduled_start) - new Date(b.scheduled_start));
+    }
+    if (state.pickerTab === 'past') {
+      return state.appointments
+        .filter((a) => new Date(a.scheduled_start) < now && !isSameDay(new Date(a.scheduled_start), now))
+        .sort((a, b) => new Date(b.scheduled_start) - new Date(a.scheduled_start)); // most recent past first
+    }
+    // 'today'
+    return state.appointments
+      .filter((a) => isSameDay(new Date(a.scheduled_start), now))
+      .sort((a, b) => new Date(a.scheduled_start) - new Date(b.scheduled_start));
+  }
+
+  function initAppointmentPickerControls() {
+    const tabToggle = document.getElementById('apptTabToggle');
+    if (tabToggle) {
+      tabToggle.querySelectorAll('.segmented-opt').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const tab = btn.getAttribute('data-tab');
+          if (tab === state.pickerTab) return;
+          state.pickerTab = tab;
+          tabToggle.querySelectorAll('.segmented-opt').forEach((b) => b.classList.toggle('is-active', b === btn));
+          renderAppointmentPicker();
+        });
+      });
+    }
+
+    const searchInput = document.getElementById('apptSearchInput');
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        state.pickerSearch = searchInput.value;
+        renderAppointmentPicker();
+      });
+    }
+  }
+
   function renderAppointmentPicker() {
     const list = document.getElementById('apptPickerList');
-    document.getElementById('apptPickerCount').textContent =
-      `${state.appointments.length} appointment${state.appointments.length === 1 ? '' : 's'} today`;
+    const filtered = getFilteredAppointments();
+    const query = state.pickerSearch.trim();
 
-    if (!state.appointments.length) {
-      list.innerHTML = '<div class="empty-state">No appointments today.</div>';
+    document.getElementById('apptPickerCount').textContent = query
+      ? `${filtered.length} match${filtered.length === 1 ? '' : 'es'} for "${query}"`
+      : `${filtered.length} appointment${filtered.length === 1 ? '' : 's'} ${TAB_LABEL[state.pickerTab]}`;
+
+    if (!filtered.length) {
+      list.innerHTML = `<div class="empty-state">${query ? 'No appointments match that name.' : 'Nothing in this range.'}</div>`;
       return;
     }
 
-    list.innerHTML = state.appointments.map((a) => `
+    // Once we're outside the "today" tab (or searching across all
+    // dates), the time alone is ambiguous — show the date too.
+    const showDate = !!query || state.pickerTab !== 'today';
+
+    list.innerHTML = filtered.map((a) => `
       <button class="sched-item" type="button" data-appt-id="${a.id}">
-        <span class="sched-time">${formatTime(a.scheduled_start)}</span>
+        <span class="sched-time">${showDate ? `${escapeHtml(formatDate(a.scheduled_start))} · ` : ''}${formatTime(a.scheduled_start)}</span>
         <span class="sched-patient">${escapeHtml(patientName(a.patient_id))}</span>
         ${a.reason ? `<span class="sched-reason">${escapeHtml(a.reason)}</span>` : ''}
       </button>
@@ -200,7 +276,7 @@
 
     list.querySelectorAll('[data-appt-id]').forEach((btn) => {
       btn.addEventListener('click', () => {
-        const appt = state.appointments.find((a) => String(a.id) === btn.getAttribute('data-appt-id'));
+        const appt = filtered.find((a) => String(a.id) === btn.getAttribute('data-appt-id'));
         const patient = appt ? state.patientsById[appt.patient_id] : null;
         if (patient) selectPatient(patient, appt);
       });
@@ -393,7 +469,7 @@
 
   function openPlanModal() {
     if (!state.activePatient) {
-      showToast('Pick a patient from today\'s appointments (or an active plan) first.');
+      showToast('Pick a patient from the appointments list (or an active plan) first.');
       return;
     }
     document.getElementById('planModalPatientName').textContent =
@@ -553,11 +629,16 @@
   /* ============================================================
      UTILITIES
      ============================================================ */
-  function todayRangeIso() {
+  // Wide enough that "Past" and "Upcoming" (and cross-date search) have
+  // real data to show, without pulling the dentist's entire appointment
+  // history on every page load. Adjust the day counts if a clinic needs
+  // to look back further than a year.
+  function pickerRangeIso() {
     const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const end = new Date(start.getTime() + 24 * 60 * 60 * 1000);
-    return { from: start.toISOString(), to: end.toISOString() };
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const from = new Date(startOfToday.getTime() - 365 * 24 * 60 * 60 * 1000);
+    const to = new Date(startOfToday.getTime() + 91 * 24 * 60 * 60 * 1000);
+    return { from: from.toISOString(), to: to.toISOString() };
   }
 
   function formatDate(iso) {

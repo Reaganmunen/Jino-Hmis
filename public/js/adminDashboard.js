@@ -27,6 +27,7 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     initSidebar();
+    initAvailabilityModal();
     loadDashboard();
   });
 
@@ -271,6 +272,87 @@
       `;
       list.appendChild(item);
     });
+  }
+
+  /* ============================================================
+     SET DENTIST AVAILABILITY MODAL
+     Uses the existing DentistSchedule endpoints as-is — no schema
+     or backend changes. One POST /dentist-schedules call per checked day.
+     ============================================================ */
+  function initAvailabilityModal() {
+    const openBtn = document.getElementById('setAvailabilityBtn');
+    const scrim = document.getElementById('availabilityModalScrim');
+    const closeBtn = document.getElementById('availabilityModalClose');
+    const cancelBtn = document.getElementById('availabilityCancelBtn');
+    const saveBtn = document.getElementById('availabilitySaveBtn');
+    if (!openBtn || !scrim) return;
+
+    const open = async () => {
+      scrim.classList.add('is-open');
+      await populateDentistOptions();
+    };
+    const close = () => { scrim.classList.remove('is-open'); };
+
+    openBtn.addEventListener('click', open);
+    closeBtn.addEventListener('click', close);
+    cancelBtn.addEventListener('click', close);
+    scrim.addEventListener('click', (e) => { if (e.target === scrim) close(); });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && scrim.classList.contains('is-open')) close();
+    });
+
+    saveBtn.addEventListener('click', () => saveAvailability(close));
+  }
+
+  async function populateDentistOptions() {
+    const select = document.getElementById('availDentistSelect');
+    select.innerHTML = '<option value="">Loading…</option>';
+    try {
+      const dentists = await fetchMethod('/users/role/dentist', 'GET', null, true);
+      if (!dentists.length) {
+        select.innerHTML = '<option value="">No dentists found</option>';
+        return;
+      }
+      select.innerHTML = dentists
+        .map((d) => `<option value="${d.id}">Dr. ${escapeHtml(d.first_name)} ${escapeHtml(d.last_name)}</option>`)
+        .join('');
+    } catch (err) {
+      select.innerHTML = '<option value="">Could not load dentists</option>';
+      showToast(err.message || 'Could not load dentist list.');
+    }
+  }
+
+  async function saveAvailability(onDone) {
+    const dentistId = document.getElementById('availDentistSelect').value;
+    const startTime = document.getElementById('availStartTime').value;
+    const endTime = document.getElementById('availEndTime').value;
+    const checkedDays = Array.from(document.querySelectorAll('#availDayChecks input:checked')).map((c) => Number(c.value));
+
+    if (!dentistId) return showToast('Choose a dentist first.');
+    if (!checkedDays.length) return showToast('Pick at least one working day.');
+    if (!startTime || !endTime) return showToast('Set a start and end time.');
+    if (startTime >= endTime) return showToast('Start time must be before end time.');
+
+    const saveBtn = document.getElementById('availabilitySaveBtn');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving…';
+
+    try {
+      await Promise.all(checkedDays.map((day) => fetchMethod('/dentist-schedules', 'POST', {
+        dentist_id: dentistId,
+        day_of_week: day,
+        start_time: startTime,
+        end_time: endTime,
+      }, true)));
+
+      showToast('Availability saved.');
+      onDone();
+    } catch (err) {
+      showToast(err.message || 'Could not save availability.');
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save availability';
+    }
   }
 
   /* ============================================================

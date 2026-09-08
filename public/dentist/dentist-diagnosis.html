@@ -97,10 +97,18 @@
 
       <!-- ---- Appointment picker (always visible, so you can switch patients) ---- -->
       <section class="panel">
-        <div class="panel-head">
-          <h2>Today's appointments</h2>
-          <span class="panel-sub" id="apptPickerCount"></span>
+        <div class="panel-head panel-head-with-toggle">
+          <h2>Appointments</h2>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div class="segmented" id="apptTabToggle">
+              <button type="button" class="segmented-opt is-active" data-tab="today">Today</button>
+              <button type="button" class="segmented-opt" data-tab="upcoming">Upcoming</button>
+              <button type="button" class="segmented-opt" data-tab="past">Past</button>
+            </div>
+            <input class="field-input" type="text" id="apptSearchInput" placeholder="Search patient by name…" style="width:200px;">
+          </div>
         </div>
+        <span class="panel-sub" id="apptPickerCount" style="display:block; margin:-6px 0 10px;"></span>
         <div class="sched-list" id="apptPickerList"><!-- rendered by JS --></div>
       </section>
 

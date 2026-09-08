@@ -40,8 +40,10 @@
     patientsById: {},
     appointmentsByDentist: {}, // dentistId -> appointments for the current day range
     weekAppointments: [],      // for week view of a single dentist
+    monthAppointmentsByDentist: {}, // dentistId -> appointments for the current month
+    yearAppointmentsByDentist: {},  // dentistId -> appointments for the current year
     scheduleByDentist: {},     // dentistId -> weekly recurring slots (cached — doesn't change with date nav)
-    viewMode: 'day',           // 'day' | 'week'
+    viewMode: 'day',           // 'day' | 'week' | 'month' | 'year'
     currentDate: new Date(),
     activeReschedule: null,
   };
@@ -103,31 +105,54 @@
 
   async function loadRange() {
     const isDayView = state.viewMode === 'day';
-    const { from, to } = isDayView ? dayRangeIso(state.currentDate) : weekRangeIso(state.currentDate);
-    const shownDentists = isDayView ? currentlyShownDentists() : [getSingleWeekDentist()].filter(Boolean);
+    const isWeekView = state.viewMode === 'week';
+    const isMonthView = state.viewMode === 'month';
+    const { from, to } = isDayView ? dayRangeIso(state.currentDate)
+      : isWeekView ? weekRangeIso(state.currentDate)
+      : isMonthView ? monthRangeIso(state.currentDate)
+      : yearRangeIso(state.currentDate);
+    // Week view's per-day columns only make sense for one dentist; Day,
+    // Month, and Year all support "All dentists" and just aggregate.
+    const shownDentists = isWeekView ? [getSingleWeekDentist()].filter(Boolean) : currentlyShownDentists();
 
     if (!shownDentists.length) {
       renderDateLabel();
       document.getElementById('apptCount').textContent = '';
-      document.getElementById('dayGrid').innerHTML = '<div class="msched-empty-state">No dentists on staff yet.</div>';
+      showNoDentistsMessage();
       return;
     }
 
     try {
       await Promise.all(shownDentists.map(async (d) => {
-        const [appts] = await Promise.all([
-          fetchMethod(`/appointments/dentist/${d.id}?from=${from}&to=${to}`, 'GET', null, true),
-          ensureScheduleLoaded(d.id),
-        ]);
+        const tasks = [fetchMethod(`/appointments/dentist/${d.id}?from=${from}&to=${to}`, 'GET', null, true)];
+        // Hour-by-hour availability shading is only used by Day view.
+        if (isDayView) tasks.push(ensureScheduleLoaded(d.id));
+        const [appts] = await Promise.all(tasks);
         const sorted = appts.sort((a, b) => new Date(a.scheduled_start) - new Date(b.scheduled_start));
         if (isDayView) state.appointmentsByDentist[d.id] = sorted;
-        else state.weekAppointments = sorted;
+        else if (isWeekView) state.weekAppointments = sorted;
+        else if (isMonthView) state.monthAppointmentsByDentist[d.id] = sorted;
+        else state.yearAppointmentsByDentist[d.id] = sorted;
       }));
       renderDateLabel();
       render();
     } catch (err) {
       handleLoadError(err);
     }
+  }
+
+  function showNoDentistsMessage() {
+    const targetId = { day: 'dayGrid', week: 'weekGrid', month: 'monthGrid', year: 'yearGrid' }[state.viewMode] || 'dayGrid';
+    document.getElementById(targetId).innerHTML = '<div class="msched-empty-state">No dentists on staff yet.</div>';
+  }
+
+  // Merges a dentistId -> appointments map down to a flat list for
+  // whichever dentists are currently shown (used by Month/Year, which —
+  // unlike Week — support viewing all dentists combined).
+  function mergeShownAppointments(byDentist, dentists) {
+    const merged = [];
+    dentists.forEach((d) => { (byDentist[d.id] || []).forEach((a) => merged.push(a)); });
+    return merged;
   }
 
   function currentlyShownDentists() {
@@ -169,34 +194,67 @@
       btn.addEventListener('click', () => {
         const view = btn.getAttribute('data-view');
         if (view === state.viewMode) return;
-        state.viewMode = view;
-        document.querySelectorAll('#viewToggle .segmented-opt').forEach((b) => b.classList.toggle('is-active', b === btn));
-        document.getElementById('dayWrap').style.display = view === 'day' ? 'block' : 'none';
-        document.getElementById('weekGrid').style.display = view === 'week' ? 'grid' : 'none';
-
-        // Week view shows one dentist's column-per-day layout — "All
-        // dentists" doesn't map onto that shape, so lock it out and
-        // fall back to whichever dentist was selected (or the first one).
-        const allOption = document.querySelector('#dentistFilter option[value="all"]');
-        if (view === 'week') {
-          allOption.disabled = true;
-          if (state.selectedDentistId === 'all' && state.dentists.length) {
-            state.selectedDentistId = String(state.dentists[0].id);
-            document.getElementById('dentistFilter').value = state.selectedDentistId;
-            showToast(`Week view shows one dentist at a time — showing Dr. ${state.dentists[0].first_name} ${state.dentists[0].last_name}`);
-          }
-        } else {
-          allOption.disabled = false;
-        }
-
+        applyViewMode(view);
         loadRange();
       });
     });
   }
 
+  // Shared by the toolbar toggle above and by drillToDay()/drillToMonth()
+  // below, so clicking into a day from Month view (or a month from Year
+  // view) goes through the exact same panel-visibility / dentist-filter
+  // logic as clicking the toggle by hand.
+  function applyViewMode(view) {
+    state.viewMode = view;
+    document.querySelectorAll('#viewToggle .segmented-opt').forEach((b) => b.classList.toggle('is-active', b.getAttribute('data-view') === view));
+    document.getElementById('dayWrap').style.display = view === 'day' ? 'block' : 'none';
+    document.getElementById('weekGrid').style.display = view === 'week' ? 'grid' : 'none';
+    document.getElementById('monthGrid').style.display = view === 'month' ? 'grid' : 'none';
+    document.getElementById('yearGrid').style.display = view === 'year' ? 'grid' : 'none';
+
+    // Week view shows one dentist's column-per-day layout — "All
+    // dentists" doesn't map onto that shape, so lock it out and
+    // fall back to whichever dentist was selected (or the first one).
+    // Day, Month, and Year all support "All dentists" fine.
+    const allOption = document.querySelector('#dentistFilter option[value="all"]');
+    if (view === 'week') {
+      allOption.disabled = true;
+      if (state.selectedDentistId === 'all' && state.dentists.length) {
+        state.selectedDentistId = String(state.dentists[0].id);
+        document.getElementById('dentistFilter').value = state.selectedDentistId;
+        showToast(`Week view shows one dentist at a time — showing Dr. ${state.dentists[0].first_name} ${state.dentists[0].last_name}`);
+      }
+    } else {
+      allOption.disabled = false;
+    }
+  }
+
+  // Drill-down from Month view: click a day, land on Day view for it.
+  function drillToDay(date) {
+    state.currentDate = date;
+    applyViewMode('day');
+    loadRange();
+  }
+
+  // Drill-down from Year view: click a month, land on Month view for it.
+  function drillToMonth(date) {
+    state.currentDate = new Date(date.getFullYear(), date.getMonth(), 1);
+    applyViewMode('month');
+    loadRange();
+  }
+
   function shiftDate(direction) {
-    const days = state.viewMode === 'day' ? 1 : 7;
-    state.currentDate = new Date(state.currentDate.getTime() + direction * days * 24 * 60 * 60 * 1000);
+    if (state.viewMode === 'day') {
+      state.currentDate = new Date(state.currentDate.getTime() + direction * 24 * 60 * 60 * 1000);
+    } else if (state.viewMode === 'week') {
+      state.currentDate = new Date(state.currentDate.getTime() + direction * 7 * 24 * 60 * 60 * 1000);
+    } else if (state.viewMode === 'month') {
+      // Calendar-correct step — a fixed day-count would drift across
+      // months of different lengths (e.g. Jan 31 + 30 days lands in March).
+      state.currentDate = new Date(state.currentDate.getFullYear(), state.currentDate.getMonth() + direction, 1);
+    } else {
+      state.currentDate = new Date(state.currentDate.getFullYear() + direction, state.currentDate.getMonth(), 1);
+    }
     loadRange();
   }
 
@@ -205,7 +263,9 @@
      ============================================================ */
   function render() {
     if (state.viewMode === 'day') renderDayGrid();
-    else renderWeekView();
+    else if (state.viewMode === 'week') renderWeekView();
+    else if (state.viewMode === 'month') renderMonthGrid();
+    else renderYearGrid();
   }
 
   function renderDateLabel() {
@@ -216,11 +276,19 @@
       });
       return;
     }
-    const { start, end } = weekBounds(state.currentDate);
-    const sameMonth = start.getMonth() === end.getMonth();
-    const startStr = start.toLocaleDateString('en-US', { day: 'numeric', month: sameMonth ? undefined : 'short' });
-    const endStr = end.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
-    label.textContent = `${startStr} – ${endStr}`;
+    if (state.viewMode === 'week') {
+      const { start, end } = weekBounds(state.currentDate);
+      const sameMonth = start.getMonth() === end.getMonth();
+      const startStr = start.toLocaleDateString('en-US', { day: 'numeric', month: sameMonth ? undefined : 'short' });
+      const endStr = end.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+      label.textContent = `${startStr} – ${endStr}`;
+      return;
+    }
+    if (state.viewMode === 'month') {
+      label.textContent = state.currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      return;
+    }
+    label.textContent = String(state.currentDate.getFullYear());
   }
 
   function patientName(patientId) {
@@ -338,6 +406,104 @@
       `);
     }
     el.innerHTML = cols.join('');
+  }
+
+  /* ---- month view: calendar grid, all shown dentists merged ---- */
+  function renderMonthGrid() {
+    const dentists = currentlyShownDentists();
+    const allAppts = mergeShownAppointments(state.monthAppointmentsByDentist, dentists);
+
+    document.getElementById('apptCount').textContent =
+      `${allAppts.length} appointment${allAppts.length === 1 ? '' : 's'}`;
+
+    const days = monthGridDays(state.currentDate);
+    const currentMonth = state.currentDate.getMonth();
+    const today = new Date();
+
+    const weekdayHeader = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+      .map((label) => `<div class="month-weekday">${label}</div>`).join('');
+
+    const dayCells = days.map((day) => {
+      const dayAppts = allAppts
+        .filter((a) => sameDay(new Date(a.scheduled_start), day))
+        .sort((a, b) => new Date(a.scheduled_start) - new Date(b.scheduled_start));
+      const isOtherMonth = day.getMonth() !== currentMonth;
+      const isToday = sameDay(day, today);
+      const visible = dayAppts.slice(0, 3);
+      const overflow = dayAppts.length - visible.length;
+
+      return `
+        <button type="button" class="month-day-cell${isOtherMonth ? ' is-other-month' : ''}${isToday ? ' is-today' : ''}" data-date="${toDateInputValue(day)}">
+          <span class="month-day-num">${day.getDate()}</span>
+          <div class="month-day-appts">
+            ${visible.map((a) => `
+              <span class="month-appt-chip ${statusMeta(a.status).className}">${escapeHtml(formatTime(a.scheduled_start))} · ${escapeHtml(patientName(a.patient_id))}</span>
+            `).join('')}
+            ${overflow > 0 ? `<span class="month-appt-more">+${overflow} more</span>` : ''}
+          </div>
+        </button>
+      `;
+    }).join('');
+
+    const grid = document.getElementById('monthGrid');
+    grid.innerHTML = weekdayHeader + dayCells;
+    grid.querySelectorAll('.month-day-cell').forEach((cell) => {
+      cell.addEventListener('click', () => {
+        const [y, m, d] = cell.getAttribute('data-date').split('-').map(Number);
+        drillToDay(new Date(y, m - 1, d));
+      });
+    });
+  }
+
+  /* ---- year view: 12 mini-months, all shown dentists merged ---- */
+  function renderYearGrid() {
+    const dentists = currentlyShownDentists();
+    const year = state.currentDate.getFullYear();
+    const today = new Date();
+    const allAppts = mergeShownAppointments(state.yearAppointmentsByDentist, dentists);
+
+    document.getElementById('apptCount').textContent =
+      `${allAppts.length} appointment${allAppts.length === 1 ? '' : 's'}`;
+
+    // Pre-count once so each mini-month just does key lookups.
+    const countByDateKey = {};
+    allAppts.forEach((a) => {
+      const key = toDateInputValue(new Date(a.scheduled_start));
+      countByDateKey[key] = (countByDateKey[key] || 0) + 1;
+    });
+
+    const months = [];
+    for (let m = 0; m < 12; m += 1) {
+      const monthDate = new Date(year, m, 1);
+      const days = monthGridDays(monthDate);
+      const monthLabel = monthDate.toLocaleDateString('en-US', { month: 'long' });
+      const monthTotal = days
+        .filter((d) => d.getMonth() === m)
+        .reduce((sum, d) => sum + (countByDateKey[toDateInputValue(d)] || 0), 0);
+
+      const dayCells = days.map((d) => {
+        const isOtherMonth = d.getMonth() !== m;
+        const isToday = sameDay(d, today);
+        const hasAppts = !!countByDateKey[toDateInputValue(d)];
+        return `<span class="year-day-cell${isOtherMonth ? ' is-other-month' : ''}${isToday ? ' is-today' : ''}${hasAppts ? ' has-appts' : ''}">${d.getDate()}</span>`;
+      }).join('');
+
+      months.push(`
+        <button type="button" class="year-month-card" data-month="${m}">
+          <div class="year-month-head">
+            <span class="year-month-name">${monthLabel}</span>
+            <span class="year-month-count">${monthTotal}</span>
+          </div>
+          <div class="year-month-grid">${dayCells}</div>
+        </button>
+      `);
+    }
+
+    const grid = document.getElementById('yearGrid');
+    grid.innerHTML = months.join('');
+    grid.querySelectorAll('.year-month-card').forEach((card) => {
+      card.addEventListener('click', () => drillToMonth(new Date(year, Number(card.getAttribute('data-month')), 1)));
+    });
   }
 
   /* ---- appointment card (shared markup for day + used by binder) ---- */
@@ -494,6 +660,36 @@
   function weekRangeIso(date) {
     const { start, end } = weekBounds(date);
     return { from: start.toISOString(), to: new Date(end.getTime() + 1).toISOString() };
+  }
+
+  function monthRangeIso(date) {
+    const start = new Date(date.getFullYear(), date.getMonth(), 1);
+    const end = new Date(date.getFullYear(), date.getMonth() + 1, 1);
+    return { from: start.toISOString(), to: end.toISOString() };
+  }
+
+  function yearRangeIso(date) {
+    const start = new Date(date.getFullYear(), 0, 1);
+    const end = new Date(date.getFullYear() + 1, 0, 1);
+    return { from: start.toISOString(), to: end.toISOString() };
+  }
+
+  // Full weeks (Monday–Sunday) covering the given month, including the
+  // leading/trailing days of adjacent months needed to fill the grid —
+  // the standard "calendar" layout, so cells always line up 7-wide.
+  function monthGridDays(date) {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstOfMonth = new Date(year, month, 1);
+    const lastOfMonth = new Date(year, month + 1, 0);
+    const gridStart = weekBounds(firstOfMonth).start;       // Monday on/before the 1st
+    const lastWeekStart = weekBounds(lastOfMonth).start;    // Monday of the week containing the last day
+    const totalDays = Math.round((lastWeekStart.getTime() - gridStart.getTime()) / (24 * 60 * 60 * 1000)) + 7;
+    const days = [];
+    for (let i = 0; i < totalDays; i += 1) {
+      days.push(new Date(gridStart.getTime() + i * 24 * 60 * 60 * 1000));
+    }
+    return days;
   }
 
   function sameDay(a, b) {

@@ -103,6 +103,8 @@
             <div class="segmented" id="viewToggle">
               <button type="button" class="segmented-opt is-active" data-view="day">Day</button>
               <button type="button" class="segmented-opt" data-view="week">Week</button>
+              <button type="button" class="segmented-opt" data-view="month">Month</button>
+              <button type="button" class="segmented-opt" data-view="year">Year</button>
             </div>
           </div>
         </div>
@@ -114,6 +116,12 @@
 
         <!-- ---- Week view: 7 columns for one selected dentist ---- -->
         <div class="week-grid" id="weekGrid" style="display:none;"><!-- rendered by JS --></div>
+
+        <!-- ---- Month view: calendar grid, all dentists or one, click a day to open Day view ---- -->
+        <div class="month-grid" id="monthGrid" style="display:none;"><!-- rendered by JS --></div>
+
+        <!-- ---- Year view: 12 mini-months, click one to open Month view ---- -->
+        <div class="year-grid" id="yearGrid" style="display:none;"><!-- rendered by JS --></div>
 
       </section>
 
