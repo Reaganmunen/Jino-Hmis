@@ -184,15 +184,10 @@
       </button>
     </div>
 
-    <p class="sign-placeholder-note">Template text — pending legal review. Not yet the clinic's official policy.</p>
-    <p class="sign-placeholder-note" id="signSignerHint" style="display:none;background:var(--amber-50);color:var(--amber-700);"></p>
     <div class="sign-content-box" id="signContentBox"></div>
 
-    <label class="field-label">Your decision</label>
-    <div class="sign-choice-row">
-      <button type="button" class="sign-choice-btn is-agree" id="signAgreeBtn">I Agree</button>
-      <button type="button" class="sign-choice-btn is-decline" id="signDeclineBtn">I Decline</button>
-    </div>
+    <label class="field-label">Tick the services you are consenting to receive</label>
+    <div class="sign-services-list" id="signServicesList" style="display:flex;flex-direction:column;gap:8px;max-height:220px;overflow-y:auto;margin-bottom:14px;"><!-- rendered by JS --></div>
 
     <label class="field-label" for="signName">Type your full name to sign</label>
     <input type="text" id="signName" class="field-input" placeholder="Full name" style="margin-bottom:4px;">
