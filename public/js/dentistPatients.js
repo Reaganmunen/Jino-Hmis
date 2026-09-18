@@ -263,18 +263,20 @@
     document.getElementById('modalPlanList').innerHTML = spinner;
     document.getElementById('modalRxList').innerHTML = spinner;
     document.getElementById('modalApptList').innerHTML = spinner;
+    document.getElementById('modalConsentList').innerHTML = spinner;
   }
 
   async function loadPatientRecords(patientId) {
     try {
-      const [diagnoses, plans, prescriptions, appointments] = await Promise.all([
+      const [diagnoses, plans, prescriptions, appointments, consentForms] = await Promise.all([
         fetchMethod(`/diagnoses/patient/${patientId}`, 'GET', null, true),
         fetchMethod(`/treatment-plans/patient/${patientId}`, 'GET', null, true),
         fetchMethod(`/prescriptions/patient/${patientId}`, 'GET', null, true),
         fetchMethod(`/appointments/patient/${patientId}`, 'GET', null, true),
+        fetchMethod(`/consent-forms/patient/${patientId}`, 'GET', null, true),
       ]);
 
-      const records = { diagnoses, plans, prescriptions, appointments };
+      const records = { diagnoses, plans, prescriptions, appointments, consentForms };
       state.recordsCache[patientId] = records;
 
       // Only render if the dentist hasn't already closed or switched patients.
@@ -292,6 +294,7 @@
         document.getElementById('modalPlanList').innerHTML = errorMsg;
         document.getElementById('modalRxList').innerHTML = errorMsg;
         document.getElementById('modalApptList').innerHTML = errorMsg;
+        document.getElementById('modalConsentList').innerHTML = errorMsg;
       }
       showToast(err.message || 'Could not load patient records.');
     }
@@ -302,6 +305,7 @@
     renderPlans(records.plans);
     renderPrescriptions(records.prescriptions);
     renderAppointments(records.appointments);
+    renderConsentForms(records.consentForms);
   }
 
   function renderDiagnosisTimeline(diagnoses) {
@@ -486,6 +490,122 @@
         </div>
       `;
     }).join('');
+  }
+
+  function renderConsentForms(forms) {
+    const list = document.getElementById('modalConsentList');
+    if (!forms.length) {
+      list.innerHTML = '<div class="empty-state">No consent forms on record for this patient yet.</div>';
+      return;
+    }
+
+    // Most recent first, so a re-issued form doesn't get buried under an
+    // older one of the same type.
+    const sorted = forms.slice().sort((a, b) => new Date(b.signed_at || b.created_at) - new Date(a.signed_at || a.created_at));
+
+    list.innerHTML = sorted.map((f) => {
+      // Every row here is already a submitted signature — consented=false
+      // means the patient signed but declined, not that nothing was signed.
+      const declined = f.consented === false;
+      const witnessLine = f.witnessed_by
+        ? `Witnessed by ${escapeHtml(resolveDentistName(f.witnessed_by))}`
+        : 'Signed via patient portal';
+
+      return `
+        <div class="cf-card" data-cf-id="${f.id}">
+          <div class="cf-head" data-role="cf-toggle">
+            <div class="cf-ic">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 19V5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="m8.5 13 2 2 4.5-4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="cf-mid">
+              <p class="t">${escapeHtml(f.form_type || 'Consent form')}</p>
+              <p class="s">${escapeHtml(f.signed_by_name || 'Patient')} · ${witnessLine}</p>
+            </div>
+            <div class="cf-date">${formatDate(f.signed_at)}</div>
+            <span class="badge ${declined ? 'badge-declined' : 'badge-signed'}">${declined ? 'Declined' : 'Signed'}</span>
+            <svg class="cf-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="cf-body">
+            <div class="cf-signature-box">
+              ${f.signature_data
+                ? `<img src="${f.signature_data}" alt="Patient signature">`
+                : `<span class="cf-signature-typed">${escapeHtml(f.signed_by_name || '')}</span>`}
+            </div>
+            <div class="cf-content-box">${escapeHtml(f.content_snapshot || 'No form content on file.')}</div>
+            <div class="bill-actions">
+              <button class="btn btn-outline btn-sm" type="button" data-role="print-consent">Print</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    list.querySelectorAll('.cf-head').forEach((head) => {
+      head.addEventListener('click', () => head.closest('.cf-card').classList.toggle('is-open'));
+    });
+
+    list.querySelectorAll('[data-role="print-consent"]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const card = btn.closest('.cf-card');
+        const form = sorted.find((f) => String(f.id) === card.dataset.cfId);
+        if (form) printConsentForm(form);
+      });
+    });
+  }
+
+  // Opens a plain print-ready window with the snapshot text (as it read at
+  // signing time) and the captured signature image, then triggers print.
+  // Assumes signature_data is stored as a data: URL (e.g. from a signature
+  // pad) — adjust the <img> src below if it's stored some other way.
+  function printConsentForm(form) {
+    const patientName = document.getElementById('recordsModalName').textContent;
+    const win = window.open('', '_blank', 'width=800,height=900');
+    if (!win) {
+      showToast('Please allow pop-ups to print this form.');
+      return;
+    }
+
+    const witnessLine = form.witnessed_by
+      ? `<p>Witnessed by: ${escapeHtml(resolveDentistName(form.witnessed_by))}</p>`
+      : '<p>Signed via patient portal (self-witnessed)</p>';
+
+    win.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>${escapeHtml(form.form_type || 'Consent Form')} — ${escapeHtml(patientName)}</title>
+        <style>
+          body { font-family: Georgia, 'Times New Roman', serif; padding: 40px; color: #111; max-width: 720px; margin: 0 auto; }
+          h1 { font-size: 20px; margin: 0 0 4px; }
+          .meta { color: #555; font-size: 13px; margin-bottom: 24px; }
+          .meta p { margin: 2px 0; }
+          .content { white-space: pre-wrap; line-height: 1.6; margin-bottom: 32px; border-top: 1px solid #ddd; border-bottom: 1px solid #ddd; padding: 20px 0; }
+          .sig-block { margin-top: 16px; }
+          .sig-img { max-width: 320px; max-height: 120px; display: block; margin: 8px 0; border-bottom: 1px solid #333; }
+          @media print { body { padding: 0; } }
+        </style>
+      </head>
+      <body>
+        <h1>${escapeHtml(form.form_type || 'Consent Form')}</h1>
+        <div class="meta">
+          <p>Patient: ${escapeHtml(patientName)}</p>
+          <p>Signed: ${formatDate(form.signed_at)}</p>
+          ${witnessLine}
+        </div>
+        <div class="content">${escapeHtml(form.content_snapshot || 'No form content on file.')}</div>
+        <div class="sig-block">
+          <p>Signature (${escapeHtml(form.signed_by_name || '')}):</p>
+          ${form.signature_data
+            ? `<img class="sig-img" src="${form.signature_data}" alt="Patient signature">`
+            : '<p>No signature image on file.</p>'}
+        </div>
+      </body>
+      </html>
+    `);
+    win.document.close();
+    win.focus();
+    win.print();
   }
 
   /* ============================================================
