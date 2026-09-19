@@ -209,6 +209,8 @@
     document.querySelectorAll('#recordsTabs .filter-tab').forEach((tab) => {
       tab.addEventListener('click', () => switchRecordsTab(tab.dataset.tab));
     });
+
+    initCertModal();
   }
 
   function openRecordsModal(patient) {
@@ -264,19 +266,21 @@
     document.getElementById('modalRxList').innerHTML = spinner;
     document.getElementById('modalApptList').innerHTML = spinner;
     document.getElementById('modalConsentList').innerHTML = spinner;
+    document.getElementById('modalCertList').innerHTML = spinner;
   }
 
   async function loadPatientRecords(patientId) {
     try {
-      const [diagnoses, plans, prescriptions, appointments, consentForms] = await Promise.all([
+      const [diagnoses, plans, prescriptions, appointments, consentForms, certificates] = await Promise.all([
         fetchMethod(`/diagnoses/patient/${patientId}`, 'GET', null, true),
         fetchMethod(`/treatment-plans/patient/${patientId}`, 'GET', null, true),
         fetchMethod(`/prescriptions/patient/${patientId}`, 'GET', null, true),
         fetchMethod(`/appointments/patient/${patientId}`, 'GET', null, true),
         fetchMethod(`/consent-forms/patient/${patientId}`, 'GET', null, true),
+        fetchMethod(`/medical-certificates/patient/${patientId}`, 'GET', null, true),
       ]);
 
-      const records = { diagnoses, plans, prescriptions, appointments, consentForms };
+      const records = { diagnoses, plans, prescriptions, appointments, consentForms, certificates };
       state.recordsCache[patientId] = records;
 
       // Only render if the dentist hasn't already closed or switched patients.
@@ -295,6 +299,7 @@
         document.getElementById('modalRxList').innerHTML = errorMsg;
         document.getElementById('modalApptList').innerHTML = errorMsg;
         document.getElementById('modalConsentList').innerHTML = errorMsg;
+        document.getElementById('modalCertList').innerHTML = errorMsg;
       }
       showToast(err.message || 'Could not load patient records.');
     }
@@ -306,6 +311,7 @@
     renderPrescriptions(records.prescriptions);
     renderAppointments(records.appointments);
     renderConsentForms(records.consentForms);
+    renderCertificates(records.certificates);
   }
 
   function renderDiagnosisTimeline(diagnoses) {
@@ -606,6 +612,187 @@
     win.document.close();
     win.focus();
     win.print();
+  }
+
+  /* ============================================================
+     SICK OFF NOTES (MedicalCertificate)
+     ------------------------------------------------------------
+     Unlike consent forms (printed client-side from a snapshot), these
+     PDFs are generated server-side by Puppeteer — the same pipeline as
+     bills and prescriptions. That means the response is a binary PDF,
+     not JSON, so we can't use fetchMethod() here (it always calls
+     response.json()) — downloadPdf()/submitCertificate() below do a
+     raw authenticated fetch instead and save the blob.
+     ============================================================ */
+  function renderCertificates(certificates) {
+    const list = document.getElementById('modalCertList');
+    if (!certificates.length) {
+      list.innerHTML = '<div class="empty-state">No sick off notes issued for this patient yet.</div>';
+      return;
+    }
+
+    const sorted = certificates.slice().sort((a, b) => new Date(b.visit_date) - new Date(a.visit_date));
+
+    list.innerHTML = sorted.map((c) => `
+      <div class="cf-card" data-cert-id="${c.id}">
+        <div class="cf-head" data-role="cert-toggle">
+          <div class="cf-ic">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="5" y="3" width="14" height="18" rx="2" stroke="currentColor" stroke-width="1.7"/><path d="M8 11.5l2 2 4.5-4.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="cf-mid">
+            <p class="t">Off ${formatDate(c.rest_from)} – ${formatDate(c.rest_to)}</p>
+            <p class="s">${escapeHtml(resolveDentistName(c.dentist_id))} · Visit ${formatDate(c.visit_date)}</p>
+          </div>
+          <svg class="cf-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="cf-body">
+          <div class="cf-content-box">${escapeHtml(c.diagnosis_summary)}</div>
+          ${c.notes ? `<div class="diagnosis-note"><span class="label">Notes</span>${escapeHtml(c.notes)}</div>` : ''}
+          <div class="bill-actions">
+            <button class="btn btn-outline btn-sm" type="button" data-role="download-cert">Download PDF</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    list.querySelectorAll('.cf-head').forEach((head) => {
+      head.addEventListener('click', () => head.closest('.cf-card').classList.toggle('is-open'));
+    });
+
+    list.querySelectorAll('[data-role="download-cert"]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const card = btn.closest('.cf-card');
+        const cert = sorted.find((c) => String(c.id) === card.dataset.certId);
+        if (!cert) return;
+        btn.disabled = true;
+        btn.textContent = 'Downloading…';
+        try {
+          await downloadPdf(`/medical-certificates/${cert.id}/pdf`, `medical-certificate-${cert.patient_id}-${cert.visit_date}.pdf`);
+        } catch (err) {
+          showToast(err.message || 'Could not download the PDF.');
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Download PDF';
+        }
+      });
+    });
+  }
+
+  function initCertModal() {
+    const scrim = document.getElementById('certModalScrim');
+    document.getElementById('newCertBtn').addEventListener('click', openCertModal);
+    document.getElementById('certModalClose').addEventListener('click', closeCertModal);
+    document.getElementById('certCancelBtn').addEventListener('click', closeCertModal);
+    scrim.addEventListener('click', (e) => { if (e.target === scrim) closeCertModal(); });
+    document.getElementById('certSaveBtn').addEventListener('click', submitCertificate);
+  }
+
+  function openCertModal() {
+    if (!state.activePatientId) return;
+    const today = new Date().toISOString().slice(0, 10);
+    document.getElementById('certVisitDate').value = today;
+    document.getElementById('certRestFrom').value = today;
+    document.getElementById('certRestTo').value = today;
+    document.getElementById('certDiagnosis').value = '';
+    document.getElementById('certNotes').value = '';
+    hideCertError();
+    document.getElementById('certModalScrim').classList.add('is-open');
+  }
+
+  function closeCertModal() {
+    document.getElementById('certModalScrim').classList.remove('is-open');
+  }
+
+  function showCertError(message) {
+    const el = document.getElementById('certError');
+    el.textContent = message;
+    el.style.display = 'block';
+  }
+  function hideCertError() {
+    const el = document.getElementById('certError');
+    el.textContent = '';
+    el.style.display = 'none';
+  }
+
+  async function submitCertificate() {
+    const patient_id = state.activePatientId;
+    const visit_date = document.getElementById('certVisitDate').value;
+    const diagnosis_summary = document.getElementById('certDiagnosis').value.trim();
+    const rest_from = document.getElementById('certRestFrom').value;
+    const rest_to = document.getElementById('certRestTo').value;
+    const notes = document.getElementById('certNotes').value.trim();
+
+    hideCertError();
+    if (!diagnosis_summary) return showCertError('Please enter a reason for the visit / diagnosis.');
+    if (!rest_from || !rest_to) return showCertError('Please set both a rest-from and rest-to date.');
+    if (new Date(rest_to) < new Date(rest_from)) return showCertError('Rest-to date cannot be before rest-from date.');
+
+    const saveBtn = document.getElementById('certSaveBtn');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Generating…';
+
+    try {
+      const token = localStorage.getItem('jino_token');
+      const response = await fetch(`${API_BASE}/medical-certificates`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ patient_id, visit_date, diagnosis_summary, rest_from, rest_to, notes }),
+      });
+
+      if (!response.ok) {
+        let message = `Request failed with status ${response.status}`;
+        try { const data = await response.json(); if (data.message) message = data.message; } catch (e) { /* not JSON — leave default message */ }
+        throw new Error(message);
+      }
+
+      const blob = await response.blob();
+      triggerBlobDownload(blob, `medical-certificate-${patient_id}-${visit_date}.pdf`);
+
+      closeCertModal();
+      showToast('Sick off note generated.');
+
+      // The create response is the PDF itself, not the saved record, so
+      // refresh this patient's certificate list from the server to pick
+      // up the new one (and drop it into the cache like the other tabs).
+      const certificates = await fetchMethod(`/medical-certificates/patient/${patient_id}`, 'GET', null, true);
+      if (state.recordsCache[patient_id]) state.recordsCache[patient_id].certificates = certificates;
+      if (state.activePatientId === patient_id) renderCertificates(certificates);
+    } catch (err) {
+      showCertError(err.message || 'Could not generate the certificate.');
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save & download PDF';
+    }
+  }
+
+  // Authenticated GET that expects a binary PDF response (bypasses
+  // fetchMethod, which always parses the response as JSON).
+  async function downloadPdf(endpoint, filename) {
+    const token = localStorage.getItem('jino_token');
+    const response = await fetch(`${API_BASE}${endpoint}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!response.ok) {
+      let message = `Request failed with status ${response.status}`;
+      try { const data = await response.json(); if (data.message) message = data.message; } catch (e) { /* not JSON */ }
+      throw new Error(message);
+    }
+    const blob = await response.blob();
+    triggerBlobDownload(blob, filename);
+  }
+
+  function triggerBlobDownload(blob, filename) {
+    const blobUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(blobUrl);
   }
 
   /* ============================================================

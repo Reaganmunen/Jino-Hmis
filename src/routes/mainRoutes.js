@@ -12,6 +12,7 @@ router.use('/treatment-plans', require('./treatmentPlanRoutes'));
 router.use('/treatment-plan-items', require('./treatmentPlanItemRoutes'));
 router.use('/prescriptions', require('./prescriptionRoutes'));
 router.use('/consent-forms', require('./consentFormRoutes'));
+router.use('/medical-certificates', require('./medicalCertificateRoutes')); // sick-off / fitness-to-work notes
 router.use('/patient-files', require('./patientFileRoutes'));
 router.use('/inventory-items', require('./inventoryItemRoutes'));
 router.use('/inventory-usage', require('./inventoryUsageRoutes'));

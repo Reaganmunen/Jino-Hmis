@@ -149,6 +149,7 @@
       <button class="filter-tab" data-tab="prescriptions" type="button">Prescriptions</button>
       <button class="filter-tab" data-tab="appointments" type="button">Appointments</button>
       <button class="filter-tab" data-tab="consent" type="button">Consent Forms</button>
+      <button class="filter-tab" data-tab="certificates" type="button">Sick Off Notes</button>
     </div>
 
     <div class="records-tab-body">
@@ -167,6 +168,60 @@
       <div class="records-tab-panel" data-tab-panel="consent">
         <div class="cf-list" id="modalConsentList"></div>
       </div>
+      <div class="records-tab-panel" data-tab-panel="certificates">
+        <div class="bill-actions" style="margin-bottom:12px;">
+          <button class="btn btn-primary btn-sm" id="newCertBtn" type="button">+ New sick off note</button>
+        </div>
+        <div class="cert-list" id="modalCertList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ NEW SICK OFF NOTE MODAL ============ -->
+<div class="modal-scrim" id="certModalScrim">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="certModalTitle">
+    <div class="modal-head">
+      <div>
+        <p class="modal-kicker">Sick off note</p>
+        <h2 id="certModalTitle">New medical certificate</h2>
+      </div>
+      <button class="icon-link-btn" id="certModalClose" type="button" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <div style="margin-top:18px;">
+      <label class="field-label" for="certVisitDate">Date of visit</label>
+      <input class="field-input" type="date" id="certVisitDate">
+    </div>
+
+    <div style="margin-top:16px;">
+      <label class="field-label" for="certDiagnosis">Reason for visit / diagnosis</label>
+      <textarea class="field-input" id="certDiagnosis" rows="3" placeholder="e.g. Acute pulpitis, lower left molar — patient in significant pain, unfit for work today."></textarea>
+    </div>
+
+    <div class="form-grid" style="margin-top:16px;">
+      <div>
+        <label class="field-label" for="certRestFrom">Rest from</label>
+        <input class="field-input" type="date" id="certRestFrom">
+      </div>
+      <div>
+        <label class="field-label" for="certRestTo">Rest to</label>
+        <input class="field-input" type="date" id="certRestTo">
+      </div>
+    </div>
+
+    <div style="margin-top:16px;margin-bottom:0;">
+      <label class="field-label" for="certNotes">Additional notes (optional)</label>
+      <textarea class="field-input" id="certNotes" rows="2" placeholder="e.g. Review in 3 days if symptoms persist."></textarea>
+    </div>
+
+    <p class="field-hint" id="certError" style="display:none;color:var(--red-700,#B42318);"></p>
+
+    <div class="modal-foot">
+      <button class="btn btn-outline" id="certCancelBtn" type="button">Cancel</button>
+      <button class="btn btn-primary" id="certSaveBtn" type="button">Save &amp; download PDF</button>
     </div>
   </div>
 </div>
