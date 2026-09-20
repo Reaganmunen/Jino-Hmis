@@ -26,6 +26,7 @@
     diagnoses: [],
     planItems: [],         // flattened TreatmentPlanItem rows, enriched with planDentistId
     activeCategory: 'medical',
+    dentition: 'permanent', // 'permanent' (32 teeth) or 'primary' (20 teeth)
     selectedTooth: null,
     legendFilter: null,    // condition string, or null for "show everything"
   };
@@ -33,11 +34,12 @@
   const DONE_STATUSES = ['completed', 'done'];
   const CLOSED_STATUSES = [...DONE_STATUSES, 'cancelled'];
 
+  // Base findings plus the pediatric/developmental ones (exfoliated,
+  // unerupted, sealant, pulpotomy) defined in toothShapes.js.
   const CONDITION_LABEL = {
     healthy: 'Healthy', caries: 'Caries', filled: 'Filled', missing: 'Missing', crown: 'Crown',
+    ...Dentition.conditionLabels(),
   };
-  const UPPER_ARCH = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];
-  const LOWER_ARCH = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38];
 
   // TreatmentPlanItem has no category column, so cosmetic vs medical is
   // inferred client-side from procedure_name. Anything that doesn't match
@@ -57,6 +59,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     initSidebar();
     initCategoryToggle();
+    initDentitionToggle();
     initPrintButton();
     loadPage();
   });
@@ -100,6 +103,9 @@
     try {
       const patient = await fetchMethod('/patients/me', 'GET', null, true);
       state.patientId = patient.id;
+      // Open on the dentition that fits the patient's age (primary under 6).
+      state.dentition = Dentition.suggestFor(patient);
+      syncDentitionToggle();
       document.getElementById('avatarInitials').textContent =
         initialsOf(`${patient.first_name} ${patient.last_name}`);
 
@@ -202,15 +208,11 @@
      tooth-svg/cond-* classes), just recolored by whichever category
      tab is active instead of always showing medical condition.
      ============================================================ */
-  const FDI_QUADRANT = { 1: 'Maxillary Right', 2: 'Maxillary Left', 3: 'Mandibular Left', 4: 'Mandibular Right' };
-  const FDI_POSITION = {
-    1: 'Central Incisor', 2: 'Lateral Incisor', 3: 'Canine', 4: 'First Premolar',
-    5: 'Second Premolar', 6: 'First Molar', 7: 'Second Molar', 8: 'Third Molar',
-  };
+  // Naming/layout for both dentitions lives in toothShapes.js (`Dentition`).
+  // A tooth's name can't come from its FDI digits alone: position 4/5 is a
+  // premolar in quadrants 1-4 but a molar in quadrants 5-8.
   function toothName(number) {
-    const quadrant = Math.floor(number / 10);
-    const position = number % 10;
-    return `${FDI_QUADRANT[quadrant]} ${FDI_POSITION[position]}`;
+    return Dentition.describe(number).fullName;
   }
 
   function cosmeticToothSet() {
@@ -225,14 +227,15 @@
     const svg = document.getElementById('odontogramSvg');
     svg.innerHTML = '';
 
-    const ALL_TEETH = [...UPPER_ARCH, ...LOWER_ARCH];
+    // Permanent = 32 teeth on a tall viewBox; primary = 20 teeth on a shorter one.
+    const dentition = Dentition.get(state.dentition);
+    svg.setAttribute('viewBox', dentition.viewBox);
     const cosmeticTeeth = state.activeCategory === 'cosmetic' ? cosmeticToothSet() : null;
 
-    ALL_TEETH.forEach((num) => {
-      const quadrant = Math.floor(num / 10);
-      const position = num % 10;
-      const shape = TOOTH_SHAPES[position];
-      if (!shape) return;
+    [...dentition.upper, ...dentition.lower].forEach((num) => {
+      const placement = Dentition.place(num);
+      if (!placement) return;
+      const { shape } = placement;
 
       let condition = 'healthy';
       if (state.activeCategory === 'medical') {
@@ -248,8 +251,12 @@
       // inner group's class-driven hover-scale CSS transform, since a CSS
       // transform on an element overrides that same element's SVG
       // transform attribute.
+      // A middle group carries the primary teeth's reposition/scale (empty
+      // for permanent teeth) so it too stays off the hover-scale element.
       const quadrantGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      quadrantGroup.setAttribute('transform', QUADRANT_TRANSFORM[quadrant] || '');
+      quadrantGroup.setAttribute('transform', placement.quadrantTransform);
+      const placementGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      if (placement.placementTransform) placementGroup.setAttribute('transform', placement.placementTransform);
 
       const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       g.setAttribute('class', `tooth-svg cond-${condition}` + (state.selectedTooth === num ? ' is-selected' : ''));
@@ -274,7 +281,8 @@
       g.addEventListener('mouseenter', (e) => showTooltip(e, num, condition));
       g.addEventListener('mousemove', moveTooltip);
       g.addEventListener('mouseleave', hideTooltip);
-      quadrantGroup.appendChild(g);
+      placementGroup.appendChild(g);
+      quadrantGroup.appendChild(placementGroup);
       svg.appendChild(quadrantGroup);
     });
 
@@ -315,6 +323,8 @@
           { cond: 'filled', label: 'Filled' },
           { cond: 'missing', label: 'Missing' },
           { cond: 'crown', label: 'Crown' },
+          // Only the pediatric/developmental findings valid for the arch on show.
+          ...Dentition.conditionsFor(state.dentition).map((c) => ({ cond: c.key, label: c.label })),
         ]
       : [
           { cond: 'healthy', label: 'No cosmetic work' },
@@ -344,14 +354,49 @@
     });
   }
 
+  /* ---- Permanent / Primary dentition toggle ---- */
+  function initDentitionToggle() {
+    document.querySelectorAll('.segmented-opt[data-dentition]').forEach((btn) => {
+      btn.addEventListener('click', () => setDentition(btn.getAttribute('data-dentition')));
+    });
+  }
+
+  function setDentition(key) {
+    if (!Dentition.get(key) || key === state.dentition) return;
+    state.dentition = key;
+    // A tooth from the other dentition isn't on the chart any more, so it
+    // can't stay selected (the detail panel falls back to recent activity).
+    if (state.selectedTooth && Dentition.of(state.selectedTooth) !== key) state.selectedTooth = null;
+    // The legend lists only findings valid for the arch on show, so a filter
+    // on one that just left the legend (e.g. Exfoliated -> Permanent) is dropped.
+    if (state.legendFilter && !['healthy', 'caries', 'filled', 'missing', 'crown', 'cosmetic']
+      .concat(Dentition.conditionsFor(key).map((c) => c.key)).includes(state.legendFilter)) {
+      state.legendFilter = null;
+    }
+    syncDentitionToggle();
+    renderLegend();
+    renderOdontogram();
+    renderDetailPanel();
+  }
+
+  // Keeps the buttons in step with state.dentition when it changes for a
+  // reason other than a click (e.g. the patient's age picks the default).
+  function syncDentitionToggle() {
+    document.querySelectorAll('.segmented-opt[data-dentition]').forEach((b) => {
+      b.classList.toggle('is-active', b.getAttribute('data-dentition') === state.dentition);
+    });
+  }
+
   function initCategoryToggle() {
-    document.querySelectorAll('.segmented-opt').forEach((btn) => {
+    // Only the Medical/Cosmetic buttons -- the dentition toggle shares the
+    // .segmented-opt class and must not be wired up here.
+    document.querySelectorAll('.segmented-opt[data-category]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const category = btn.getAttribute('data-category');
         if (category === state.activeCategory) return;
         state.activeCategory = category;
         state.legendFilter = null; // condition sets differ between tabs, so a stale filter wouldn't make sense
-        document.querySelectorAll('.segmented-opt').forEach((b) => b.classList.toggle('is-active', b === btn));
+        btn.parentElement.querySelectorAll('.segmented-opt').forEach((b) => b.classList.toggle('is-active', b === btn));
         renderLegend();
         renderOdontogram();
         renderDetailPanel();

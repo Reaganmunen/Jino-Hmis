@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="../css/dashboard.css">
 <link rel="stylesheet" href="../css/dentist-dashboard.css">
 <link rel="stylesheet" href="../css/dentist-diagnosis.css">
+<link rel="stylesheet" href="../css/tooth-conditions.css">
 </head>
 <body>
 
@@ -116,7 +117,11 @@
       <section class="panel" id="chartingPanel" style="display:none;">
         <div class="panel-head panel-head-with-toggle">
           <h2>Charting <span id="chartingPatientName" class="charting-patient-name"></span></h2>
-          <div style="display:flex; align-items:center; gap:12px;">
+          <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <div class="segmented" id="dentitionToggle" role="group" aria-label="Dentition">
+              <button type="button" class="segmented-opt is-active" data-dentition="permanent">Permanent (32)</button>
+              <button type="button" class="segmented-opt" data-dentition="primary">Primary (20)</button>
+            </div>
             <div class="segmented" id="categoryToggle">
               <button type="button" class="segmented-opt is-active" data-category="medical">Medical</button>
               <button type="button" class="segmented-opt" data-category="cosmetic">Cosmetic</button>

@@ -64,3 +64,241 @@ const QUADRANT_TRANSFORM = {
   4: 'scale(1, -1) translate(0, -694)',
   3: 'scale(-1, -1) translate(-409, -694)',
 };
+/* ============================================================
+   DENTITIONS -- permanent (32 teeth) and primary / deciduous (20)
+   ------------------------------------------------------------
+   Shared by the dentist charting page and the patient tooth chart
+   so both draw, name and place teeth from one source of truth.
+
+   FDI numbering: quadrants 1-4 are the permanent dentition and
+   5-8 the primary dentition, in the same order
+   (5 = maxillary right, 6 = maxillary left, 7 = mandibular left,
+   8 = mandibular right). Primary positions run 1-5: central
+   incisor, lateral incisor, canine, first molar, second molar.
+
+   NB: positions 4 and 5 are premolars in a permanent quadrant but
+   molars in a primary one, so a tooth can never be named from its
+   last digit alone -- always go through Dentition.describe().
+
+   Public API (one global, so nothing else leaks into page scope):
+     Dentition.get(key)          -> { key, label, toothCount, viewBox, upper, lower }
+     Dentition.of(fdi)           -> 'permanent' | 'primary' | null
+     Dentition.describe(fdi)     -> names, quadrant, Universal code
+     Dentition.place(fdi)        -> { shape, quadrantTransform, placementTransform }
+     Dentition.suggestFor(patient) -> which dentition to open on by default
+     Dentition.conditionsFor(key)  -> pediatric/developmental findings valid for that arch
+     Dentition.conditionLabels()   -> { key: label } for those findings
+   ============================================================ */
+const Dentition = (function () {
+  const VIEW_WIDTH = 409;
+  const PERMANENT_VIEW_HEIGHT = 694;
+
+  // Bounding box of each TOOTH_SHAPES outline in that path's own coordinate
+  // space (measured from the path data). Used to centre a shape on a target
+  // point when it's re-used at a different size/position for the primary arch.
+  const SHAPE_BOX = {
+    1: { cx: 179.1, cy: 30.9,  w: 49.8, h: 59.7 },
+    2: { cx: 133.2, cy: 36.1,  w: 43.2, h: 53.5 },
+    3: { cx: 101.1, cy: 56.9,  w: 54.1, h: 48.6 },
+    4: { cx: 76.8,  cy: 87.0,  w: 56.6, h: 44.9 },
+    5: { cx: 59.5,  cy: 121.0, w: 60.2, h: 41.2 },
+    6: { cx: 43.1,  cy: 170.6, w: 72.9, h: 65.4 },
+    7: { cx: 35.2,  cy: 233.5, w: 69.2, h: 59.1 },
+    8: { cx: 32.3,  cy: 290.1, w: 63.3, h: 54.5 },
+  };
+
+  // Primary arch, drawn for quadrant 5 (maxillary right); 6/7/8 mirror it.
+  // Keys are the primary FDI position digit (1-5). The library ships no
+  // primary-specific art, so: incisors and canine reuse the matching
+  // permanent outline (slightly reduced -- primary crowns are smaller),
+  // the first primary molar borrows the first-premolar outline, and the
+  // second primary molar borrows the first-molar outline (it's the
+  // closest match -- the second primary molar resembles a permanent first
+  // molar). cx/cy = where the shape's centre lands, in quadrant space.
+  const PRIMARY_LAYOUT = {
+    1: { shape: 1, cx: 180.4, cy: 31,  scale: 0.95 }, // central incisor
+    2: { shape: 2, cx: 137.5, cy: 37,  scale: 0.95 }, // lateral incisor
+    3: { shape: 3, cx: 106,   cy: 58,  scale: 0.95 }, // canine
+    4: { shape: 4, cx: 80,    cy: 92,  scale: 1.0  }, // first molar
+    5: { shape: 6, cx: 52,    cy: 150, scale: 0.98 }, // second molar
+  };
+
+  // Vertical space between the maxillary and mandibular arches. The
+  // primary viewBox is only as tall as 20 teeth need (a child's mouth is
+  // smaller), instead of reusing the permanent chart's 694.
+  const PRIMARY_MIDLINE_GAP = 44;
+  const primaryArchDepth = Math.max(...Object.values(PRIMARY_LAYOUT)
+    .map((t) => t.cy + (SHAPE_BOX[t.shape].h * t.scale) / 2));
+  const PRIMARY_VIEW_HEIGHT = Math.round(2 * primaryArchDepth + PRIMARY_MIDLINE_GAP);
+
+  // Same mirroring scheme as QUADRANT_TRANSFORM above, but for the primary
+  // chart's own height (the vertical flip depends on it).
+  const PRIMARY_QUADRANT_TRANSFORM = {
+    5: '',
+    6: `scale(-1, 1) translate(-${VIEW_WIDTH}, 0)`,
+    8: `scale(1, -1) translate(0, -${PRIMARY_VIEW_HEIGHT})`,
+    7: `scale(-1, -1) translate(-${VIEW_WIDTH}, -${PRIMARY_VIEW_HEIGHT})`,
+  };
+
+  const DENTITIONS = {
+    permanent: {
+      key: 'permanent',
+      label: 'Permanent',
+      toothCount: 32,
+      viewBox: `0 0 ${VIEW_WIDTH} ${PERMANENT_VIEW_HEIGHT}`,
+      upper: [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28],
+      lower: [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38],
+    },
+    primary: {
+      key: 'primary',
+      label: 'Primary',
+      toothCount: 20,
+      viewBox: `0 0 ${VIEW_WIDTH} ${PRIMARY_VIEW_HEIGHT}`,
+      upper: [55, 54, 53, 52, 51, 61, 62, 63, 64, 65],
+      lower: [85, 84, 83, 82, 81, 71, 72, 73, 74, 75],
+    },
+  };
+
+  const QUADRANT_NAMES = {
+    1: 'Maxillary Right', 2: 'Maxillary Left', 3: 'Mandibular Left', 4: 'Mandibular Right',
+    5: 'Maxillary Right', 6: 'Maxillary Left', 7: 'Mandibular Left', 8: 'Mandibular Right',
+  };
+  const PERMANENT_POSITION_NAMES = {
+    1: 'Central Incisor', 2: 'Lateral Incisor', 3: 'Canine', 4: 'First Premolar',
+    5: 'Second Premolar', 6: 'First Molar', 7: 'Second Molar', 8: 'Third Molar',
+  };
+  const PRIMARY_POSITION_NAMES = {
+    1: 'Central Incisor', 2: 'Lateral Incisor', 3: 'Canine', 4: 'First Molar', 5: 'Second Molar',
+  };
+
+  // Universal numbering system: permanent teeth 1-32 (upper right third
+  // molar -> lower right third molar), primary teeth A-T (upper right
+  // second molar -> lower right second molar).
+  function universalCode(quadrant, position) {
+    if (quadrant <= 4) {
+      return String({ 1: 9 - position, 2: 8 + position, 3: 25 - position, 4: 24 + position }[quadrant]);
+    }
+    const letterIndex = { 5: 5 - position, 6: 4 + position, 7: 15 - position, 8: 14 + position }[quadrant];
+    return String.fromCharCode(65 + letterIndex);
+  }
+
+  function get(key) {
+    return DENTITIONS[key];
+  }
+
+  function of(fdi) {
+    const quadrant = Math.floor(Number(fdi) / 10);
+    if (quadrant >= 1 && quadrant <= 4) return 'permanent';
+    if (quadrant >= 5 && quadrant <= 8) return 'primary';
+    return null;
+  }
+
+  function describe(fdi) {
+    const n = Number(fdi);
+    const quadrant = Math.floor(n / 10);
+    const position = n % 10;
+    const dentition = of(n);
+    const names = dentition === 'primary' ? PRIMARY_POSITION_NAMES : PERMANENT_POSITION_NAMES;
+
+    if (!dentition || !names[position]) {
+      return { fdi: n, dentition: null, isPrimary: false, quadrantName: '', positionName: 'Tooth', fullName: `Tooth ${fdi}`, universal: '' };
+    }
+
+    const isPrimary = dentition === 'primary';
+    // Primary teeth are named e.g. "Maxillary Right Primary Central Incisor".
+    const positionName = isPrimary ? `Primary ${names[position]}` : names[position];
+    return {
+      fdi: n,
+      dentition,
+      isPrimary,
+      quadrantName: QUADRANT_NAMES[quadrant],
+      positionName,
+      fullName: `${QUADRANT_NAMES[quadrant]} ${positionName}`,
+      universal: universalCode(quadrant, position),
+    };
+  }
+
+  // Everything a renderer needs to draw one tooth. Callers nest three
+  // groups: quadrantTransform (mirroring) > placementTransform (primary
+  // repositioning; '' for permanent) > the tooth <g> that carries the
+  // class-driven hover CSS. Keeping them on separate elements matters
+  // because a CSS transform on an element overrides that same element's
+  // SVG transform attribute.
+  function place(fdi) {
+    const n = Number(fdi);
+    const quadrant = Math.floor(n / 10);
+    const position = n % 10;
+
+    if (of(n) === 'primary') {
+      const t = PRIMARY_LAYOUT[position];
+      if (!t) return null;
+      const box = SHAPE_BOX[t.shape];
+      const tx = t.cx - box.cx * t.scale;
+      const ty = t.cy - box.cy * t.scale;
+      return {
+        shape: TOOTH_SHAPES[t.shape],
+        quadrantTransform: PRIMARY_QUADRANT_TRANSFORM[quadrant] || '',
+        placementTransform: `translate(${tx.toFixed(2)} ${ty.toFixed(2)}) scale(${t.scale})`,
+      };
+    }
+
+    const shape = TOOTH_SHAPES[position];
+    if (!shape) return null;
+    return { shape, quadrantTransform: QUADRANT_TRANSFORM[quadrant] || '', placementTransform: '' };
+  }
+
+  // Which dentition a chart should open on. Under 6 there are no
+  // permanent teeth yet (first permanent molars erupt at about 6), so the
+  // primary chart is the right starting point. From 6 up it opens on
+  // permanent -- children aged 6-12 are in MIXED dentition, so the
+  // clinician may need to flip between the two. The date-of-birth field
+  // name isn't confirmed for this backend, so a few likely spellings are
+  // tried; if none is present it simply falls back to permanent.
+  function suggestFor(patient) {
+    if (!patient) return 'permanent';
+    const raw = patient.date_of_birth || patient.dob || patient.birth_date || patient.dateOfBirth;
+    const dob = raw ? new Date(raw) : null;
+    if (!dob || Number.isNaN(dob.getTime())) return 'permanent';
+
+    const now = new Date();
+    let age = now.getFullYear() - dob.getFullYear();
+    const beforeBirthday = now.getMonth() < dob.getMonth() ||
+      (now.getMonth() === dob.getMonth() && now.getDate() < dob.getDate());
+    if (beforeBirthday) age -= 1;
+    return age >= 0 && age < 6 ? 'primary' : 'permanent';
+  }
+
+  // Findings beyond the base set (healthy / caries / filled / missing /
+  // crown) that matter most when charting children. `dentitions` says which
+  // arch a finding can apply to: a permanent tooth never "exfoliates" (an
+  // adult tooth that's gone is Missing/extracted, which is a different
+  // clinical statement), but any tooth can be unerupted or sealed, and
+  // pulpotomy is also done on immature permanent molars.
+  // Labels must not contain "·" or "—": the dentist page stores them inside
+  // diagnosis_text ("Condition: <label> · ...") and parses them back out.
+  // To add a finding, add it here, to CONDITION_KEYWORDS in
+  // dentistDiagnosis.js, to tooth-conditions.css, and to the DB (see the
+  // migration) if "ToothChart".condition is an enum.
+  const EXTRA_CONDITIONS = {
+    exfoliated: { label: 'Exfoliated', dentitions: ['primary'] },
+    unerupted:  { label: 'Unerupted',  dentitions: ['primary', 'permanent'] },
+    sealant:    { label: 'Sealant',    dentitions: ['primary', 'permanent'] },
+    pulpotomy:  { label: 'Pulpotomy',  dentitions: ['primary', 'permanent'] },
+  };
+
+  // [{ key, label }] of the extra findings that apply to a dentition.
+  function conditionsFor(dentitionKey) {
+    return Object.keys(EXTRA_CONDITIONS)
+      .filter((k) => EXTRA_CONDITIONS[k].dentitions.includes(dentitionKey))
+      .map((k) => ({ key: k, label: EXTRA_CONDITIONS[k].label }));
+  }
+
+  // { key: label } for every extra finding, for label lookups.
+  function conditionLabels() {
+    const out = {};
+    Object.keys(EXTRA_CONDITIONS).forEach((k) => { out[k] = EXTRA_CONDITIONS[k].label; });
+    return out;
+  }
+
+  return { get, of, describe, place, suggestFor, conditionsFor, conditionLabels };
+})();

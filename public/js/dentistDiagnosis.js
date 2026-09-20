@@ -15,13 +15,10 @@
   /* ============================================================
      TOOTH REFERENCE DATA
      ============================================================ */
-  const UPPER_TEETH = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];
-  const LOWER_TEETH = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38];
-  const POSITION_NAMES = [
-    '', 'Central Incisor', 'Lateral Incisor', 'Canine', '1st Premolar',
-    '2nd Premolar', '1st Molar', '2nd Molar', '3rd Molar',
-  ];
-  const QUADRANT_NAMES = { 1: 'Upper Right', 2: 'Upper Left', 3: 'Lower Left', 4: 'Lower Right' };
+  // Tooth lists, names and layout for BOTH dentitions (permanent 11-48,
+  // primary 51-85) live in toothShapes.js under the `Dentition` global.
+  // Names can't be derived from the FDI digits alone: position 4/5 is a
+  // premolar in quadrants 1-4 but a molar in quadrants 5-8.
 
   // Condition options are category-scoped: a Medical finding picks from
   // the clinical set below, a Cosmetic finding from the aesthetic set.
@@ -31,16 +28,15 @@
     medical: { caries: 'Caries', filled: 'Filled / restored', missing: 'Missing / extracted', crown: 'Crown' },
     cosmetic: { whitening: 'Whitening', veneer: 'Veneer', bonding: 'Bonding', contouring: 'Contouring', smile_design: 'Smile Design' },
   };
-  const ALL_CONDITION_LABELS = { ...CONDITION_SETS.medical, ...CONDITION_SETS.cosmetic };
+  // Pediatric/developmental findings (exfoliated, unerupted, sealant,
+  // pulpotomy) are defined in toothShapes.js. They're offered under Medical,
+  // filtered by the tooth's dentition (see populateConditionOptions), and
+  // included here so a saved "Condition: Exfoliated" parses back out.
+  const ALL_CONDITION_LABELS = { ...CONDITION_SETS.medical, ...CONDITION_SETS.cosmetic, ...Dentition.conditionLabels() };
 
   function toothLabel(fdi) {
-    const str = String(fdi);
-    const quadrant = Number(str[0]);
-    const position = Number(str[1]);
-    return {
-      name: POSITION_NAMES[position] || 'Tooth',
-      quadrant: QUADRANT_NAMES[quadrant] || '',
-    };
+    const d = Dentition.describe(fdi);
+    return { name: d.positionName, quadrant: d.quadrantName, universal: d.universal, isPrimary: d.isPrimary };
   }
 
   /* ============================================================
@@ -57,6 +53,7 @@
     files: [],             // patient files (X-rays, etc.) tagged to this appointment
     selectedTooth: null,  // currently open-in-modal tooth (FDI number as string)
     activeCategory: 'medical', // which category the odontogram/timeline are showing
+    dentition: 'permanent',    // which arch is drawn: 'permanent' (32 teeth) or 'primary' (20 teeth)
     pickerTab: 'today',    // 'today' | 'upcoming' | 'past' — ignored while pickerSearch is non-empty
     pickerSearch: '',      // patient-name search, overrides the tab and searches the full fetched range
   };
@@ -68,6 +65,7 @@
     renderTopbarAvatar(`Dr. ${sessionUser.first_name} ${sessionUser.last_name}`);
     initToothModal();
     initCategoryToggle();
+    initDentitionToggle();
     initAppointmentPickerControls();
     renderLegend();
     document.getElementById('switchPatientBtn').addEventListener('click', showAppointmentPicker);
@@ -232,6 +230,12 @@
     state.activePatient = state.patientsById[appt.patient_id] || null;
     state.selectedTooth = null;
 
+    // Open on the dentition that fits the patient's age (primary under 6);
+    // the dentist can still flip it with the toggle for mixed dentition.
+    state.dentition = Dentition.suggestFor(state.activePatient);
+    syncDentitionToggle();
+    renderLegend();
+
     renderAppointmentPicker();
 
     if (!state.activePatient) {
@@ -311,6 +315,10 @@
     bonding: ['bonding'],
     contouring: ['contour'],
     smile_design: ['smile design'],
+    exfoliated: ['exfoliat'],
+    unerupted: ['unerupted', 'not yet erupted'],
+    sealant: ['sealant', 'fissure seal'],
+    pulpotomy: ['pulpotomy'],
   };
 
   function parseCondition(diagnosisText) {
@@ -358,8 +366,6 @@
      cosmetic procedures aren't individually color-coded, matching
      how tooth-chart.css only styles one cosmetic color).
      ============================================================ */
-  const ALL_TEETH = [...UPPER_TEETH, ...LOWER_TEETH];
-
   function latestConditionForTooth(tooth, category) {
     const matches = state.diagnoses.filter((d) =>
       (Array.isArray(d.tooth_refs) ? d.tooth_refs : []).some((t) => String(t) === String(tooth)) &&
@@ -374,15 +380,17 @@
   }
 
   function renderOdontogram() {
+    const dentition = Dentition.get(state.dentition);
     const host = document.getElementById('odontogramHost');
-    host.innerHTML = '<svg id="odontogramSvg" viewBox="0 0 409 694"></svg>';
+    // The primary chart's viewBox is shorter than the permanent one (20
+    // teeth in a smaller arch), so it's set per dentition, not hard-coded.
+    host.innerHTML = `<svg id="odontogramSvg" viewBox="${dentition.viewBox}"></svg>`;
     const svg = document.getElementById('odontogramSvg');
 
-    ALL_TEETH.forEach((num) => {
-      const quadrant = Math.floor(num / 10);
-      const position = num % 10;
-      const shape = TOOTH_SHAPES[position];
-      if (!shape) return;
+    [...dentition.upper, ...dentition.lower].forEach((num) => {
+      const placement = Dentition.place(num);
+      if (!placement) return;
+      const { shape } = placement;
 
       const rawCondition = latestConditionForTooth(num, state.activeCategory);
       const condition = state.activeCategory === 'medical'
@@ -393,8 +401,12 @@
       // Same split as toothChart.js: the outer <g> only ever carries the
       // quadrant-mirroring transform attribute, kept separate from the
       // inner group's class-driven hover-scale CSS transform.
+      // A middle group carries the primary teeth's reposition/scale (empty
+      // for permanent teeth) so it too stays off the hover-scale element.
       const quadrantGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      quadrantGroup.setAttribute('transform', QUADRANT_TRANSFORM[quadrant] || '');
+      quadrantGroup.setAttribute('transform', placement.quadrantTransform);
+      const placementGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      if (placement.placementTransform) placementGroup.setAttribute('transform', placement.placementTransform);
 
       const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       g.setAttribute('class', `tooth-svg cond-${condition}` + (state.selectedTooth === toothStr ? ' is-selected' : ''));
@@ -415,7 +427,8 @@
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); focusTooth(toothStr); }
       });
 
-      quadrantGroup.appendChild(g);
+      placementGroup.appendChild(g);
+      quadrantGroup.appendChild(placementGroup);
       svg.appendChild(quadrantGroup);
     });
 
@@ -434,6 +447,7 @@
           { cond: 'filled', label: 'Filled' },
           { cond: 'missing', label: 'Missing' },
           { cond: 'crown', label: 'Crown' },
+          ...Dentition.conditionsFor(state.dentition).map((c) => ({ cond: c.key, label: c.label })),
         ]
       : [
           { cond: 'healthy', label: 'No cosmetic work' },
@@ -458,6 +472,39 @@
           renderDiagnosisTimeline();
         }
       });
+    });
+  }
+
+  /* ---- Permanent / Primary dentition toggle ---- */
+  function initDentitionToggle() {
+    const toggle = document.getElementById('dentitionToggle');
+    if (!toggle) return;
+    toggle.querySelectorAll('.segmented-opt').forEach((btn) => {
+      btn.addEventListener('click', () => setDentition(btn.getAttribute('data-dentition')));
+    });
+  }
+
+  function setDentition(key) {
+    if (!Dentition.get(key) || key === state.dentition) return;
+    state.dentition = key;
+    // A tooth from the other dentition isn't on the chart any more, so it
+    // can't stay selected.
+    if (state.selectedTooth && Dentition.of(state.selectedTooth) !== key) state.selectedTooth = null;
+    syncDentitionToggle();
+    renderLegend();
+    if (state.activePatient) {
+      renderOdontogram();
+      renderToothDetail();
+    }
+  }
+
+  // Keeps the buttons in step with state.dentition when it changes for a
+  // reason other than a click (e.g. a new patient's age picks the default).
+  function syncDentitionToggle() {
+    const toggle = document.getElementById('dentitionToggle');
+    if (!toggle) return;
+    toggle.querySelectorAll('.segmented-opt').forEach((b) => {
+      b.classList.toggle('is-active', b.getAttribute('data-dentition') === state.dentition);
     });
   }
 
@@ -486,7 +533,9 @@
     }
 
     const tooth = state.selectedTooth;
-    const { name, quadrant } = toothLabel(tooth);
+    const { name, quadrant, universal, isPrimary } = toothLabel(tooth);
+    // Primary teeth are also charted by letter (A-T) in the Universal system.
+    const sub = [`FDI ${tooth}`, isPrimary ? `Universal ${universal}` : null, quadrant].filter(Boolean).join(' · ');
     const matches = state.diagnoses.filter((d) =>
       (Array.isArray(d.tooth_refs) ? d.tooth_refs : []).some((t) => String(t) === String(tooth)) &&
       parseCategory(d.diagnosis_text) === state.activeCategory);
@@ -504,7 +553,7 @@
 
     col.innerHTML = `
       <p class="tooth-detail-title">${escapeHtml(name)}</p>
-      <p class="tooth-detail-sub">FDI ${escapeHtml(tooth)} · ${escapeHtml(quadrant)}</p>
+      <p class="tooth-detail-sub">${escapeHtml(sub)}</p>
       <button class="tooth-add-btn" type="button" id="toothAddFindingBtn">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         Log a finding
@@ -685,8 +734,21 @@
   function populateConditionOptions(category) {
     const select = document.getElementById('conditionSelect');
     const set = CONDITION_SETS[category] || CONDITION_SETS.medical;
-    select.innerHTML = '<option value="">No condition (healthy)</option>' +
+    let options = '<option value="">No condition (healthy)</option>' +
       Object.keys(set).map((key) => `<option value="${key}">${escapeHtml(set[key])}</option>`).join('');
+
+    // Medical findings also offer the pediatric/developmental set, filtered
+    // to what's valid for the selected tooth's dentition -- e.g. "Exfoliated"
+    // only appears for primary teeth.
+    if (category === 'medical') {
+      const extras = Dentition.conditionsFor(Dentition.of(state.selectedTooth));
+      if (extras.length) {
+        options += '<optgroup label="Pediatric &amp; developmental">' +
+          extras.map((c) => `<option value="${c.key}">${escapeHtml(c.label)}</option>`).join('') +
+          '</optgroup>';
+      }
+    }
+    select.innerHTML = options;
   }
 
   function openToothModal(tooth) {
