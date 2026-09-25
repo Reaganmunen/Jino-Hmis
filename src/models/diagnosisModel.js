@@ -31,6 +31,23 @@ const findDiagnosisById = (id, callback) => {
   });
 };
 
+// Corrects an already-logged diagnosis/finding in place. Only tooth_refs
+// and diagnosis_text are editable — patient_id, appointment_id and
+// dentist_id stay fixed to how the record was originally created.
+const updateDiagnosis = (id, data, callback) => {
+  const { tooth_refs, diagnosis_text } = data;
+  const query = `
+    UPDATE "Diagnosis"
+    SET tooth_refs = $1, diagnosis_text = $2
+    WHERE id = $3
+    RETURNING *
+  `;
+  pool.query(query, [tooth_refs, diagnosis_text, id], (err, result) => {
+    if (err) return callback(err);
+    callback(null, result.rows[0]);
+  });
+};
+
 // Powers the dentist overview: diagnoses this dentist logged within a date range.
 // Query params expected as ISO timestamps, e.g. ?from=2026-08-17T00:00:00&to=2026-08-18T00:00:00
 const findDiagnosesByDentist = (dentist_id, from, to, callback) => {
@@ -61,4 +78,5 @@ module.exports = {
   findDiagnosisById,
   findDiagnosesByDentist,
   findDiagnosisByAppointment,
+  updateDiagnosis,
 };

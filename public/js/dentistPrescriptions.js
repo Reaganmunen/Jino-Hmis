@@ -22,6 +22,7 @@
     activePatient: null,
     diagnoses: [],          // active patient's diagnosis history, for the "link to diagnosis" dropdown
     prescriptions: [],      // active patient's prescription history
+    editingPrescriptionId: null, // set while rxFormPanel is editing an existing prescription instead of creating one
   };
 
   document.addEventListener('DOMContentLoaded', () => {
@@ -31,6 +32,7 @@
     document.getElementById('switchPatientBtn').addEventListener('click', showPatientPicker);
     document.getElementById('downloadPatientRxBtn').addEventListener('click', downloadActivePatientRx);
     document.getElementById('rxSaveBtn').addEventListener('click', savePrescription);
+    document.getElementById('rxCancelEditBtn').addEventListener('click', exitEditMode);
     loadInitialData();
   });
 
@@ -109,7 +111,7 @@
     document.getElementById('rxPatientName').textContent = `— ${patient.first_name} ${patient.last_name}`;
     document.getElementById('rxFormPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-    resetRxForm();
+    exitEditMode();
     document.getElementById('rxTimeline').innerHTML = '<div class="empty-state">Loading prescription history…</div>';
     document.getElementById('rxDiagnosisSelect').innerHTML = '<option value="">No diagnosis link</option>';
 
@@ -159,6 +161,33 @@
     document.getElementById('rxNotes').value = '';
   }
 
+  // Fills the form from an existing prescription and flips it into "edit"
+  // mode — savePrescription() below then PUTs instead of POSTs.
+  function startEditPrescription(rx) {
+    state.editingPrescriptionId = rx.id;
+    document.getElementById('rxDrugName').value = rx.drug_name || '';
+    document.getElementById('rxDosage').value = rx.dosage || '';
+    document.getElementById('rxFrequency').value = rx.frequency || '';
+    document.getElementById('rxDuration').value = rx.duration || '';
+    document.getElementById('rxDiagnosisSelect').value = rx.diagnosis_id || '';
+    document.getElementById('rxNotes').value = rx.notes || '';
+    document.getElementById('rxFormTitle').textContent = 'Edit prescription';
+    document.getElementById('rxSaveBtn').textContent = 'Update prescription';
+    document.getElementById('rxCancelEditBtn').style.display = 'inline-flex';
+    document.getElementById('rxFormPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // Clears the form and drops back to "new prescription" mode, whether
+  // called after a successful save, an explicit cancel, or a patient switch.
+  function exitEditMode() {
+    state.editingPrescriptionId = null;
+    resetRxForm();
+    document.getElementById('rxFormTitle').textContent = 'New prescription';
+    document.getElementById('rxSaveBtn').textContent = 'Save prescription';
+    document.getElementById('rxSaveBtn').disabled = false;
+    document.getElementById('rxCancelEditBtn').style.display = 'none';
+  }
+
   async function savePrescription() {
     if (!state.activePatient) return;
 
@@ -174,30 +203,38 @@
       return;
     }
 
+    const isEditing = !!state.editingPrescriptionId;
     const saveBtn = document.getElementById('rxSaveBtn');
     saveBtn.disabled = true;
-    saveBtn.textContent = 'Saving…';
+    saveBtn.textContent = isEditing ? 'Updating…' : 'Saving…';
+
+    const payload = {
+      patient_id: state.activePatient.id,
+      diagnosis_id: diagnosisValue || null,
+      drug_name,
+      dosage,
+      frequency,
+      duration,
+      notes,
+    };
 
     try {
-      const created = await fetchMethod('/prescriptions', 'POST', {
-        patient_id: state.activePatient.id,
-        diagnosis_id: diagnosisValue || null,
-        drug_name,
-        dosage,
-        frequency,
-        duration,
-        notes,
-      }, true);
-
-      state.prescriptions.unshift(created);
+      if (isEditing) {
+        const updated = await fetchMethod(`/prescriptions/${state.editingPrescriptionId}`, 'PUT', payload, true);
+        const idx = state.prescriptions.findIndex((rx) => rx.id === updated.id);
+        if (idx !== -1) state.prescriptions[idx] = updated;
+        showToast('Prescription updated.');
+      } else {
+        const created = await fetchMethod('/prescriptions', 'POST', payload, true);
+        state.prescriptions.unshift(created);
+        showToast('Prescription saved.');
+      }
       renderPrescriptionHistory();
-      resetRxForm();
-      showToast('Prescription saved.');
+      exitEditMode();
     } catch (err) {
-      showToast(err.message || 'Could not save this prescription. Please try again.');
-    } finally {
+      showToast(err.message || `Could not ${isEditing ? 'update' : 'save'} this prescription. Please try again.`);
       saveBtn.disabled = false;
-      saveBtn.textContent = 'Save prescription';
+      saveBtn.textContent = isEditing ? 'Update prescription' : 'Save prescription';
     }
   }
 
@@ -214,6 +251,7 @@
       <div class="timeline-item">
         <div class="timeline-row">
           <span class="timeline-date">${formatDate(rx.created_at)}</span>
+          <button class="panel-link rx-edit-btn" type="button" data-id="${rx.id}">Edit</button>
         </div>
         <div class="timeline-note">
           <div class="rx-drug-name">${escapeHtml(rx.drug_name || '')}</div>
@@ -226,6 +264,13 @@
         </div>
       </div>
     `).join('');
+
+    el.querySelectorAll('.rx-edit-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const rx = state.prescriptions.find((p) => String(p.id) === btn.dataset.id);
+        if (rx) startEditPrescription(rx);
+      });
+    });
   }
 
   /* ============================================================

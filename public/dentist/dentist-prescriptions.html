@@ -114,7 +114,7 @@
       <!-- ---- New prescription — hidden until a patient is selected ---- -->
       <section class="panel" id="rxFormPanel" style="display:none;">
         <div class="panel-head">
-          <h2>New prescription <span id="rxPatientName" class="charting-patient-name"></span></h2>
+          <h2><span id="rxFormTitle">New prescription</span> <span id="rxPatientName" class="charting-patient-name"></span></h2>
           <button class="panel-link" id="switchPatientBtn" type="button">Switch patient</button>
         </div>
 
@@ -150,6 +150,7 @@
         </div>
 
         <div class="modal-foot" style="justify-content:flex-end; margin-top:16px;">
+          <button class="btn btn-outline" id="rxCancelEditBtn" type="button" style="display:none;">Cancel edit</button>
           <button class="btn btn-primary" id="rxSaveBtn" type="button">Save prescription</button>
         </div>
       </section>

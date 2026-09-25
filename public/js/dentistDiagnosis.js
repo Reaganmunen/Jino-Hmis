@@ -52,6 +52,7 @@
     diagnoses: [],        // full diagnosis history for the active patient
     files: [],             // patient files (X-rays, etc.) tagged to this appointment
     selectedTooth: null,  // currently open-in-modal tooth (FDI number as string)
+    editingDiagnosisId: null, // set while the tooth modal is editing an existing finding instead of creating one
     activeCategory: 'medical', // which category the odontogram/timeline are showing
     dentition: 'permanent',    // which arch is drawn: 'permanent' (32 teeth) or 'primary' (20 teeth)
     pickerTab: 'today',    // 'today' | 'upcoming' | 'past' — ignored while pickerSearch is non-empty
@@ -545,6 +546,7 @@
           <div class="timeline-item">
             <div class="timeline-row">
               <span class="timeline-date">${formatDate(d.created_at)}</span>
+              <button class="panel-link tooth-finding-edit-btn" type="button" data-id="${d.id}">Edit</button>
             </div>
             <div class="timeline-note">${escapeHtml(d.diagnosis_text || '')}</div>
           </div>
@@ -561,6 +563,12 @@
       <div class="tooth-detail-list"><div class="timeline">${items}</div></div>
     `;
     document.getElementById('toothAddFindingBtn').addEventListener('click', () => openToothModal(tooth));
+    col.querySelectorAll('.tooth-finding-edit-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const d = state.diagnoses.find((x) => String(x.id) === btn.dataset.id);
+        if (d) openToothModal(tooth, d);
+      });
+    });
   }
 
   /* ============================================================
@@ -580,6 +588,7 @@
         <div class="timeline-item">
           <div class="timeline-row">
             <span class="timeline-date">${formatDate(d.created_at)}</span>
+            ${teeth.length ? `<button class="panel-link diag-edit-btn" type="button" data-id="${d.id}">Edit</button>` : ''}
           </div>
           <div class="timeline-note">
             ${escapeHtml(d.diagnosis_text || '')}
@@ -588,6 +597,21 @@
         </div>
       `;
     }).join('');
+
+    // Editing from this all-teeth timeline needs the modal open on the
+    // right tooth — findings here are always single-tooth (tooth_refs[0]),
+    // same assumption the "log a finding" flow makes when saving one.
+    el.querySelectorAll('.diag-edit-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const d = state.diagnoses.find((x) => String(x.id) === btn.dataset.id);
+        if (!d) return;
+        const teeth = Array.isArray(d.tooth_refs) ? d.tooth_refs : [];
+        if (!teeth.length) return;
+        const tooth = String(teeth[0]);
+        focusTooth(tooth);
+        openToothModal(tooth, d);
+      });
+    });
   }
 
   /* ============================================================
@@ -751,19 +775,44 @@
     select.innerHTML = options;
   }
 
-  function openToothModal(tooth) {
+  // Pass `existing` (a diagnosis row) to open the modal in edit mode,
+  // pre-filled with what was saved before. Category/condition parse the
+  // same way the odontogram does (parseCategory/parseCondition); procedure
+  // and notes are pulled back out of composeDiagnosisText's own format,
+  // so this only round-trips cleanly for findings logged through this
+  // modal — free-text edits made elsewhere may not parse back perfectly.
+  function openToothModal(tooth, existing) {
+    state.editingDiagnosisId = existing ? existing.id : null;
+
     const { name } = toothLabel(tooth);
     document.getElementById('toothModalTitle').textContent = name;
     document.getElementById('toothModalFdiBadge').textContent = `FDI ${tooth}`;
-    document.getElementById('categorySelect').value = state.activeCategory;
-    populateConditionOptions(state.activeCategory);
-    document.getElementById('procedureSelect').value = '';
-    document.getElementById('notesInput').value = '';
+    document.getElementById('toothModalKicker').textContent = existing ? 'Edit finding' : 'Log a finding';
+
+    const category = existing ? parseCategory(existing.diagnosis_text) : state.activeCategory;
+    document.getElementById('categorySelect').value = category;
+    populateConditionOptions(category);
+    document.getElementById('conditionSelect').value = existing ? (parseCondition(existing.diagnosis_text) || '') : '';
+
+    let procedureName = '';
+    let notes = '';
+    if (existing) {
+      const text = existing.diagnosis_text || '';
+      const procMatch = text.match(/Procedure:\s*([^·—]+)/i);
+      if (procMatch) procedureName = procMatch[1].trim();
+      const notesMatch = text.match(/—\s*(.+)$/s);
+      if (notesMatch) notes = notesMatch[1].trim();
+    }
+    document.getElementById('procedureSelect').value = procedureName;
+    document.getElementById('notesInput').value = notes;
+
+    document.getElementById('toothModalSave').textContent = existing ? 'Update finding' : 'Save finding';
     document.getElementById('toothModalScrim').classList.add('is-open');
   }
 
   function closeToothModal() {
     document.getElementById('toothModalScrim').classList.remove('is-open');
+    state.editingDiagnosisId = null;
   }
 
   async function saveToothFinding() {
@@ -775,19 +824,28 @@
     const notes = document.getElementById('notesInput').value.trim();
 
     const diagnosis_text = composeDiagnosisText({ category, condition, procedureName, notes });
+    const isEditing = !!state.editingDiagnosisId;
     const saveBtn = document.getElementById('toothModalSave');
     saveBtn.disabled = true;
-    saveBtn.textContent = 'Saving…';
+    saveBtn.textContent = isEditing ? 'Updating…' : 'Saving…';
 
     try {
-      const created = await fetchMethod('/diagnoses', 'POST', {
-        patient_id: state.activePatient.id,
-        appointment_id: state.activeAppointment.id,
-        tooth_refs: [Number(state.selectedTooth)],
-        diagnosis_text,
-      }, true);
-
-      state.diagnoses.unshift(created);
+      if (isEditing) {
+        const updated = await fetchMethod(`/diagnoses/${state.editingDiagnosisId}`, 'PUT', {
+          tooth_refs: [Number(state.selectedTooth)],
+          diagnosis_text,
+        }, true);
+        const idx = state.diagnoses.findIndex((d) => d.id === updated.id);
+        if (idx !== -1) state.diagnoses[idx] = updated; else state.diagnoses.unshift(updated);
+      } else {
+        const created = await fetchMethod('/diagnoses', 'POST', {
+          patient_id: state.activePatient.id,
+          appointment_id: state.activeAppointment.id,
+          tooth_refs: [Number(state.selectedTooth)],
+          diagnosis_text,
+        }, true);
+        state.diagnoses.unshift(created);
+      }
 
       // ToothChart's condition column only recognizes the medical set
       // (healthy/caries/filled/missing/crown) -- that's also all the
@@ -797,6 +855,13 @@
       // stay Diagnosis-only until there's a real place for them to live
       // (either a schema change or wiring through Treatment Plan items,
       // which is what the patient page's own Cosmetic tab reads from).
+      //
+      // ToothChart itself is an append-only observation history, not a
+      // single editable row per tooth — there's no linked ToothChart id
+      // to update in place even when we're editing the Diagnosis record.
+      // So an edit, like a new finding, just appends a fresh ToothChart
+      // entry reflecting the corrected condition; the earlier entry this
+      // finding originally wrote stays in that history as-is.
       if (category === 'medical') {
         try {
           await fetchMethod('/tooth-chart', 'POST', {
@@ -815,12 +880,12 @@
       renderToothDetail();
       renderDiagnosisTimeline();
       closeToothModal();
-      showToast('Finding saved.');
+      showToast(isEditing ? 'Finding updated.' : 'Finding saved.');
     } catch (err) {
-      showToast(err.message || 'Could not save this finding. Please try again.');
+      showToast(err.message || `Could not ${isEditing ? 'update' : 'save'} this finding. Please try again.`);
     } finally {
       saveBtn.disabled = false;
-      saveBtn.textContent = 'Save finding';
+      saveBtn.textContent = isEditing ? 'Update finding' : 'Save finding';
     }
   }
 

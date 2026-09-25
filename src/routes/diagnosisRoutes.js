@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const {
-  addDiagnosis, getPatientDiagnoses, getDiagnosis, getDentistDiagnoses, getDiagnosisForAppointment,
+  addDiagnosis, getPatientDiagnoses, getDiagnosis, editDiagnosis, getDentistDiagnoses, getDiagnosisForAppointment,
 } = require('../controllers/diagnosisController');
 const verifyToken = require('../middleware/authMiddleware');
 const { authorizeRoles, allowSelfOrStaff, allowDentistSelfOrStaff } = require('../middleware/roleMiddleware');
@@ -28,5 +28,9 @@ router.get(
   getPatientDiagnoses,
 );
 router.get('/:id', getDiagnosis); // ownership checked in controller — no patientId in the URL here
+
+// Editing a finding/checkup: staff-role gated here, "is this actually
+// your record" ownership checked in the controller — same split as GET /:id.
+router.put('/:id', authorizeRoles('dentist', 'admin'), editDiagnosis);
 
 module.exports = router;

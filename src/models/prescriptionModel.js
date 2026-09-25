@@ -15,6 +15,32 @@ const createPrescription = (data, callback) => {
   });
 };
 
+const findPrescriptionById = (id, callback) => {
+  const query = `SELECT * FROM "Prescription" WHERE id = $1`;
+  pool.query(query, [id], (err, result) => {
+    if (err) return callback(err);
+    callback(null, result.rows[0]);
+  });
+};
+
+// Corrects an already-saved prescription in place (wrong dosage typed,
+// duration needs adjusting, etc). patient_id and dentist_id stay fixed
+// to how it was originally written; diagnosis_id can be relinked.
+const updatePrescription = (id, data, callback) => {
+  const { drug_name, dosage, frequency, duration, notes, diagnosis_id } = data;
+  const query = `
+    UPDATE "Prescription"
+    SET drug_name = $1, dosage = $2, frequency = $3, duration = $4, notes = $5, diagnosis_id = $6
+    WHERE id = $7
+    RETURNING *
+  `;
+  const values = [drug_name, dosage, frequency, duration, notes, diagnosis_id, id];
+  pool.query(query, values, (err, result) => {
+    if (err) return callback(err);
+    callback(null, result.rows[0]);
+  });
+};
+
 const findPrescriptionsByPatient = (patient_id, callback) => {
   const query = `SELECT * FROM "Prescription" WHERE patient_id = $1 ORDER BY created_at DESC`;
   pool.query(query, [patient_id], (err, result) => {
@@ -59,5 +85,6 @@ const findPrescriptionsByPatientOnDate = (patient_id, date, callback) => {
 };
 
 module.exports = {
-  createPrescription, findPrescriptionsByPatient, findPrescriptionsByDentist, findPrescriptionsByPatientOnDate,
+  createPrescription, findPrescriptionById, updatePrescription,
+  findPrescriptionsByPatient, findPrescriptionsByDentist, findPrescriptionsByPatientOnDate,
 };
