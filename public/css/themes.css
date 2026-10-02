@@ -1,0 +1,98 @@
+/* ============================================================
+   themes.css — seasonal themes for Jino
+   Activated by js/theme.js, which sets <html data-theme="...">.
+   Each theme only overrides the shared colour variables, so every
+   page picks it up automatically. Keep it subtle & professional.
+   ============================================================ */
+
+/* ---------- Logo mark (sidebar) — replaces the old "J" tile ---------- */
+.brand-mark{background:transparent !important;overflow:visible;position:relative;flex:none;}
+.brand-mark img{width:100%;height:100%;object-fit:cover;border-radius:9px;display:block;}
+
+/* Wrapper JS puts around standalone logos so decorations can attach */
+.logo-deco{position:relative;display:inline-block;line-height:0;}
+
+/* Decoration layer (hat / heart) — hidden unless a theme turns it on */
+.brand-mark::after,.logo-deco::after{content:"";position:absolute;display:none;pointer-events:none;background-repeat:no-repeat;background-size:contain;}
+
+/* ============================================================
+   CHRISTMAS  (1–26 Dec) — festive red + ice
+   ============================================================ */
+html[data-theme="christmas"]{
+  --navy-950:#2A0B13;
+  --navy-900:#2B1118;
+  --navy-800:#5C1B27;
+  --blue-600:#C0212F;
+  --blue-500:#D63C4A;
+  --blue-100:#F9DCE0;
+  --blue-50:#F1F7FB;           /* ice */
+  --slate-300:#D3E1EC;
+  --slate-200:#E1ECF4;
+  --slate-100:#EBF3F9;
+  --shadow-card:0 1px 2px rgba(42,11,19,.04),0 12px 32px -12px rgba(42,11,19,.16);
+  --shadow-soft:0 1px 2px rgba(42,11,19,.04),0 4px 14px -6px rgba(42,11,19,.10);
+}
+html[data-theme="christmas"] .btn-primary{box-shadow:0 6px 16px -6px rgba(192,33,47,.5);}
+html[data-theme="christmas"] .btn-primary:hover{background:#A91B28;}
+/* candy-stripe garland along the top of the sidebar */
+html[data-theme="christmas"] .sidebar{border-top:4px solid transparent;border-image:repeating-linear-gradient(135deg,#C0212F 0 10px,#fff 10px 20px) 4;}
+html[data-theme="christmas"] .topbar{border-bottom-color:#CFE0EC;}
+/* login / register left panel */
+html[data-theme="christmas"] .auth-brand{background:linear-gradient(165deg,#2A0B13,#4A1520);}
+html[data-theme="christmas"] .auth-brand::after{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:repeating-linear-gradient(135deg,#C0212F 0 10px,#fff 10px 20px);z-index:3;}
+/* index hero — a faint ice wash */
+html[data-theme="christmas"] .hero{background-image:linear-gradient(180deg,rgba(214,232,245,.55),rgba(255,255,255,0) 60%);}
+/* Santa hat on the logo */
+html[data-theme="christmas"] .brand-mark::after,
+html[data-theme="christmas"] .logo-deco::after{
+  display:block;width:62%;height:56%;top:-34%;left:-12%;transform:rotate(-14deg);
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 90'><path d='M12 66C14 30 40 6 74 12c12 2 18 10 16 20-3 14-4 24-2 34z' fill='%23C0212F'/><path d='M74 12c12 2 18 10 16 20' fill='none' stroke='%239E1A26' stroke-width='3'/><rect x='4' y='60' width='92' height='24' rx='12' fill='%23fff'/><circle cx='88' cy='16' r='11' fill='%23fff'/></svg>");
+}
+
+/* ============================================================
+   NEW YEAR  (27 Dec – 3 Jan) — midnight navy + champagne gold
+   ============================================================ */
+html[data-theme="newyear"]{
+  --blue-600:#A87B10;
+  --blue-500:#C9A227;
+  --blue-100:#F5EBC9;
+  --blue-50:#FAF8F1;
+  --slate-200:#ECE8DB;
+  --slate-100:#F3F0E6;
+}
+html[data-theme="newyear"] .btn-primary{box-shadow:0 6px 16px -6px rgba(168,123,16,.5);}
+html[data-theme="newyear"] .btn-primary:hover{background:#8E680D;}
+html[data-theme="newyear"] .sidebar{border-top:4px solid #C9A227;}
+html[data-theme="newyear"] .auth-brand::after{content:"";position:absolute;left:0;right:0;top:0;height:4px;background:#C9A227;z-index:3;}
+
+/* ============================================================
+   VALENTINE'S  (10–14 Feb) — soft rose
+   ============================================================ */
+html[data-theme="valentines"]{
+  --navy-950:#2A0F1F;
+  --navy-900:#2E1424;
+  --navy-800:#5A2140;
+  --blue-600:#C2255C;
+  --blue-500:#E0457B;
+  --blue-100:#FCE1EA;
+  --blue-50:#FFF6F9;
+  --slate-200:#F1E4EA;
+  --slate-100:#F8EEF2;
+}
+html[data-theme="valentines"] .btn-primary{box-shadow:0 6px 16px -6px rgba(194,37,92,.5);}
+html[data-theme="valentines"] .btn-primary:hover{background:#A81D4D;}
+html[data-theme="valentines"] .sidebar{border-top:4px solid #E0457B;}
+html[data-theme="valentines"] .auth-brand{background:linear-gradient(165deg,#2A0F1F,#4A1A35);}
+html[data-theme="valentines"] .brand-mark::after,
+html[data-theme="valentines"] .logo-deco::after{
+  display:block;width:34%;height:34%;top:-14%;right:-14%;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 21s-8-5.2-8-11a4.6 4.6 0 0 1 8-3 4.6 4.6 0 0 1 8 3c0 5.8-8 11-8 11z' fill='%23E0457B' stroke='%23fff' stroke-width='1.4'/></svg>");
+}
+
+/* ---------- Falling snow (Christmas only, injected by theme.js) ---------- */
+#jino-snow{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9999;}
+@media (prefers-reduced-motion:reduce){#jino-snow{display:none;}}
+
+/* Standalone logo images (landing, login, register) */
+.brand-logo{border-radius:10px;}
+.auth-brand .brand-logo{height:40px;}

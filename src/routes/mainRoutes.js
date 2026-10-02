@@ -24,6 +24,8 @@ router.use('/mpesa', require('./mpesaRoutes'));
 router.use('/insurance-providers', require('./insuranceProviderRoutes'));
 router.use('/insurance-claims', require('./insuranceClaimRoutes'));
 router.use('/claim-status-history', require('./claimStatusHistoryRoutes'));
+router.use('/lab-partners', require('./labPartnerRoutes'));
+router.use('/lab-orders', require('./labOrderRoutes'));
 router.use('/referrals', require('./referralRoutes'));
 router.use('/recall-reminders', require('./recallReminderRoutes'));
 router.use('/audit-log', require('./auditLogRoutes'));
