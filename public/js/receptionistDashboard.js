@@ -648,7 +648,8 @@
     if (!amount || amount <= 0) return showToast('Enter a valid amount');
 
     try {
-      const res = await fetchMethod('/mpesa/initiate', 'POST', { bill_id: bill.id, phone, amount }, true);
+      const endpoint = document.getElementById('mpesaProvider').value === 'kcb' ? '/kcb/initiate' : '/mpesa/initiate';
+      const res = await fetchMethod(endpoint, 'POST', { bill_id: bill.id, phone, amount }, true);
       state.activeMpesaTransaction = res.transaction;
       document.getElementById('mpesaFormStep').style.display = 'none';
       document.getElementById('mpesaWaitingStep').style.display = 'block';

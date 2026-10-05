@@ -10,12 +10,6 @@
 <link rel="stylesheet" href="../css/dashboard.css">
 <link rel="stylesheet" href="../css/receptionist-dashboard.css">
 <link rel="stylesheet" href="../css/receptionist-billing.css">
-<link rel="icon" type="image/x-icon" href="../favicon.ico">
-<link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="../assets/favicon-16.png">
-<link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
-<link rel="stylesheet" href="../css/themes.css">
-<script src="../js/theme.js"></script>
 </head>
 <body>
 
@@ -25,7 +19,7 @@
   <aside class="sidebar" id="sidebar">
     <div class="side-top">
       <div class="brand">
-        <span class="brand-mark"><img src="../assets/logo-mark.png" alt="Jino"></span>
+        <span class="brand-mark">J</span>
         <span class="brand-name">Jino</span>
       </div>
       <button class="side-close" id="sideClose" aria-label="Close menu">
@@ -247,6 +241,12 @@
       </div>
 
       <div class="pay-summary mpesa-summary" id="stkSummary"><!-- JS --></div>
+
+      <label class="field-label" for="stkProvider">Pay with</label>
+      <select id="stkProvider" class="field-input" style="margin-bottom:16px;">
+        <option value="daraja">M-Pesa (Safaricom)</option>
+        <option value="kcb">KCB Buni (Lipa na KCB)</option>
+      </select>
 
       <label class="field-label" for="stkPhone">Patient's M-Pesa phone number</label>
       <input type="tel" id="stkPhone" class="field-input mpesa-input" placeholder="07XX XXX XXX" style="margin-bottom:16px;">

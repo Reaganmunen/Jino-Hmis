@@ -48,7 +48,42 @@ const findTransactionsByBill = (bill_id, callback) => {
   });
 };
 
+
+// Same as createMpesaTransaction but records which provider ('daraja' | 'kcb') sent the push.
+// Needs migrations/001_mpesa_transaction_provider.sql. createMpesaTransaction is unchanged.
+const createProviderTransaction = (data, callback) => {
+  const { bill_id, phone, amount, checkout_request_id, merchant_request_id, provider } = data;
+  const query = `
+    INSERT INTO "MpesaTransaction"
+      (bill_id, phone, amount, checkout_request_id, merchant_request_id, status, provider)
+    VALUES ($1, $2, $3, $4, $5, 'pending', $6)
+    RETURNING *
+  `;
+  pool.query(query, [bill_id, phone, amount, checkout_request_id, merchant_request_id, provider], (err, result) => {
+    if (err) return callback(err);
+    callback(null, result.rows[0]);
+  });
+};
+
+// Settles a transaction only while it is still 'pending'. Returns the row on the first
+// callback and nothing on a retry, so a repeated callback can't credit a bill twice.
+const settleTransactionIfPending = (checkout_request_id, data, callback) => {
+  const { status, mpesa_receipt, result_desc, raw_callback } = data;
+  const query = `
+    UPDATE "MpesaTransaction"
+    SET status = $1, mpesa_receipt = $2, result_desc = $3, raw_callback = $4
+    WHERE checkout_request_id = $5 AND status = 'pending'
+    RETURNING *
+  `;
+  pool.query(query, [status, mpesa_receipt, result_desc, raw_callback, checkout_request_id], (err, result) => {
+    if (err) return callback(err);
+    callback(null, result.rows[0]);
+  });
+};
+
 module.exports = {
+  createProviderTransaction,
+  settleTransactionIfPending,
   createMpesaTransaction,
   findByCheckoutRequestId,
   updateMpesaTransactionResult,

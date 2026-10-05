@@ -21,6 +21,7 @@ router.use('/bills', require('./billRoutes'));
 router.use('/bill-items', require('./billItemRoutes'));
 router.use('/payments', require('./paymentRoutes'));
 router.use('/mpesa', require('./mpesaRoutes'));
+router.use('/kcb', require('./kcbRoutes')); // KCB Buni STK push (runs alongside Daraja)
 router.use('/insurance-providers', require('./insuranceProviderRoutes'));
 router.use('/insurance-claims', require('./insuranceClaimRoutes'));
 router.use('/claim-status-history', require('./claimStatusHistoryRoutes'));

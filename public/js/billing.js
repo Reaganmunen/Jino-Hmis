@@ -302,7 +302,7 @@
     const txnHtml = d.transactions.length
       ? d.transactions.slice(0, 3).map((t) => `
           <div class="pay-row">
-            <span>M-Pesa · ${escapeHtml(formatDate(t.created_at))}${t.mpesa_receipt ? ' · ' + escapeHtml(t.mpesa_receipt) : ''}</span>
+            <span>${t.provider === 'kcb' ? 'KCB Buni' : 'M-Pesa'} · ${escapeHtml(formatDate(t.created_at))}${t.mpesa_receipt ? ' · ' + escapeHtml(t.mpesa_receipt) : ''}</span>
             <span class="badge badge-${t.status === 'success' ? 'success' : t.status === 'failed' ? 'failed' : 'pending'}">${capitalize(t.status)}</span>
           </div>
         `).join('')
@@ -421,7 +421,8 @@
     submitBtn.textContent = 'Sending…';
 
     try {
-      const res = await fetchMethod('/mpesa/initiate', 'POST', {
+      const endpoint = document.getElementById('payProvider').value === 'kcb' ? '/kcb/initiate' : '/mpesa/initiate';
+      const res = await fetchMethod(endpoint, 'POST', {
         bill_id: billId,
         phone,
         amount,
