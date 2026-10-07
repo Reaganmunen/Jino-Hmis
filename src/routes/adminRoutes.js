@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const {
-  getSummary, getRevenueTrendStat, getTopServicesStat, getWorkload, getSchedule,
+  getSummary, getRevenueTrendStat, getMonthlyRevenueStat, getTopServicesStat, getWorkload, getSchedule,
 } = require('../controllers/statsController');
 const verifyToken = require('../middleware/authMiddleware');
 const { authorizeRoles } = require('../middleware/roleMiddleware');
@@ -11,6 +11,7 @@ router.use(authorizeRoles('admin')); // whole router is admin-only, unlike inven
 
 router.get('/stats/summary', getSummary);           // ?from=&to=  (today's range)
 router.get('/stats/revenue-trend', getRevenueTrendStat); // ?days=30
+router.get('/stats/revenue-monthly', getMonthlyRevenueStat); // ?months=12
 router.get('/stats/top-services', getTopServicesStat);   // ?limit=5
 router.get('/stats/workload', getWorkload);          // ?from=&to=
 router.get('/schedule', getSchedule);                // ?from=&to=  (all dentists)

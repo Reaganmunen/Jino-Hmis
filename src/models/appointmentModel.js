@@ -136,6 +136,21 @@ const updateAppointment = (id, data, callback) => {
   });
 };
 
+// Hand an appointment over to a different dentist. Only dentist_id changes —
+// time, room, reason and status are left alone. The DB exclusion constraint
+// rejects the move (23P01 -> 409) if the new dentist is already booked then.
+const reassignAppointment = (id, dentist_id, callback) => {
+  const query = `
+    UPDATE "Appointment" SET dentist_id = $1
+    WHERE id = $2 AND deleted_at IS NULL
+    RETURNING *
+  `;
+  pool.query(query, [dentist_id, id], (err, result) => {
+    if (err) return callback(err);
+    callback(null, result.rows[0]);
+  });
+};
+
 const softDeleteAppointment = (id, callback) => {
   const query = `UPDATE "Appointment" SET deleted_at = now(), status = 'cancelled' WHERE id = $1`;
   pool.query(query, [id], (err, result) => {
@@ -154,5 +169,6 @@ module.exports = {
   updateAppointmentStatus,
   rescheduleAppointment,
   updateAppointment,
+  reassignAppointment,
   softDeleteAppointment,
 };

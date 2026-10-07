@@ -2,8 +2,9 @@ const {
   createAppointment, findAppointmentById, findAppointmentsByPatient,
   findAppointmentsByDentist, findAppointmentsByStatus, updateAppointmentStatus,
   rescheduleAppointment, updateAppointment, softDeleteAppointment,
-  findAppointmentWithDetails,
+  findAppointmentWithDetails, reassignAppointment,
 } = require('../models/appointmentModel');
+const { findUserById } = require('../models/userModel');
 const { sendEmail } = require('../services/emailService');
 const { getAppointmentEmail } = require('../services/emailTemplates');
 
@@ -91,14 +92,33 @@ const getAppointmentsByStatus = (req, res, next) => {
   });
 };
 
+const VALID_STATUSES = ['pending', 'confirmed', 'checked_in', 'completed', 'no_show', 'cancelled'];
+
+// A dentist can only change the status of their own appointments (e.g. mark
+// one completed); admin/receptionist can change any.
 const setStatus = (req, res, next) => {
   const { status } = req.body;
   if (!status) return res.status(400).json({ message: 'status is required' });
-  updateAppointmentStatus(req.params.id, status, (err, appointment) => {
-    if (err) return next(err);
-    if (!appointment) return res.status(404).json({ message: 'Appointment not found' });
-    res.json(appointment);
-    notifyPatient(status, appointment.id); // no-op for statuses with no template (checked_in, completed, ...)
+  if (!VALID_STATUSES.includes(status)) {
+    return res.status(400).json({ message: `status must be one of: ${VALID_STATUSES.join(', ')}` });
+  }
+
+  findAppointmentById(req.params.id, (findErr, existing) => {
+    if (findErr) return next(findErr);
+    if (!existing) return res.status(404).json({ message: 'Appointment not found' });
+    if (req.user.role === 'dentist' && String(existing.dentist_id) !== String(req.user.id)) {
+      return res.status(403).json({ message: 'You can only update your own appointments' });
+    }
+    if (status === 'completed' && existing.status === 'cancelled') {
+      return res.status(400).json({ message: 'A cancelled appointment cannot be marked as completed' });
+    }
+
+    updateAppointmentStatus(req.params.id, status, (err, appointment) => {
+      if (err) return next(err);
+      if (!appointment) return res.status(404).json({ message: 'Appointment not found' });
+      res.json(appointment);
+      notifyPatient(status, appointment.id); // no-op for statuses with no template (checked_in, completed, ...)
+    });
   });
 };
 
@@ -160,6 +180,44 @@ const editAppointment = (req, res, next) => {
   });
 };
 
+// PUT /appointments/:id/reassign   body: { dentist_id }
+// A dentist hands one of THEIR appointments to a colleague (admin/receptionist
+// can reassign any). Time stays the same; if the colleague is already booked
+// then, the DB exclusion constraint answers 409 via errorMiddleware.
+const reassign = (req, res, next) => {
+  const { dentist_id } = req.body;
+  if (!dentist_id) return res.status(400).json({ message: 'dentist_id is required' });
+
+  findAppointmentById(req.params.id, (findErr, appointment) => {
+    if (findErr) return next(findErr);
+    if (!appointment) return res.status(404).json({ message: 'Appointment not found' });
+
+    if (req.user.role === 'dentist' && String(appointment.dentist_id) !== String(req.user.id)) {
+      return res.status(403).json({ message: 'You can only reassign your own appointments' });
+    }
+    if (String(appointment.dentist_id) === String(dentist_id)) {
+      return res.status(400).json({ message: 'This appointment is already assigned to that dentist' });
+    }
+    if (['completed', 'cancelled', 'no_show'].includes(appointment.status)) {
+      return res.status(400).json({ message: `A ${appointment.status.replace('_', '-')} appointment cannot be reassigned` });
+    }
+
+    findUserById(dentist_id, (userErr, target) => {
+      if (userErr) return next(userErr);
+      if (!target || target.role !== 'dentist' || !target.is_active) {
+        return res.status(400).json({ message: 'Selected user is not an active dentist' });
+      }
+
+      reassignAppointment(req.params.id, dentist_id, (err, updated) => {
+        if (err) return next(err);
+        if (!updated) return res.status(404).json({ message: 'Appointment not found' });
+        res.json(updated);
+        notifyPatient('reassigned', updated.id);
+      });
+    });
+  });
+};
+
 const cancelAppointment = (req, res, next) => {
   findAppointmentById(req.params.id, (findErr, appointment) => {
     if (findErr) return next(findErr);
@@ -179,5 +237,5 @@ const cancelAppointment = (req, res, next) => {
 
 module.exports = {
   bookAppointment, getAppointment, getPatientAppointments, getDentistAppointments,
-  getAppointmentsByStatus, setStatus, reschedule, editAppointment, cancelAppointment,
+  getAppointmentsByStatus, setStatus, reschedule, reassign, editAppointment, cancelAppointment,
 };

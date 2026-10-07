@@ -19,6 +19,7 @@
   const state = {
     summary: null,
     revenueTrend: [],
+    monthlyRevenue: [],
     topServices: [],
     workload: [],
     schedule: [],
@@ -28,6 +29,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     initSidebar();
     initAvailabilityModal();
+    initMonthlyRevenue();
     loadDashboard();
   });
 
@@ -42,9 +44,10 @@
 
       const { from, to } = todayRangeIso();
 
-      const [summary, revenueTrend, topServices, workload, schedule, lowStock] = await Promise.all([
+      const [summary, revenueTrend, monthlyRevenue, topServices, workload, schedule, lowStock] = await Promise.all([
         fetchMethod(`/admin/stats/summary?from=${from}&to=${to}`, 'GET', null, true),
         fetchMethod('/admin/stats/revenue-trend?days=14', 'GET', null, true),
+        fetchMethod(`/admin/stats/revenue-monthly?months=${currentMonthRange()}`, 'GET', null, true),
         fetchMethod('/admin/stats/top-services?limit=5', 'GET', null, true),
         fetchMethod(`/admin/stats/workload?from=${from}&to=${to}`, 'GET', null, true),
         fetchMethod(`/admin/schedule?from=${from}&to=${to}`, 'GET', null, true),
@@ -53,6 +56,7 @@
 
       state.summary = summary;
       state.revenueTrend = revenueTrend;
+      state.monthlyRevenue = monthlyRevenue;
       state.topServices = topServices;
       state.workload = workload;
       state.schedule = schedule;
@@ -61,6 +65,7 @@
       renderStats();
       renderSchedule();
       renderRevenueChart();
+      renderMonthlyRevenue();
       renderAlerts();
       renderTopServices();
       renderWorkload();
@@ -171,6 +176,79 @@
       `;
       container.appendChild(col);
     });
+  }
+
+  /* ============================================================
+     REVENUE BY MONTH — each calendar month's own total (not cumulative)
+     ============================================================ */
+  function currentMonthRange() {
+    const select = document.getElementById('monthlyRevRange');
+    return select ? Number(select.value) || 12 : 12;
+  }
+
+  function initMonthlyRevenue() {
+    document.getElementById('monthlyRevRange').addEventListener('change', async () => {
+      try {
+        state.monthlyRevenue = await fetchMethod(`/admin/stats/revenue-monthly?months=${currentMonthRange()}`, 'GET', null, true);
+        renderMonthlyRevenue();
+      } catch (err) {
+        showToast(err.message || 'Could not load monthly revenue.');
+      }
+    });
+  }
+
+  function monthLabel(ym, style) {
+    const [y, m] = ym.split('-').map(Number);
+    return new Date(y, m - 1, 1).toLocaleDateString('en-US',
+      style === 'long' ? { month: 'long', year: 'numeric' } : { month: 'short' });
+  }
+
+  function renderMonthlyRevenue() {
+    const chart = document.getElementById('monthlyRevChart');
+    const table = document.getElementById('monthlyRevTable');
+    const rows = state.monthlyRevenue || [];
+    chart.innerHTML = '';
+    table.innerHTML = '';
+
+    if (!rows.length || rows.every((r) => Number(r.revenue) === 0)) {
+      chart.style.height = 'auto';
+      chart.innerHTML = '<div class="empty-state" style="width:100%;">No payments recorded in this period yet.</div>';
+      return;
+    }
+    chart.style.height = '';
+
+    const currentYm = rows[rows.length - 1].month; // last row is always the current month
+    const max = Math.max(...rows.map((r) => Number(r.revenue)), 1);
+
+    rows.forEach((r) => {
+      const value = Number(r.revenue);
+      const heightPct = Math.max((value / max) * 100, value > 0 ? 3 : 0);
+      const isCurrent = r.month === currentYm;
+      const col = document.createElement('div');
+      col.className = 'monthly-rev-col' + (isCurrent ? ' is-current' : '');
+      col.title = `${monthLabel(r.month, 'long')}: ${formatKsh(value)}`;
+      col.innerHTML = `
+        <div class="monthly-rev-value">${value > 0 ? escapeHtml(formatKsh(value).replace('KSh ', '')) : ''}</div>
+        <div class="monthly-rev-bar" style="height:${heightPct}%"></div>
+        <div class="monthly-rev-label">${escapeHtml(monthLabel(r.month))}</div>
+      `;
+      chart.appendChild(col);
+    });
+
+    // Newest month first in the table.
+    const body = rows.slice().reverse().map((r) => `
+      <tr class="${r.month === currentYm ? 'is-current' : ''}">
+        <td>${escapeHtml(monthLabel(r.month, 'long'))}${r.month === currentYm ? '<span class="monthly-rev-tag">so far</span>' : ''}</td>
+        <td class="num">${Number(r.payment_count)}</td>
+        <td class="num">${escapeHtml(formatKsh(r.revenue))}</td>
+      </tr>
+    `).join('');
+    table.innerHTML = `
+      <table>
+        <thead><tr><th>Month</th><th class="num">Payments</th><th class="num">Revenue received</th></tr></thead>
+        <tbody>${body}</tbody>
+      </table>
+    `;
   }
 
   /* ============================================================

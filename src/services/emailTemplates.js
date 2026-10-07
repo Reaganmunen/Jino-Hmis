@@ -42,6 +42,14 @@ const templates = {
       <p>If this wasn't you, or you'd like to rebook, please contact us.</p>
     `),
   }),
+  reassigned: (a, clinicName) => ({
+    subject: `Your Dentist Has Changed - ${clinicName}`,
+    html: wrapper(clinicName, `
+      <p>Hi ${a.patient_first_name},</p>
+      <p>Your appointment on <strong>${formatDateTime(a.scheduled_start)}</strong> will now be with <strong>Dr. ${a.dentist_first_name} ${a.dentist_last_name}</strong>.</p>
+      <p>The date and time have not changed.${a.room ? ` Room: ${a.room}.` : ''}</p>
+    `),
+  }),
   rescheduled: (a, clinicName) => ({
     subject: `Appointment Rescheduled - ${clinicName}`,
     html: wrapper(clinicName, `

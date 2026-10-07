@@ -62,6 +62,40 @@
   margin-top:8px;font-size:10px;color:var(--slate-500);font-weight:600;white-space:nowrap;
 }
 
+/* ---- revenue by month ---- */
+.rev-range{
+  font-family:inherit;font-size:12.5px;font-weight:600;color:var(--navy-900);
+  border:1.5px solid var(--slate-200);border-radius:var(--radius-sm);padding:6px 10px;background:var(--white);
+}
+.monthly-rev-chart{display:flex;align-items:flex-end;gap:10px;height:220px;padding:8px 4px 0;}
+.monthly-rev-col{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;}
+.monthly-rev-bar{
+  width:100%;max-width:44px;border-radius:6px 6px 2px 2px;background:var(--blue-500);
+  transition:background .12s ease;
+}
+.monthly-rev-col:hover .monthly-rev-bar{background:var(--blue-600);}
+.monthly-rev-col.is-current .monthly-rev-bar{background:var(--green-700);}
+.monthly-rev-value{font-size:10px;font-weight:700;color:var(--navy-950);margin-bottom:4px;white-space:nowrap;}
+.monthly-rev-label{margin-top:8px;font-size:11px;color:var(--slate-500);font-weight:600;white-space:nowrap;}
+.monthly-rev-col.is-current .monthly-rev-label{color:var(--green-700);}
+.monthly-rev-table{margin-top:18px;overflow-x:auto;}
+.monthly-rev-table table{width:100%;border-collapse:collapse;font-size:13px;}
+.monthly-rev-table th{
+  text-align:left;font-size:11.5px;font-weight:700;color:var(--slate-500);text-transform:uppercase;
+  letter-spacing:.04em;padding:8px 10px;border-bottom:1px solid var(--slate-200);
+}
+.monthly-rev-table td{padding:9px 10px;border-bottom:1px solid var(--slate-100);color:var(--navy-900);}
+.monthly-rev-table th.num,.monthly-rev-table td.num{text-align:right;font-variant-numeric:tabular-nums;}
+.monthly-rev-table tr.is-current td{font-weight:700;}
+.monthly-rev-tag{
+  margin-left:6px;font-size:10.5px;font-weight:700;color:var(--green-700);background:var(--green-50);
+  border-radius:100px;padding:2px 8px;
+}
+@media (max-width:700px){
+  .monthly-rev-chart{gap:5px;}
+  .monthly-rev-value{display:none;}
+}
+
 /* ---- alerts (low stock / outstanding balance / other flags) ---- */
 .alert-list{display:flex;flex-direction:column;gap:10px;}
 .alert-row{

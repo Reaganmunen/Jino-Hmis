@@ -24,13 +24,15 @@
   const STATUS_META = {
     pending: { label: 'Pending', className: 'status-pending' },
     confirmed: { label: 'Confirmed', className: 'status-confirmed' },
+    checked_in: { label: 'Checked in', className: 'status-checked_in' },
     completed: { label: 'Completed', className: 'status-completed' },
+    no_show: { label: 'No-show', className: 'status-no_show' },
     cancelled: { label: 'Cancelled', className: 'status-cancelled' },
   };
   function statusMeta(status) {
     return STATUS_META[status] || { label: capitalize(status || 'Unknown'), className: 'status-default' };
   }
-  const TERMINAL_STATUSES = ['completed', 'cancelled'];
+  const TERMINAL_STATUSES = ['completed', 'cancelled', 'no_show'];
 
   /* ============================================================
      STATE
@@ -42,6 +44,8 @@
     viewMode: 'day',     // 'day' | 'week'
     currentDate: new Date(), // anchor date — the day, or a day inside the active week
     activeReschedule: null,  // appointment currently open in the reschedule modal
+    activeReassign: null,    // appointment currently open in the reassign modal
+    dentists: [],            // other active dentists, for the reassign picker
   };
 
   // Day view hour rows. Adjust to match your clinic's actual hours.
@@ -53,6 +57,7 @@
     renderTopbarAvatar(`Dr. ${sessionUser.first_name} ${sessionUser.last_name}`);
     initToolbar();
     initRescheduleModal();
+    initReassignModal();
     loadPatientsThenAppointments();
   });
 
@@ -191,7 +196,7 @@
           </div>
           ${dayAppts.length
             ? dayAppts.map((a) => `
-                <div class="week-appt-chip ${statusMeta(a.status).className}">
+                <div class="week-appt-chip ${statusMeta(a.status).className}" data-jump-date="${toDateInputValue(new Date(a.scheduled_start))}" title="Open this day to manage the appointment">
                   ${escapeHtml(formatTime(a.scheduled_start))} · ${escapeHtml(patientName(a.patient_id))}
                 </div>
               `).join('')
@@ -200,6 +205,15 @@
       `);
     }
     el.innerHTML = cols.join('');
+    // Actions (complete / reschedule / reassign / cancel) live on the day view,
+    // so clicking a chip in the week view jumps straight to that day.
+    el.querySelectorAll('[data-jump-date]').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        const [y, m, d] = chip.getAttribute('data-jump-date').split('-').map(Number);
+        state.currentDate = new Date(y, m - 1, d);
+        document.querySelector('#viewToggle [data-view="day"]').click();
+      });
+    });
   }
 
   function renderApptCard(a) {
@@ -217,8 +231,10 @@
         ${a.reason ? `<span class="appt-reason-chip">${escapeHtml(a.reason)}</span>` : ''}
         ${isTerminal ? '' : `
           <div class="appt-actions">
-            ${a.status !== 'confirmed' ? `<button class="appt-action-btn confirm" data-action="confirm" data-appt-id="${a.id}" type="button">Confirm</button>` : ''}
+            <button class="appt-action-btn complete" data-action="complete" data-appt-id="${a.id}" type="button">Mark completed</button>
+            ${a.status === 'pending' ? `<button class="appt-action-btn confirm" data-action="confirm" data-appt-id="${a.id}" type="button">Confirm</button>` : ''}
             <button class="appt-action-btn" data-action="reschedule" data-appt-id="${a.id}" type="button">Reschedule</button>
+            <button class="appt-action-btn reassign" data-action="reassign" data-appt-id="${a.id}" type="button">Assign to another dentist</button>
             <button class="appt-action-btn cancel" data-action="cancel" data-appt-id="${a.id}" type="button">Cancel</button>
           </div>
         `}
@@ -233,6 +249,8 @@
       if (!appt) return;
       const action = btn.getAttribute('data-action');
       if (action === 'confirm') btn.addEventListener('click', () => confirmAppointment(appt));
+      if (action === 'complete') btn.addEventListener('click', () => completeAppointment(appt));
+      if (action === 'reassign') btn.addEventListener('click', () => openReassignModal(appt));
       if (action === 'reschedule') btn.addEventListener('click', () => openRescheduleModal(appt));
       if (action === 'cancel') btn.addEventListener('click', () => cancelAppointmentAction(appt));
     });
@@ -249,6 +267,19 @@
       showToast('Appointment confirmed.');
     } catch (err) {
       showToast(err.message || 'Could not confirm this appointment.');
+    }
+  }
+
+  async function completeAppointment(appt) {
+    const ok = window.confirm(`Mark the appointment with ${patientName(appt.patient_id)} as completed?`);
+    if (!ok) return;
+    try {
+      const updated = await fetchMethod(`/appointments/${appt.id}/status`, 'PUT', { status: 'completed' }, true);
+      Object.assign(appt, updated);
+      render();
+      showToast('Appointment marked as completed.');
+    } catch (err) {
+      showToast(err.message || 'Could not mark this appointment as completed.');
     }
   }
 
@@ -327,6 +358,89 @@
     } finally {
       saveBtn.disabled = false;
       saveBtn.textContent = 'Save new time';
+    }
+  }
+
+  /* ============================================================
+     REASSIGN TO ANOTHER DENTIST
+     ============================================================ */
+  function initReassignModal() {
+    document.getElementById('reassignModalCancel').addEventListener('click', closeReassignModal);
+    document.getElementById('reassignModalScrim').addEventListener('click', (e) => {
+      if (e.target.id === 'reassignModalScrim') closeReassignModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.getElementById('reassignModalScrim').classList.contains('is-open')) closeReassignModal();
+    });
+    document.getElementById('reassignModalSave').addEventListener('click', saveReassign);
+  }
+
+  // Dentist list is fetched once, on first open, then reused.
+  async function ensureDentistsLoaded() {
+    if (state.dentists.length) return;
+    const all = await fetchMethod('/users/dentists', 'GET', null, true);
+    state.dentists = all.filter((d) => d.is_active !== false && String(d.id) !== String(state.dentistId));
+  }
+
+  async function openReassignModal(appt) {
+    state.activeReassign = appt;
+    document.getElementById('reassignModalTitle').textContent = patientName(appt.patient_id);
+    document.getElementById('reassignSummary').textContent =
+      `${new Date(appt.scheduled_start).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' })}, ` +
+      `${formatTime(appt.scheduled_start)} – ${formatTime(appt.scheduled_end)}`;
+
+    const select = document.getElementById('reassignDentist');
+    select.innerHTML = '<option value="">Loading dentists…</option>';
+    document.getElementById('reassignModalScrim').classList.add('is-open');
+
+    try {
+      await ensureDentistsLoaded();
+    } catch (err) {
+      closeReassignModal();
+      showToast(err.message || 'Could not load the list of dentists.');
+      return;
+    }
+
+    if (!state.dentists.length) {
+      select.innerHTML = '<option value="">No other dentists available</option>';
+      return;
+    }
+    select.innerHTML = '<option value="">Select a dentist…</option>' + state.dentists
+      .map((d) => `<option value="${escapeHtml(d.id)}">Dr. ${escapeHtml(d.first_name)} ${escapeHtml(d.last_name)}</option>`)
+      .join('');
+  }
+
+  function closeReassignModal() {
+    state.activeReassign = null;
+    document.getElementById('reassignModalScrim').classList.remove('is-open');
+  }
+
+  async function saveReassign() {
+    const appt = state.activeReassign;
+    if (!appt) return;
+
+    const dentistId = document.getElementById('reassignDentist').value;
+    if (!dentistId) {
+      showToast('Choose the dentist to hand this appointment to.');
+      return;
+    }
+
+    const saveBtn = document.getElementById('reassignModalSave');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Assigning…';
+
+    try {
+      await fetchMethod(`/appointments/${appt.id}/reassign`, 'PUT', { dentist_id: dentistId }, true);
+      const target = state.dentists.find((d) => String(d.id) === String(dentistId));
+      closeReassignModal();
+      // The appointment now belongs to the other dentist, so it leaves this schedule.
+      await loadAppointmentsForRange();
+      showToast(`Appointment assigned to Dr. ${target ? target.last_name : 'colleague'}.`);
+    } catch (err) {
+      showToast(err.message || 'Could not reassign this appointment.');
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Assign dentist';
     }
   }
 

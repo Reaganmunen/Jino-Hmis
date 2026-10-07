@@ -1,6 +1,6 @@
 const {
   getPatientSummary, getStaffSummary, getAppointmentStatusCounts,
-  getRevenueForRange, getOutstandingBalance, getRevenueTrend,
+  getRevenueForRange, getRevenueThisMonth, getMonthlyRevenue, getOutstandingBalance, getRevenueTrend,
   getTopServices, getScheduleForRange, getDentistWorkload,
 } = require('../models/statsModel');
 
@@ -33,16 +33,12 @@ const getSummary = (req, res, next) => {
     return res.status(400).json({ message: 'Query params "from" and "to" are required' });
   }
 
-  const monthStart = new Date();
-  monthStart.setDate(1);
-  monthStart.setHours(0, 0, 0, 0);
-
   parallel({
     patients: getPatientSummary,
     staff: getStaffSummary,
     appointmentStatusCounts: (cb) => getAppointmentStatusCounts(from, to, cb),
     revenueToday: (cb) => getRevenueForRange(from, to, cb),
-    revenueThisMonth: (cb) => getRevenueForRange(monthStart.toISOString(), to, cb),
+    revenueThisMonth: getRevenueThisMonth, // current calendar month only (Nairobi time)
     outstandingBalance: getOutstandingBalance,
   }, (err, results) => {
     if (err) return next(err);
@@ -57,6 +53,17 @@ const getRevenueTrendStat = (req, res, next) => {
   since.setHours(0, 0, 0, 0);
 
   getRevenueTrend(since.toISOString(), (err, rows) => {
+    if (err) return next(err);
+    res.json(rows);
+  });
+};
+
+// GET /admin/stats/revenue-monthly?months=12
+// One row per calendar month: { month: '2026-10', revenue, payment_count }.
+// Each month stands alone — it does not roll over last month's money.
+const getMonthlyRevenueStat = (req, res, next) => {
+  const months = Math.min(Math.max(parseInt(req.query.months, 10) || 12, 1), 36);
+  getMonthlyRevenue(months, (err, rows) => {
     if (err) return next(err);
     res.json(rows);
   });
@@ -97,4 +104,4 @@ const getSchedule = (req, res, next) => {
   });
 };
 
-module.exports = { getSummary, getRevenueTrendStat, getTopServicesStat, getWorkload, getSchedule };
+module.exports = { getSummary, getRevenueTrendStat, getMonthlyRevenueStat, getTopServicesStat, getWorkload, getSchedule };

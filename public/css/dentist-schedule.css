@@ -69,6 +69,8 @@
 .appt-card.status-pending{border-left-color:var(--amber-700);background:var(--amber-50);}
 .appt-card.status-confirmed{border-left-color:var(--blue-600);background:var(--blue-50);}
 .appt-card.status-completed{border-left-color:var(--green-700);background:var(--green-50);}
+.appt-card.status-checked_in{border-left-color:var(--blue-600);background:var(--blue-50);}
+.appt-card.status-no_show{border-left-color:var(--red-700);background:var(--red-50);opacity:.75;}
 .appt-card.status-cancelled{border-left-color:var(--slate-500);background:var(--slate-100);opacity:.65;}
 .appt-card.status-default{border-left-color:var(--slate-500);}
 
@@ -82,6 +84,8 @@
 .status-pending .appt-status-badge{background:var(--amber-700);color:#fff;}
 .status-confirmed .appt-status-badge{background:var(--blue-600);color:#fff;}
 .status-completed .appt-status-badge{background:var(--green-700);color:#fff;}
+.status-checked_in .appt-status-badge{background:var(--blue-600);color:#fff;}
+.status-no_show .appt-status-badge{background:var(--red-700);color:#fff;}
 .status-cancelled .appt-status-badge{background:var(--slate-500);color:#fff;}
 .status-default .appt-status-badge{background:var(--slate-500);color:#fff;}
 
@@ -99,6 +103,10 @@
 .appt-action-btn:hover{background:var(--slate-100);}
 .appt-action-btn.confirm{border-color:var(--blue-600);color:var(--blue-600);}
 .appt-action-btn.cancel{border-color:var(--red-700);color:var(--red-700);}
+.appt-action-btn.complete{border-color:var(--green-700);background:var(--green-700);color:#fff;}
+.appt-action-btn.complete:hover{background:var(--green-700);filter:brightness(.92);}
+.appt-action-btn.reassign{border-color:var(--navy-900);color:var(--navy-900);}
+.appt-handover-note{margin-top:8px;font-size:11.5px;color:var(--slate-500);}
 
 /* ---- Week view: 7 compact columns ---- */
 .week-grid{
@@ -114,6 +122,10 @@
 .week-appt-chip.status-pending{border-left-color:var(--amber-700);background:var(--amber-50);}
 .week-appt-chip.status-confirmed{border-left-color:var(--blue-600);background:var(--blue-50);}
 .week-appt-chip.status-completed{border-left-color:var(--green-700);background:var(--green-50);}
+.week-appt-chip{cursor:pointer;}
+.week-appt-chip:hover{filter:brightness(.97);}
+.week-appt-chip.status-checked_in{border-left-color:var(--blue-600);background:var(--blue-50);}
+.week-appt-chip.status-no_show{border-left-color:var(--red-700);background:var(--red-50);opacity:.7;}
 .week-appt-chip.status-cancelled{border-left-color:var(--slate-500);opacity:.6;}
 .week-day-empty{font-size:11px;color:var(--slate-500);opacity:.5;}
 
@@ -122,3 +134,7 @@
   .sched-toolbar-right{justify-content:space-between;}
   .week-grid{grid-template-columns:repeat(7, minmax(120px, 1fr));}
 }
+
+/* ---- Reassign modal ---- */
+.reassign-summary{margin:14px 0 0;font-size:13px;color:var(--slate-700);}
+.reassign-hint{margin:8px 0 0;font-size:12px;color:var(--slate-500);line-height:1.45;}

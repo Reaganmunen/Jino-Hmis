@@ -71,6 +71,47 @@ const getRevenueForRange = (from, to, callback) => {
   });
 };
 
+// Revenue received so far in the CURRENT calendar month (Nairobi time).
+// Month boundaries are computed in SQL so it never depends on the server's
+// timezone — payments from last month are never included.
+const getRevenueThisMonth = (callback) => {
+  const query = `
+    SELECT COALESCE(SUM(amount), 0) AS revenue
+    FROM "Payment"
+    WHERE (paid_at AT TIME ZONE 'Africa/Nairobi') >= date_trunc('month', now() AT TIME ZONE 'Africa/Nairobi')
+  `;
+  pool.query(query, (err, result) => {
+    if (err) return callback(err);
+    callback(null, Number(result.rows[0].revenue));
+  });
+};
+
+// Revenue received in EACH of the last N calendar months (Nairobi time).
+// Each row is that month's own total — NOT cumulative. Months with no
+// payments are returned as 0 so the chart has no gaps.
+const getMonthlyRevenue = (months, callback) => {
+  const query = `
+    SELECT
+      to_char(m.month_start, 'YYYY-MM') AS month,
+      COALESCE(SUM(p.amount), 0) AS revenue,
+      COUNT(p.id) AS payment_count
+    FROM generate_series(
+      date_trunc('month', now() AT TIME ZONE 'Africa/Nairobi') - (($1::int - 1) * interval '1 month'),
+      date_trunc('month', now() AT TIME ZONE 'Africa/Nairobi'),
+      interval '1 month'
+    ) AS m(month_start)
+    LEFT JOIN "Payment" p
+      ON (p.paid_at AT TIME ZONE 'Africa/Nairobi') >= m.month_start
+     AND (p.paid_at AT TIME ZONE 'Africa/Nairobi') < m.month_start + interval '1 month'
+    GROUP BY m.month_start
+    ORDER BY m.month_start
+  `;
+  pool.query(query, [months], (err, result) => {
+    if (err) return callback(err);
+    callback(null, result.rows);
+  });
+};
+
 // Total unpaid balance across all non-void bills — the "outstanding" figure.
 const getOutstandingBalance = (callback) => {
   const query = `
@@ -170,6 +211,8 @@ module.exports = {
   getStaffSummary,
   getAppointmentStatusCounts,
   getRevenueForRange,
+  getRevenueThisMonth,
+  getMonthlyRevenue,
   getOutstandingBalance,
   getRevenueTrend,
   getTopServices,

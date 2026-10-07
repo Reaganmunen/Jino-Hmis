@@ -168,6 +168,33 @@
   </div>
 </div>
 
+<!-- ============ REASSIGN MODAL ============ -->
+<div class="modal-scrim" id="reassignModalScrim">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <p class="modal-kicker">Assign to another dentist</p>
+        <h2 id="reassignModalTitle">Appointment</h2>
+      </div>
+    </div>
+
+    <p class="reassign-summary" id="reassignSummary"></p>
+
+    <div style="margin-top:14px;">
+      <label class="field-label" for="reassignDentist">New dentist</label>
+      <select class="field-input" id="reassignDentist">
+        <option value="">Loading dentists…</option>
+      </select>
+      <p class="reassign-hint">The date and time stay the same. If the dentist is already booked then, you'll be told and nothing changes. The patient is emailed about the change.</p>
+    </div>
+
+    <div class="modal-foot">
+      <button class="btn btn-outline" id="reassignModalCancel" type="button">Cancel</button>
+      <button class="btn btn-primary" id="reassignModalSave" type="button">Assign dentist</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <!--

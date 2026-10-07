@@ -195,6 +195,20 @@
 
       </section>
 
+      <!-- ---- Revenue by month (each month stands alone) ---- -->
+      <section class="panel" id="monthlyRevPanel">
+        <div class="panel-head">
+          <h2>Revenue by month</h2>
+          <select class="rev-range" id="monthlyRevRange" aria-label="Months to show">
+            <option value="6">Last 6 months</option>
+            <option value="12" selected>Last 12 months</option>
+          </select>
+        </div>
+        <p class="panel-sub">Payments received in each calendar month. Every month starts from zero — nothing carries over from the previous one.</p>
+        <div class="monthly-rev-chart" id="monthlyRevChart"><!-- rendered by JS --></div>
+        <div class="monthly-rev-table" id="monthlyRevTable"><!-- rendered by JS --></div>
+      </section>
+
       <!-- ---- Top services + Staff workload ---- -->
       <section class="body-grid">
 
