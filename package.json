@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "postinstall": "puppeteer browsers install chrome",
     "migrate": "npx node-pg-migrate",
     "migrate:up": "npx node-pg-migrate up",
     "migrate:down": "npx node-pg-migrate down",
@@ -19,7 +20,7 @@
     "express-rate-limit": "^7.5.0",
     "express-validator": "^7.2.1",
     "jsonwebtoken": "^9.0.2",
-    "node": "^26.8.1",
+    
     "nodemailer": "^9.0.6",
     "pg": "^8.13.1",
     "puppeteer": "^25.9.0",
