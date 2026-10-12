@@ -18,7 +18,19 @@ const generatePdf = async (html) => {
       ],
     });
     const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
+    // Don't wait for "network idle": if the logo URL (or anything else the
+    // page requests) is slow or unreachable from Render, networkidle0 hangs
+    // until the 30s timeout and the whole PDF fails. Load the HTML itself,
+    // then give images a short, capped window to finish, and print anyway.
+    await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await Promise.race([
+      page.evaluate(() => Promise.all(
+        Array.from(document.images).map((img) => (img.complete
+          ? null
+          : new Promise((resolve) => { img.onload = resolve; img.onerror = resolve; }))),
+      )),
+      new Promise((resolve) => setTimeout(resolve, 5000)),
+    ]);
     const pdfBytes = await page.pdf({
       format: 'A4',
       printBackground: true,
