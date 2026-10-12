@@ -23,6 +23,7 @@
     diagnoses: [],          // active patient's diagnosis history, for the "link to diagnosis" dropdown
     prescriptions: [],      // active patient's prescription history
     editingPrescriptionId: null, // set while rxFormPanel is editing an existing prescription instead of creating one
+    templates: [],          // this dentist's saved templates (built-ins live in BUILT_IN_TEMPLATES)
   };
 
   document.addEventListener('DOMContentLoaded', () => {
@@ -33,6 +34,11 @@
     document.getElementById('downloadPatientRxBtn').addEventListener('click', downloadActivePatientRx);
     document.getElementById('rxSaveBtn').addEventListener('click', savePrescription);
     document.getElementById('rxCancelEditBtn').addEventListener('click', exitEditMode);
+    document.getElementById('rxDrugName').addEventListener('input', updateAllergyBox);
+    document.getElementById('rxTemplateSelect').addEventListener('change', onTemplateChange);
+    document.getElementById('rxSaveTemplateBtn').addEventListener('click', saveAsTemplate);
+    document.getElementById('rxDeleteTemplateBtn').addEventListener('click', deleteSelectedTemplate);
+    loadTemplates();
     loadInitialData();
   });
 
@@ -105,6 +111,7 @@
 
   async function selectPatient(patient) {
     state.activePatient = patient;
+    updateAllergyBox();
 
     document.getElementById('rxFormPanel').style.display = 'block';
     document.getElementById('rxHistoryPanel').style.display = 'block';
@@ -116,10 +123,17 @@
     document.getElementById('rxDiagnosisSelect').innerHTML = '<option value="">No diagnosis link</option>';
 
     try {
-      const [diagnoses, prescriptions] = await Promise.all([
+      const [diagnoses, prescriptions, freshPatient] = await Promise.all([
         fetchMethod(`/diagnoses/patient/${patient.id}`, 'GET', null, true),
         fetchMethod(`/prescriptions/patient/${patient.id}`, 'GET', null, true),
+        // Re-read the patient so the allergy check uses the latest record, not the cached roster row.
+        fetchMethod(`/patients/${patient.id}`, 'GET', null, true).catch(() => null),
       ]);
+
+      if (freshPatient && state.activePatient && state.activePatient.id === patient.id) {
+        Object.assign(state.activePatient, freshPatient);
+        updateAllergyBox();
+      }
 
       state.diagnoses = diagnoses.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       state.prescriptions = prescriptions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -159,6 +173,9 @@
     document.getElementById('rxDuration').value = '';
     document.getElementById('rxDiagnosisSelect').value = '';
     document.getElementById('rxNotes').value = '';
+    document.getElementById('rxTemplateSelect').value = '';
+    document.getElementById('rxDeleteTemplateBtn').style.display = 'none';
+    updateAllergyBox();
   }
 
   // Fills the form from an existing prescription and flips it into "edit"
@@ -171,6 +188,7 @@
     document.getElementById('rxDuration').value = rx.duration || '';
     document.getElementById('rxDiagnosisSelect').value = rx.diagnosis_id || '';
     document.getElementById('rxNotes').value = rx.notes || '';
+    updateAllergyBox();
     document.getElementById('rxFormTitle').textContent = 'Edit prescription';
     document.getElementById('rxSaveBtn').textContent = 'Update prescription';
     document.getElementById('rxCancelEditBtn').style.display = 'inline-flex';
@@ -201,6 +219,15 @@
     if (!drug_name || !dosage || !frequency || !duration) {
       showToast('Drug name, dosage, frequency, and duration are all required.');
       return;
+    }
+
+    const allergyHits = AllergyCheck.check(state.activePatient.allergies, drug_name);
+    if (allergyHits.length) {
+      const lines = allergyHits.map((h) => `• ${h.message}`).join('\n');
+      const proceed = window.confirm(
+        `ALLERGY WARNING for ${state.activePatient.first_name} ${state.activePatient.last_name}\n\n${lines}\n\nPrescribe ${drug_name} anyway?`,
+      );
+      if (!proceed) return;
     }
 
     const isEditing = !!state.editingPrescriptionId;
@@ -236,6 +263,147 @@
       saveBtn.disabled = false;
       saveBtn.textContent = isEditing ? 'Update prescription' : 'Save prescription';
     }
+  }
+
+  /* ============================================================
+     TEMPLATES
+     ------------------------------------------------------------
+     Built-in starting points plus this dentist's own saved ones
+     (GET/POST/DELETE /prescription-templates). Picking one only fills
+     the form; nothing is saved until the dentist presses Save. The
+     built-in doses are common adult starting points — review them
+     against your clinic's own protocol before relying on them.
+     ============================================================ */
+  const BUILT_IN_TEMPLATES = [
+    { name: 'Amoxicillin 500mg', drug_name: 'Amoxicillin', dosage: '500mg', frequency: '3 times daily', duration: '5 days', notes: 'Complete the full course even if you feel better.' },
+    { name: 'Augmentin 625mg', drug_name: 'Amoxicillin + clavulanic acid (Augmentin)', dosage: '625mg', frequency: '3 times daily', duration: '5 days', notes: 'Take with food. Complete the full course.' },
+    { name: 'Metronidazole 400mg', drug_name: 'Metronidazole', dosage: '400mg', frequency: '3 times daily', duration: '5 days', notes: 'Avoid alcohol during treatment and for 48 hours after the last dose.' },
+    { name: 'Clindamycin 300mg', drug_name: 'Clindamycin', dosage: '300mg', frequency: '4 times daily', duration: '5 days', notes: 'Take with a full glass of water. Report any severe diarrhoea.' },
+    { name: 'Ibuprofen 400mg', drug_name: 'Ibuprofen', dosage: '400mg', frequency: '3 times daily after meals', duration: '3 days', notes: 'Take with food. Stop and contact the clinic if you get stomach pain.' },
+    { name: 'Paracetamol 1g', drug_name: 'Paracetamol', dosage: '1g', frequency: 'Every 6 hours when needed', duration: '3 days', notes: 'Do not take more than 4g in 24 hours.' },
+    { name: 'Chlorhexidine 0.2% mouthwash', drug_name: 'Chlorhexidine 0.2% mouthwash', dosage: '10ml', frequency: 'Twice daily', duration: '7 days', notes: 'Rinse for 1 minute, then spit out. Do not swallow. Avoid eating or drinking for 30 minutes afterwards.' },
+  ];
+
+  async function loadTemplates() {
+    try {
+      const rows = await fetchMethod('/prescription-templates', 'GET', null, true);
+      state.templates = Array.isArray(rows) ? rows : [];
+    } catch (err) {
+      // Non-fatal: the built-in templates still work if saved ones can't load.
+      state.templates = [];
+    }
+    renderTemplateSelect();
+  }
+
+  function renderTemplateSelect() {
+    const sel = document.getElementById('rxTemplateSelect');
+    const mine = state.templates
+      .map((t) => `<option value="c:${escapeHtml(t.id)}">${escapeHtml(t.name)}</option>`).join('');
+    const common = BUILT_IN_TEMPLATES
+      .map((t, i) => `<option value="b:${i}">${escapeHtml(t.name)}</option>`).join('');
+    sel.innerHTML = '<option value="">Choose a template…</option>'
+      + (mine ? `<optgroup label="My templates">${mine}</optgroup>` : '')
+      + `<optgroup label="Common">${common}</optgroup>`;
+  }
+
+  // Returns { ...template, custom: boolean } for the current picker value, or null.
+  function getSelectedTemplate() {
+    const value = document.getElementById('rxTemplateSelect').value;
+    if (value.startsWith('b:')) {
+      const t = BUILT_IN_TEMPLATES[Number(value.slice(2))];
+      return t ? { ...t, custom: false } : null;
+    }
+    if (value.startsWith('c:')) {
+      const t = state.templates.find((x) => String(x.id) === value.slice(2));
+      return t ? { ...t, custom: true } : null;
+    }
+    return null;
+  }
+
+  function onTemplateChange() {
+    const tpl = getSelectedTemplate();
+    document.getElementById('rxDeleteTemplateBtn').style.display = tpl && tpl.custom ? 'inline-flex' : 'none';
+    if (!tpl) return;
+    document.getElementById('rxDrugName').value = tpl.drug_name || '';
+    document.getElementById('rxDosage').value = tpl.dosage || '';
+    document.getElementById('rxFrequency').value = tpl.frequency || '';
+    document.getElementById('rxDuration').value = tpl.duration || '';
+    document.getElementById('rxNotes').value = tpl.notes || '';
+    updateAllergyBox();
+  }
+
+  async function saveAsTemplate() {
+    const drug_name = document.getElementById('rxDrugName').value.trim();
+    const dosage = document.getElementById('rxDosage').value.trim();
+    const frequency = document.getElementById('rxFrequency').value.trim();
+    const duration = document.getElementById('rxDuration').value.trim();
+    const notes = document.getElementById('rxNotes').value.trim();
+
+    if (!drug_name || !dosage || !frequency || !duration) {
+      showToast('Fill in the drug name, dosage, frequency and duration first, then save it as a template.');
+      return;
+    }
+
+    const name = (window.prompt('Name this template:', `${drug_name} ${dosage}`.trim()) || '').trim();
+    if (!name) return;
+
+    try {
+      const created = await fetchMethod(
+        '/prescription-templates', 'POST',
+        { name, drug_name, dosage, frequency, duration, notes }, true,
+      );
+      state.templates.push(created);
+      state.templates.sort((a, b) => a.name.localeCompare(b.name));
+      renderTemplateSelect();
+      document.getElementById('rxTemplateSelect').value = `c:${created.id}`;
+      document.getElementById('rxDeleteTemplateBtn').style.display = 'inline-flex';
+      showToast('Template saved.');
+    } catch (err) {
+      showToast(err.message || 'Could not save the template.');
+    }
+  }
+
+  async function deleteSelectedTemplate() {
+    const tpl = getSelectedTemplate();
+    if (!tpl || !tpl.custom) return;
+    if (!window.confirm(`Delete the template "${tpl.name}"? Prescriptions already written are not affected.`)) return;
+
+    try {
+      await fetchMethod(`/prescription-templates/${tpl.id}`, 'DELETE', null, true);
+      state.templates = state.templates.filter((t) => String(t.id) !== String(tpl.id));
+      renderTemplateSelect();
+      document.getElementById('rxDeleteTemplateBtn').style.display = 'none';
+      showToast('Template deleted.');
+    } catch (err) {
+      showToast(err.message || 'Could not delete the template.');
+    }
+  }
+
+  /* ============================================================
+     ALLERGY BOX
+     ------------------------------------------------------------
+     Shows the patient's recorded allergies and, as the drug name is
+     typed, any match from allergyCheck.js. savePrescription() asks for
+     confirmation before saving a flagged drug. It is a screening aid —
+     no warning does not mean the drug is safe for this patient.
+     ============================================================ */
+  function updateAllergyBox() {
+    const box = document.getElementById('rxAllergyBox');
+    if (!box) return;
+    const patient = state.activePatient;
+    if (!patient) { box.innerHTML = ''; return; }
+
+    const allergiesText = (patient.allergies || '').trim();
+    const recorded = AllergyCheck.parseAllergies(allergiesText);
+
+    let html = recorded.length
+      ? `<div class="rx-allergy-line rx-allergy-record">Allergies on record: ${escapeHtml(allergiesText)}</div>`
+      : '<div class="rx-allergy-line rx-allergy-none">No allergies on record for this patient.</div>';
+
+    AllergyCheck.check(allergiesText, document.getElementById('rxDrugName').value).forEach((hit) => {
+      html += `<div class="rx-allergy-line rx-allergy-${hit.level}" role="alert">${hit.level === 'high' ? 'Warning' : 'Check'}: ${escapeHtml(hit.message)}</div>`;
+    });
+    box.innerHTML = html;
   }
 
   /* ============================================================

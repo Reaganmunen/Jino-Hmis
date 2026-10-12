@@ -1,0 +1,31 @@
+/* ============================================================
+   DENTIST EXTRAS — additive styles only.
+   Allergy warning + prescription templates (dentist-prescriptions.html)
+   and the follow-up reminder prompt (dentist-schedule.html).
+   Loaded after dashboard.css; reuses its tokens and classes unchanged.
+   ============================================================ */
+
+/* ---- prescription templates ---- */
+.rx-template-row{margin-bottom:16px;}
+.rx-template-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.rx-template-controls .field-input{flex:1 1 220px;min-width:0;}
+
+/* ---- allergy box above the prescription fields ---- */
+.rx-allergy-box{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+.rx-allergy-box:empty{display:none;}
+.rx-allergy-line{
+  padding:10px 14px;border-radius:var(--radius-sm);
+  font-size:13px;font-weight:600;line-height:1.45;
+}
+.rx-allergy-record{background:var(--red-50);color:var(--red-700);}
+.rx-allergy-high{background:var(--red-700);color:#fff;}
+.rx-allergy-caution{background:var(--amber-50);color:var(--amber-700);}
+.rx-allergy-none{background:var(--slate-100);color:var(--slate-500);font-weight:500;}
+
+/* ---- follow-up reminder prompt ---- */
+.rc-scrim{z-index:110;}
+.rc-modal{max-width:460px;}
+.rc-intro{margin:10px 0 0;font-size:13.5px;line-height:1.5;color:var(--slate-600);}
+.rc-presets{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 4px;}
+.rc-field{margin-top:14px;}
+.rc-error{min-height:18px;margin:10px 0 0;font-size:13px;font-weight:600;color:var(--red-700);}

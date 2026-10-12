@@ -220,7 +220,7 @@
     const meta = statusMeta(a.status);
     const isTerminal = TERMINAL_STATUSES.includes(a.status);
     return `
-      <div class="appt-card ${meta.className}" data-appt-id="${a.id}">
+      <div class="appt-card ${meta.className}" data-appt-id="${a.id}" data-patient-id="${escapeHtml(a.patient_id)}" data-appointment-id="${escapeHtml(a.id)}" role="button" tabindex="0" title="View appointment and patient details">
         <div class="appt-card-top">
           <div>
             <div class="appt-patient-name">${escapeHtml(patientName(a.patient_id))}</div>
@@ -278,6 +278,14 @@
       Object.assign(appt, updated);
       render();
       showToast('Appointment marked as completed.');
+      // Offer a follow-up reminder while the visit is fresh (dentist can skip).
+      if (window.RecallPrompt) {
+        RecallPrompt.open({
+          patientId: appt.patient_id,
+          patientName: patientName(appt.patient_id),
+          notify: showToast,
+        });
+      }
     } catch (err) {
       showToast(err.message || 'Could not mark this appointment as completed.');
     }

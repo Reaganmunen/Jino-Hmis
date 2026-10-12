@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="../css/dashboard.css">
 <link rel="stylesheet" href="../css/dentist-dashboard.css">
 <link rel="stylesheet" href="../css/dentist-prescriptions.css">
+<link rel="stylesheet" href="../css/dentist-extras.css">
 <link rel="icon" type="image/x-icon" href="../favicon.ico">
 <link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="../assets/favicon-16.png">
@@ -125,6 +126,19 @@
           <button class="panel-link" id="switchPatientBtn" type="button">Switch patient</button>
         </div>
 
+        <div class="rx-allergy-box" id="rxAllergyBox" aria-live="polite"></div>
+
+        <div class="rx-template-row">
+          <label class="field-label" for="rxTemplateSelect">Start from a template</label>
+          <div class="rx-template-controls">
+            <select class="field-input" id="rxTemplateSelect">
+              <option value="">Choose a template…</option>
+            </select>
+            <button class="btn btn-outline btn-sm" id="rxSaveTemplateBtn" type="button">Save as template</button>
+            <button class="btn btn-outline btn-sm" id="rxDeleteTemplateBtn" type="button" style="display:none;">Delete template</button>
+          </div>
+        </div>
+
         <div class="rx-form-grid">
           <div>
             <label class="field-label" for="rxDrugName">Drug name</label>
@@ -182,6 +196,7 @@
   Adjust the paths below to wherever these actually live in your public/ folder.
 -->
 <script src="../js/api.js"></script>
+<script src="../js/allergyCheck.js"></script>
 <script src="../js/dentistPrescriptions.js"></script>
 <script src="../js/revamp.js"></script>
 </body>

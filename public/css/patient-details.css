@@ -1,0 +1,97 @@
+/* ============================================================
+   PATIENT DETAILS MODAL — additive styles only.
+   Loaded after dashboard.css; reuses its tokens (--navy-*, --blue-*,
+   --slate-*, --red-*, --radius-*) and its .modal / .modal-scrim /
+   .badge / .filter-tab / .icon-link-btn classes unchanged.
+   Everything new is prefixed pd- so it can't collide with page styles.
+   ============================================================ */
+body.pd-open{overflow:hidden;}
+
+/* anything wired up with data-patient-id opens the modal */
+[data-patient-id]:not(a):not(button){cursor:pointer;}
+[data-patient-id]:not(a):not(button):focus-visible{outline:2px solid var(--blue-600);outline-offset:2px;}
+
+.pd-scrim{z-index:120;} /* above page modals and the mobile sidebar scrim */
+.pd-modal{max-width:720px;}
+
+.pd-meta{margin:2px 0 0;font-size:12.5px;color:var(--slate-500);}
+
+.pd-allergy{
+  display:flex;align-items:center;gap:8px;margin-top:14px;padding:10px 14px;
+  background:var(--red-50);color:var(--red-700);border-radius:var(--radius-sm);
+  font-size:13px;font-weight:600;
+}
+.pd-allergy svg{flex:0 0 auto;}
+
+/* ---- focus card (the appointment / diagnosis that was clicked) ---- */
+.pd-focus{
+  margin-top:16px;padding:16px 18px;border:1px solid var(--slate-200);
+  border-left:4px solid var(--blue-600);border-radius:var(--radius-sm);
+  background:var(--blue-50);
+}
+.pd-focus-head{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.pd-focus-kicker{
+  margin:0;font-size:11.5px;font-weight:700;color:var(--blue-600);
+  text-transform:uppercase;letter-spacing:.05em;
+}
+.pd-when{font-size:12px;font-weight:500;color:var(--slate-500);}
+.pd-sub{
+  margin:14px 0 6px;font-size:11.5px;font-weight:700;color:var(--slate-500);
+  text-transform:uppercase;letter-spacing:.05em;
+}
+
+/* ---- label / value grid ---- */
+.pd-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  gap:12px 18px;margin:12px 0 0;
+}
+.pd-grid-2{grid-template-columns:repeat(auto-fit,minmax(210px,1fr));margin-top:0;}
+.pd-field dt{margin:0;font-size:11.5px;font-weight:600;color:var(--slate-500);}
+.pd-field dd{margin:2px 0 0;font-size:13.5px;font-weight:600;color:var(--navy-950);overflow-wrap:anywhere;}
+
+/* ---- diagnosis text + tooth pills ---- */
+.pd-dx{
+  padding:10px 12px;background:var(--white);border:1px solid var(--slate-200);
+  border-radius:var(--radius-sm);margin-bottom:6px;
+}
+.pd-dx-bare{margin-top:10px;}
+.pd-dx-text{margin:0;font-size:13.5px;line-height:1.55;color:var(--navy-950);white-space:pre-wrap;overflow-wrap:anywhere;}
+.pd-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.pd-pill{
+  display:inline-block;padding:2px 9px;border-radius:999px;font-size:11.5px;font-weight:600;
+  background:var(--blue-100);color:var(--blue-600);
+}
+
+/* ---- tabs + panels ---- */
+.pd-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:18px 0 4px;}
+.pd-body{margin-top:12px;min-height:120px;}
+.pd-panel{display:none;}
+.pd-panel.is-active{display:block;}
+
+.pd-muted{margin:0;padding:18px 4px;text-align:center;color:var(--slate-500);font-size:13.5px;}
+.pd-focus .pd-muted{padding:4px 0;text-align:left;}
+.pd-loading{padding:34px 12px;}
+
+/* ---- list rows ---- */
+.pd-row{
+  display:flex;align-items:center;gap:12px;padding:11px 10px;margin:0 -10px;
+  border-bottom:1px solid var(--slate-100);border-radius:10px;cursor:pointer;
+  transition:background .12s ease;
+}
+.pd-row:last-child{border-bottom:none;}
+.pd-row:hover{background:var(--slate-100);}
+.pd-row:focus-visible{outline:2px solid var(--blue-600);outline-offset:-2px;}
+.pd-row-main{flex:1;min-width:0;}
+.pd-row-t{margin:0;font-size:13.5px;font-weight:600;color:var(--navy-950);overflow-wrap:anywhere;}
+.pd-row-s{margin:2px 0 0;font-size:12.5px;color:var(--slate-500);overflow-wrap:anywhere;}
+.pd-chev{flex:0 0 auto;color:var(--slate-500);font-size:20px;line-height:1;}
+
+.pd-rx{padding:10px 0;border-bottom:1px solid var(--slate-100);}
+.pd-rx:last-child{border-bottom:none;}
+.pd-rx .pd-row-t .pd-when{margin-left:8px;}
+.pd-focus .pd-rx{padding:6px 0;}
+
+@media (max-width:560px){
+  .pd-modal{padding:20px 16px 18px;}
+  .pd-focus{padding:14px;}
+}

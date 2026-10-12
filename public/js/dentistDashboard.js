@@ -224,7 +224,7 @@
         ${teeth.map((t) => `<span class="diagnosis-tooth-pill">FDI ${escapeHtml(String(t))}</span>`).join('')}
       `;
       item.style.cursor = 'pointer';
-      item.addEventListener('click', () => openPatientChart(d.patient_id));
+      item.addEventListener('click', () => openPatientChart(d.patient_id, null, d.id));
       list.appendChild(item);
     });
   }
@@ -281,12 +281,10 @@
     });
   }
 
-  // Patient chart page isn't built yet — this is the deliberate hook for it.
-  // Swap the URL once dentist-patient-chart.html exists.
-  function openPatientChart(patientId, appointmentId) {
-    const params = new URLSearchParams({ patientId });
-    if (appointmentId) params.set('appointmentId', appointmentId);
-    window.location.href = `dentist-patient-chart.html?${params.toString()}`;
+  // Opens the shared patient details modal (js/patientDetails.js). Pass an
+  // appointmentId or diagnosisId to show that record in full at the top.
+  function openPatientChart(patientId, appointmentId, diagnosisId) {
+    PatientDetails.open({ patientId, appointmentId, diagnosisId });
   }
 
   /* ============================================================
