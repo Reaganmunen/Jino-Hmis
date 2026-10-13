@@ -1,0 +1,86 @@
+/* ============================================================
+   medical-history.css — editor modal, summary panel and alert
+   strips for the medical history module. Reuses the shared
+   colour variables (so seasonal themes still apply).
+   ============================================================ */
+
+/* ---- editor modal ---- */
+.mh-scrim{z-index:140;} /* above the patient-details modal (120) */
+.mh-modal{max-width:760px;}
+.mh-status{
+  margin:14px 0 0;padding:10px 14px;border-radius:var(--radius-sm);
+  background:var(--blue-50);color:var(--navy-900);font-size:13px;font-weight:500;
+}
+.mh-status.is-warn{background:var(--amber-50);color:var(--amber-700);}
+.mh-form{margin-top:18px;}
+.mh-section{margin-bottom:22px;}
+.mh-section h3{
+  margin:0 0 10px;font-size:12px;font-weight:700;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--blue-600);
+}
+.mh-checks{display:grid;grid-template-columns:1fr;gap:6px;}
+.mh-check{
+  border:1px solid var(--slate-200);border-radius:var(--radius-sm);
+  padding:9px 12px;background:var(--white);
+}
+.mh-check.is-on{border-color:var(--blue-500);background:var(--blue-50);}
+.mh-check label{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;color:var(--navy-900);cursor:pointer;}
+.mh-check input[type="checkbox"]{margin-top:3px;flex:0 0 auto;}
+.mh-check .mh-note{display:none;margin-top:8px;}
+.mh-check.is-on .mh-note{display:block;}
+.mh-row2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.mh-inline-check{display:flex;gap:10px;align-items:center;font-size:13.5px;color:var(--navy-900);margin-bottom:10px;}
+.mh-med{
+  display:grid;grid-template-columns:1.6fr 1fr 1fr 1.2fr auto;gap:8px;margin-bottom:8px;align-items:center;
+}
+.mh-med-remove{
+  border:0;background:transparent;color:var(--red-700);font-size:20px;line-height:1;
+  cursor:pointer;padding:4px 8px;border-radius:6px;
+}
+.mh-med-remove:hover{background:var(--red-50);}
+.mh-error{margin-top:10px;color:var(--red-700);font-size:13px;font-weight:600;}
+.mh-foot{
+  display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;
+  margin-top:18px;padding-top:16px;border-top:1px solid var(--slate-200);
+}
+.mh-foot-right{display:flex;gap:10px;margin-left:auto;}
+
+/* ---- alert strips (patient modal header + prescription page) ---- */
+.mh-standing{display:flex;flex-direction:column;gap:6px;margin-top:10px;}
+.mh-alert{
+  display:flex;gap:8px;align-items:flex-start;padding:9px 13px;border-radius:var(--radius-sm);
+  font-size:13px;font-weight:500;line-height:1.45;
+}
+.mh-alert b{font-weight:700;white-space:nowrap;}
+.mh-alert-high{background:var(--red-50);color:var(--red-700);}
+.mh-alert-caution{background:var(--amber-50);color:var(--amber-700);}
+.mh-alert-info{background:var(--slate-100);color:var(--navy-900);}
+
+/* ---- summary panel (patient modal tab) ---- */
+.mh-summary-actions{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px;}
+.mh-review{font-size:12.5px;color:var(--slate-500);margin:0 0 14px;}
+.mh-review.is-warn{color:var(--amber-700);font-weight:600;}
+.mh-block{margin-bottom:16px;}
+.mh-block h4{
+  margin:0 0 8px;font-size:11.5px;font-weight:700;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--slate-500);
+}
+.mh-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.mh-chip{
+  padding:5px 10px;border-radius:999px;background:var(--blue-100);color:var(--navy-900);
+  font-size:12.5px;font-weight:600;
+}
+.mh-chip small{font-weight:500;color:var(--slate-500);}
+.mh-table{width:100%;border-collapse:collapse;font-size:13px;}
+.mh-table th{text-align:left;font-size:11.5px;color:var(--slate-500);padding:4px 8px 6px 0;}
+.mh-table td{padding:6px 8px 6px 0;border-top:1px solid var(--slate-200);color:var(--navy-900);}
+.mh-empty{font-size:13.5px;color:var(--slate-500);}
+
+@media (max-width:640px){
+  .mh-row2{grid-template-columns:1fr;}
+  .mh-med{grid-template-columns:1fr 1fr;}
+  .mh-med-remove{justify-self:end;}
+}
+
+/* gate mode: form must be completed before the chart opens */
+.mh-required{margin:14px 0 0;padding:10px 14px;border-radius:var(--radius-sm);background:#FEF3C7;color:#7A4B00;font-size:13px;font-weight:600;}

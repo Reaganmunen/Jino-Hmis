@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="../css/dashboard.css">
 <link rel="stylesheet" href="../css/dentist-dashboard.css">
 <link rel="stylesheet" href="../css/dentist-patients.css">
+<link rel="stylesheet" href="../css/medical-history.css">
 <link rel="icon" type="image/x-icon" href="../favicon.ico">
 <link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="../assets/favicon-16.png">
@@ -151,7 +152,9 @@
     </div>
 
     <div class="records-tabs" id="recordsTabs">
-      <button class="filter-tab is-active" data-tab="diagnoses" type="button">Diagnoses</button>
+      <button class="filter-tab is-active" data-tab="info" type="button">Patient info</button>
+      <button class="filter-tab" data-tab="medical" type="button">Medical history</button>
+      <button class="filter-tab" data-tab="diagnoses" type="button">Diagnoses</button>
       <button class="filter-tab" data-tab="plans" type="button">Treatment plans</button>
       <button class="filter-tab" data-tab="prescriptions" type="button">Prescriptions</button>
       <button class="filter-tab" data-tab="appointments" type="button">Appointments</button>
@@ -160,7 +163,13 @@
     </div>
 
     <div class="records-tab-body">
-      <div class="records-tab-panel is-active" data-tab-panel="diagnoses">
+      <div class="records-tab-panel is-active" data-tab-panel="info">
+        <div class="pinfo-grid" id="modalInfoGrid"></div>
+      </div>
+      <div class="records-tab-panel" data-tab-panel="medical">
+        <div id="modalMedicalPanel"></div>
+      </div>
+      <div class="records-tab-panel" data-tab-panel="diagnoses">
         <div class="timeline" id="modalDiagnosisTimeline"></div>
       </div>
       <div class="records-tab-panel" data-tab-panel="plans">
@@ -241,6 +250,7 @@
 -->
 <script src="../js/api.js"></script>
 <script src="../js/avatar.js"></script>
+<script src="../js/medicalHistory.js"></script>
 <script src="../js/dentistPatients.js"></script>
 <script src="../js/revamp.js"></script>
 </body>

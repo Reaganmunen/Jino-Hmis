@@ -13,6 +13,7 @@ router.use('/treatment-plan-items', require('./treatmentPlanItemRoutes'));
 router.use('/prescriptions', require('./prescriptionRoutes'));
 router.use('/prescription-templates', require('./prescriptionTemplateRoutes')); // dentist-saved Rx shortcuts
 router.use('/consent-forms', require('./consentFormRoutes'));
+router.use('/medical-history', require('./medicalHistoryRoutes')); // structured medical history + clinical alerts
 router.use('/medical-certificates', require('./medicalCertificateRoutes')); // sick-off / fitness-to-work notes
 router.use('/patient-files', require('./patientFileRoutes'));
 router.use('/inventory-items', require('./inventoryItemRoutes'));
@@ -23,6 +24,7 @@ router.use('/bill-items', require('./billItemRoutes'));
 router.use('/payments', require('./paymentRoutes'));
 router.use('/mpesa', require('./mpesaRoutes'));
 router.use('/kcb', require('./kcbRoutes')); // KCB Buni STK push (runs alongside Daraja)
+router.use('/equity', require('./equityRoutes')); // Equity paybill STK push via Jenga (runs alongside Daraja/KCB)
 router.use('/insurance-providers', require('./insuranceProviderRoutes'));
 router.use('/insurance-claims', require('./insuranceClaimRoutes'));
 router.use('/claim-status-history', require('./claimStatusHistoryRoutes'));

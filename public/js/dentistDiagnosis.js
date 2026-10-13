@@ -34,6 +34,32 @@
   // included here so a saved "Condition: Exfoliated" parses back out.
   const ALL_CONDITION_LABELS = { ...CONDITION_SETS.medical, ...CONDITION_SETS.cosmetic, ...Dentition.conditionLabels() };
 
+  /* ---- Tooth surfaces ----
+     M mesial, D distal, O occlusal (back teeth), I incisal (front teeth),
+     B buccal/labial, L lingual/palatal. Stored in canonical order so
+     "occlusal + distal" is always O, D (charted as "OD"). */
+  const SURFACE_ORDER = ['M', 'O', 'I', 'D', 'B', 'L'];
+  const SURFACE_NAMES = { M: 'Mesial', O: 'Occlusal', I: 'Incisal', D: 'Distal', B: 'Buccal', L: 'Lingual' };
+
+  function sortSurfaces(list) {
+    const set = new Set(list);
+    return SURFACE_ORDER.filter((s) => set.has(s));
+  }
+  function surfaceNames(codes) { return sortSurfaces(codes).map((s) => SURFACE_NAMES[s]).join(', '); }
+  function surfaceCode(codes) { return sortSurfaces(codes).join(''); }
+
+  // "Mesial, Occlusal" (or "MO") -> ['M','O']
+  function parseSurfaces(text) {
+    const m = (text || '').match(/Surfaces:\s*([^·—]+)/i);
+    if (!m) return [];
+    const found = [];
+    m[1].split(/[,/&\s]+/).map((t) => t.trim().toLowerCase()).filter(Boolean).forEach((tok) => {
+      const code = SURFACE_ORDER.find((c) => SURFACE_NAMES[c].toLowerCase() === tok);
+      if (code) found.push(code);
+    });
+    return sortSurfaces(found);
+  }
+
   function toothLabel(fdi) {
     const d = Dentition.describe(fdi);
     return { name: d.positionName, quadrant: d.quadrantName, universal: d.universal, isPrimary: d.isPrimary };
@@ -57,6 +83,7 @@
     dentition: 'permanent',    // which arch is drawn: 'permanent' (32 teeth) or 'primary' (20 teeth)
     pickerTab: 'today',    // 'today' | 'upcoming' | 'past' — ignored while pickerSearch is non-empty
     pickerSearch: '',      // patient-name search, overrides the tab and searches the full fetched range
+    selectToken: 0,        // bumped on every patient click so a slow medical-history check can't open a stale chart
   };
 
   const TAB_LABEL = { today: 'today', upcoming: 'upcoming', past: 'in the past' };
@@ -65,6 +92,7 @@
     initSidebar();
     renderTopbarAvatar(`Dr. ${sessionUser.first_name} ${sessionUser.last_name}`);
     initToothModal();
+    initPatientInfoModal();
     initCategoryToggle();
     initDentitionToggle();
     initAppointmentPickerControls();
@@ -226,9 +254,80 @@
     });
   }
 
+  /* ============================================================
+     MEDICAL HISTORY GATE
+     ------------------------------------------------------------
+     Clicking a patient does NOT open the chart straight away. The
+     medical history form comes first (it can't be dismissed), and
+     the odontogram only opens once it's saved. The form shows only when:
+       1. the patient has no medical history at all, or
+       2. the latest history is more than 6 months old.
+     Otherwise the chart opens directly — the dentist can still
+     open/update the history from "Patient details".
+     ============================================================ */
   async function selectAppointment(appt) {
+    const patient = state.patientsById[appt.patient_id] || null;
+    if (!patient) {
+      showToast('Could not find this patient\'s record.');
+      return;
+    }
+
+    const myToken = ++state.selectToken;
+
+    // Nothing clinical stays on screen from the previous patient while we check.
+    document.getElementById('chartingPanel').style.display = 'none';
+    document.getElementById('checkupPanel').style.display = 'none';
+
+    let needsForm = true;
+    try {
+      if (!window.MedicalHistory) throw new Error('The medical history form did not load. Please refresh the page.');
+      const data = await window.MedicalHistory.fetchCurrent(patient.id);
+      if (myToken !== state.selectToken) return; // dentist clicked someone else meanwhile
+      needsForm = !data.current || isOlderThanSixMonths(data.current);
+    } catch (err) {
+      if (myToken !== state.selectToken) return;
+      const authFailures = ['No token provided', 'Invalid token', 'Token expired', 'Account not found or inactive'];
+      if (authFailures.includes(err.message)) { handleLoadError(err); return; }
+      showToast(err.message || 'Could not check this patient\'s medical history. Please try again.');
+      return;
+    }
+
+    if (!needsForm) {
+      openCharting(appt, patient);
+      return;
+    }
+
+    window.MedicalHistory.open({
+      patientId: patient.id,
+      patientName: `${patient.first_name} ${patient.last_name}`,
+      required: true,
+      onSaved: async () => {
+        // The form may have changed the patient's allergies — pick that up before charting.
+        await refreshPatient(patient.id);
+        openCharting(appt, state.patientsById[patient.id] || patient);
+      },
+      onCancel: () => showToast('Complete the medical history to open the chart.'),
+    });
+  }
+
+  // Age of the latest history, counted from when it was last reviewed (or, if it
+  // was never reviewed, when it was recorded). 180 days, same as the server's rule.
+  function isOlderThanSixMonths(current) {
+    const when = new Date(current.reviewed_at || current.created_at);
+    if (isNaN(when.getTime())) return true; // unreadable date: safer to ask again
+    return (Date.now() - when.getTime()) / 86400000 > 180;
+  }
+
+  async function refreshPatient(patientId) {
+    try {
+      const fresh = await fetchMethod(`/patients/${patientId}`, 'GET', null, true);
+      state.patientsById[patientId] = { ...state.patientsById[patientId], ...fresh };
+    } catch (err) { /* keep the copy we already have */ }
+  }
+
+  async function openCharting(appt, patient) {
     state.activeAppointment = appt;
-    state.activePatient = state.patientsById[appt.patient_id] || null;
+    state.activePatient = patient;
     state.selectedTooth = null;
 
     // Open on the dentition that fits the patient's age (primary under 6);
@@ -239,15 +338,11 @@
 
     renderAppointmentPicker();
 
-    if (!state.activePatient) {
-      showToast('Could not find this patient\'s record.');
-      return;
-    }
-
     const chartingPanel = document.getElementById('chartingPanel');
     chartingPanel.style.display = 'block';
     document.getElementById('checkupPanel').style.display = 'block';
     document.getElementById('chartingPatientName').textContent = `— ${state.activePatient.first_name} ${state.activePatient.last_name}`;
+    renderChartingAllergy();
     chartingPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     document.getElementById('odontogramHost').innerHTML = '<div class="empty-state">Loading diagnosis history…</div>';
@@ -276,6 +371,120 @@
     }
   }
 
+  /* ============================================================
+     PATIENT DETAILS MODAL
+     ------------------------------------------------------------
+     The bio data the receptionist captured at registration, kept
+     in a modal so it doesn't crowd the charting page. Allergies
+     are the one exception: they also show as a thin strip above
+     the odontogram whenever the patient has any.
+     ============================================================ */
+  function hasAllergies(p) {
+    if (!p || !p.allergies) return false;
+    const v = String(p.allergies).trim().toLowerCase();
+    return v !== '' && v !== 'none' && v !== 'n/a' && v !== 'na' && v !== 'nil';
+  }
+
+  function ageFromDob(dob) {
+    if (!dob) return null;
+    const birth = new Date(dob);
+    if (isNaN(birth.getTime())) return null;
+    const now = new Date();
+    let age = now.getFullYear() - birth.getFullYear();
+    const m = now.getMonth() - birth.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
+    return age;
+  }
+
+  const WARN_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 16.5v.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M10.4 3.9 2.7 18a1.8 1.8 0 0 0 1.6 2.7h15.4a1.8 1.8 0 0 0 1.6-2.7L13.6 3.9a1.8 1.8 0 0 0-3.2 0Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>';
+
+  function renderChartingAllergy() {
+    const el = document.getElementById('chartingAllergyAlert');
+    const p = state.activePatient;
+    if (hasAllergies(p)) {
+      el.innerHTML = `${WARN_ICON}<span>Allergies: ${escapeHtml(p.allergies)}</span>`;
+      el.style.display = 'flex';
+    } else {
+      el.style.display = 'none';
+      el.innerHTML = '';
+    }
+  }
+
+  function initPatientInfoModal() {
+    const scrim = document.getElementById('patientInfoScrim');
+    const close = () => scrim.classList.remove('is-open');
+    document.getElementById('patientInfoBtn').addEventListener('click', openPatientInfo);
+    document.getElementById('patientInfoClose').addEventListener('click', close);
+    document.getElementById('patientInfoDoneBtn').addEventListener('click', close);
+    scrim.addEventListener('click', (e) => { if (e.target === scrim) close(); });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && scrim.classList.contains('is-open')) close();
+    });
+
+    // Open the shared medical history form on top (not a gate here — it can be closed).
+    document.getElementById('patientInfoMedicalBtn').addEventListener('click', () => {
+      const p = state.activePatient;
+      if (!p || !window.MedicalHistory) return;
+      window.MedicalHistory.open({
+        patientId: p.id,
+        patientName: `${p.first_name} ${p.last_name}`,
+        onSaved: async () => {
+          await refreshPatient(p.id);
+          if (state.activePatient && state.activePatient.id === p.id) {
+            state.activePatient = state.patientsById[p.id] || state.activePatient;
+            renderChartingAllergy();
+            renderPatientInfo();
+          }
+          showToast('Medical history saved.');
+        },
+      });
+    });
+  }
+
+  function openPatientInfo() {
+    if (!state.activePatient) return;
+    renderPatientInfo();
+    document.getElementById('patientInfoScrim').classList.add('is-open');
+  }
+
+  function renderPatientInfo() {
+    const p = state.activePatient;
+    if (!p) return;
+    const age = ageFromDob(p.date_of_birth);
+
+    document.getElementById('patientInfoName').textContent = `${p.first_name} ${p.last_name}`;
+    document.getElementById('patientInfoMeta').textContent =
+      [age != null ? `${age} yrs` : null, p.phone].filter(Boolean).join(' · ');
+
+    const allergyEl = document.getElementById('patientInfoAllergy');
+    if (hasAllergies(p)) {
+      allergyEl.innerHTML = `${WARN_ICON}<span>Allergies: ${escapeHtml(p.allergies)}</span>`;
+      allergyEl.style.display = 'flex';
+    } else {
+      allergyEl.style.display = 'none';
+      allergyEl.innerHTML = '';
+    }
+
+    const rows = [
+      ['Full name', `${p.first_name} ${p.last_name}`],
+      ['Date of birth', p.date_of_birth ? `${formatDate(p.date_of_birth)}${age != null ? ` (${age} yrs)` : ''}` : null],
+      ['Phone', p.phone],
+      ['Email', p.email],
+      ['National ID', p.national_id],
+      ['Address', p.address],
+      ['Next of kin', p.next_of_kin_name],
+      ['Next of kin phone', p.next_of_kin_phone],
+      ['Allergies', hasAllergies(p) ? p.allergies : null, 'None recorded'],
+      ['Registered on', p.created_at ? formatDate(p.created_at) : null],
+    ];
+    document.getElementById('patientInfoGrid').innerHTML = rows.map(([label, value, emptyText]) => `
+      <div class="pinfo-cell">
+        <p class="pinfo-label">${escapeHtml(label)}</p>
+        <p class="pinfo-value">${value ? escapeHtml(String(value)) : escapeHtml(emptyText || '—')}</p>
+      </div>
+    `).join('');
+  }
+
   function showAppointmentPicker() {
     document.getElementById('chartingPanel').style.display = 'none';
     document.getElementById('checkupPanel').style.display = 'none';
@@ -291,11 +500,13 @@
      chart modal, etc.) and so we can parse them back out here to
      color/filter teeth by category.
      ============================================================ */
-  function composeDiagnosisText({ category, condition, procedureName, notes }) {
+  function composeDiagnosisText({ category, condition, procedureName, surfaces = [], material = '', notes }) {
     const parts = [];
     parts.push(`Category: ${category === 'cosmetic' ? 'Cosmetic' : 'Medical'}`);
     if (condition) parts.push(`Condition: ${ALL_CONDITION_LABELS[condition]}`);
     if (procedureName) parts.push(`Procedure: ${procedureName}`);
+    if (surfaces.length) parts.push(`Surfaces: ${surfaceNames(surfaces)}`);
+    if (material) parts.push(`Material: ${material}`);
     let text = parts.join(' · ');
     if (notes) text = text ? `${text} — ${notes}` : notes;
     return text || 'No additional notes.';
@@ -750,6 +961,49 @@
       populateConditionOptions(e.target.value);
     });
     document.getElementById('toothModalSave').addEventListener('click', saveToothFinding);
+    document.getElementById('surfacePicker').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-surface]');
+      if (!btn) return;
+      const on = !btn.classList.contains('is-on');
+      btn.classList.toggle('is-on', on);
+      btn.setAttribute('aria-pressed', String(on));
+      updateSurfaceSummary();
+    });
+  }
+
+  /* ---- Surface picker ----
+     Classic five-zone tooth diagram. Mesial faces the midline, so it
+     sits on the right for teeth in quadrants 1/4/5/8 (patient's right,
+     drawn on the left of the chart) and on the left for 2/3/6/7.
+     Front teeth (FDI x1-x3) have an incisal edge instead of an
+     occlusal surface. */
+  function buildSurfacePicker(tooth, selected) {
+    const quadrant = Number(String(tooth).charAt(0));
+    const position = Number(String(tooth).charAt(1));
+    const mesialOnRight = [1, 4, 5, 8].includes(quadrant);
+    const centre = position <= 3 ? 'I' : 'O';
+    const cell = (code, cls) => `
+      <button type="button" class="surf ${cls}${selected.includes(code) ? ' is-on' : ''}"
+        data-surface="${code}" aria-pressed="${selected.includes(code)}"
+        title="${SURFACE_NAMES[code]}${code === 'B' && position <= 3 ? ' (labial)' : ''}${code === 'L' && quadrant <= 2 ? ' (palatal)' : ''}">${code}</button>`;
+    document.getElementById('surfacePicker').innerHTML =
+      cell('B', 'surf-top') +
+      cell(mesialOnRight ? 'D' : 'M', 'surf-left') +
+      cell(centre, 'surf-mid') +
+      cell(mesialOnRight ? 'M' : 'D', 'surf-right') +
+      cell('L', 'surf-bottom');
+    updateSurfaceSummary();
+  }
+
+  function selectedSurfaces() {
+    return sortSurfaces(Array.from(document.querySelectorAll('#surfacePicker .surf.is-on')).map((b) => b.dataset.surface));
+  }
+
+  function updateSurfaceSummary() {
+    const sel = selectedSurfaces();
+    document.getElementById('surfaceSummary').textContent = sel.length
+      ? `${surfaceNames(sel)} (${surfaceCode(sel)})`
+      : 'No surface selected.';
   }
 
   // Condition options are scoped to whichever category is picked in the
@@ -796,14 +1050,21 @@
 
     let procedureName = '';
     let notes = '';
+    let material = '';
+    let surfaces = [];
     if (existing) {
       const text = existing.diagnosis_text || '';
       const procMatch = text.match(/Procedure:\s*([^·—]+)/i);
       if (procMatch) procedureName = procMatch[1].trim();
+      const matMatch = text.match(/Material:\s*([^·—]+)/i);
+      if (matMatch) material = matMatch[1].trim();
+      surfaces = parseSurfaces(text);
       const notesMatch = text.match(/—\s*(.+)$/s);
       if (notesMatch) notes = notesMatch[1].trim();
     }
     document.getElementById('procedureSelect').value = procedureName;
+    document.getElementById('materialInput').value = material;
+    buildSurfacePicker(tooth, surfaces);
     document.getElementById('notesInput').value = notes;
 
     document.getElementById('toothModalSave').textContent = existing ? 'Update finding' : 'Save finding';
@@ -822,8 +1083,11 @@
     const condition = document.getElementById('conditionSelect').value;
     const procedureName = document.getElementById('procedureSelect').value;
     const notes = document.getElementById('notesInput').value.trim();
+    const surfaces = selectedSurfaces();
+    // "·" and "—" are the separators in diagnosis_text, so keep them out of free text.
+    const material = document.getElementById('materialInput').value.replace(/[·—]/g, '-').trim();
 
-    const diagnosis_text = composeDiagnosisText({ category, condition, procedureName, notes });
+    const diagnosis_text = composeDiagnosisText({ category, condition, procedureName, surfaces, material, notes });
     const isEditing = !!state.editingDiagnosisId;
     const saveBtn = document.getElementById('toothModalSave');
     saveBtn.disabled = true;
@@ -870,6 +1134,9 @@
             tooth_number: Number(state.selectedTooth),
             condition: condition || 'healthy',
             notes,
+            surfaces,
+            procedure_name: procedureName || null,
+            material: material || null,
           }, true);
         } catch (toothChartErr) {
           showToast('Finding saved, but the patient-facing chart could not be updated.');

@@ -24,6 +24,7 @@
 
   const TABS = [
     { id: 'patient', label: 'Patient' },
+    { id: 'medical', label: 'Medical history' },
     { id: 'diagnoses', label: 'Diagnoses' },
     { id: 'appointments', label: 'Appointments' },
     { id: 'prescriptions', label: 'Prescriptions' },
@@ -40,6 +41,7 @@
     diagnoses: [],
     prescriptions: [],
     plans: [],
+    medical: null,       // { ok, data, alerts } from loadMedical()
     focus: null,         // { type: 'appointment' | 'diagnosis', id }
     activeTab: 'patient',
     dentistsById: null,  // lazy, fetched once
@@ -65,12 +67,15 @@
     state.diagnoses = [];
     state.prescriptions = [];
     state.plans = [];
+    state.medical = null;
 
     const myToken = ++state.token;
 
     els.name.textContent = 'Loading…';
     els.meta.textContent = '';
     els.allergy.style.display = 'none';
+    els.mhAlerts.style.display = 'none';
+    els.mhAlerts.innerHTML = '';
     els.focus.innerHTML = '';
     setLoading();
     selectTab(state.activeTab);
@@ -81,12 +86,13 @@
     // Each request fails on its own: a missing prescriptions list should
     // not stop the patient's name and appointments from showing.
     const get = (path) => fetchMethod(path, 'GET', null, true);
-    const [patient, appts, diagnoses, rx, plans] = await Promise.all([
+    const [patient, appts, diagnoses, rx, plans, medical] = await Promise.all([
       get(`/patients/${patientId}`).catch((e) => ({ __error: e })),
       get(`/appointments/patient/${patientId}`).catch(() => null),
       get(`/diagnoses/patient/${patientId}`).catch(() => null),
       get(`/prescriptions/patient/${patientId}`).catch(() => null),
       get(`/treatment-plans/patient/${patientId}`).catch(() => null),
+      loadMedical(patientId),
       loadDentists(),
     ]);
 
@@ -106,7 +112,9 @@
     state.failed = {
       appointments: appts === null, diagnoses: diagnoses === null,
       prescriptions: rx === null, plans: plans === null,
+      medical: !medical.ok,
     };
+    state.medical = medical;
 
     renderAll();
   }
@@ -144,6 +152,7 @@
           </button>
         </div>
         <div class="pd-allergy" id="pdAllergy" style="display:none;"></div>
+        <div class="mh-standing" id="pdMhAlerts" style="display:none;"></div>
         <div id="pdFocus"></div>
         <div class="pd-tabs" id="pdTabs" role="tablist">
           ${TABS.map((t) => `<button class="filter-tab" role="tab" data-tab="${t.id}" type="button">${t.label}</button>`).join('')}
@@ -159,6 +168,7 @@
     els.name = scrim.querySelector('#pdName');
     els.meta = scrim.querySelector('#pdMeta');
     els.allergy = scrim.querySelector('#pdAllergy');
+    els.mhAlerts = scrim.querySelector('#pdMhAlerts');
     els.focus = scrim.querySelector('#pdFocus');
     els.close = scrim.querySelector('#pdClose');
     els.tabs = scrim.querySelector('#pdTabs');
@@ -242,6 +252,8 @@
     renderAppointmentsPanel();
     renderPrescriptionsPanel();
     renderPlansPanel();
+    renderMedicalAlerts();
+    renderMedicalPanel();
     selectTab(state.activeTab);
   }
 
@@ -352,6 +364,84 @@
         ${field('Next of kin phone', p.next_of_kin_phone || '—')}
         ${field('Allergies', (p.allergies || '').trim() || 'None recorded')}
       </dl>`;
+  }
+
+  /* ---- medical history (module: medicalHistory.js, loaded on demand) ---- */
+  let mhLoader = null;
+  function ensureMedicalHistory() {
+    if (window.MedicalHistory) return Promise.resolve(true);
+    if (!mhLoader) {
+      mhLoader = new Promise((resolve) => {
+        if (!document.querySelector('link[data-mh-css]')) {
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = '/css/medical-history.css';
+          link.setAttribute('data-mh-css', '1');
+          document.head.appendChild(link);
+        }
+        const s = document.createElement('script');
+        s.src = '/js/medicalHistory.js';
+        s.onload = () => resolve(true);
+        s.onerror = () => { mhLoader = null; resolve(false); };
+        document.head.appendChild(s);
+      });
+    }
+    return mhLoader;
+  }
+
+  // Never throws: { ok:false } when the module or the endpoints are unavailable.
+  async function loadMedical(patientId) {
+    const loaded = await ensureMedicalHistory();
+    if (!loaded) return { ok: false, data: null, alerts: null };
+    try {
+      const [data, alerts] = await Promise.all([
+        window.MedicalHistory.fetchCurrent(patientId),
+        window.MedicalHistory.fetchAlerts(patientId).catch(() => null),
+      ]);
+      return { ok: true, data, alerts };
+    } catch (e) {
+      return { ok: false, data: null, alerts: null };
+    }
+  }
+
+  async function reloadMedical() {
+    if (!state.patient) return;
+    const myToken = state.token;
+    const fresh = await loadMedical(state.patient.id);
+    if (myToken !== state.token) return;
+    state.medical = fresh;
+    state.failed.medical = !fresh.ok;
+    renderMedicalAlerts();
+    renderMedicalPanel();
+  }
+
+  function renderMedicalAlerts() {
+    const m = state.medical;
+    const list = m && m.ok && m.alerts && Array.isArray(m.alerts.standing) ? m.alerts.standing : [];
+    if (!list.length || !window.MedicalHistory) {
+      els.mhAlerts.style.display = 'none';
+      els.mhAlerts.innerHTML = '';
+      return;
+    }
+    els.mhAlerts.innerHTML = window.MedicalHistory.alertsHtml(list);
+    els.mhAlerts.style.display = 'flex';
+  }
+
+  function renderMedicalPanel() {
+    const el = els.panels.medical;
+    const m = state.medical;
+    if (!m || !m.ok || !window.MedicalHistory) {
+      el.innerHTML = '<p class="pd-muted">Medical history is not available right now (you may not have permission to view it).</p>';
+      return;
+    }
+    const p = state.patient;
+    window.MedicalHistory.renderSummary(el, {
+      patientId: p.id,
+      patientName: `${p.first_name} ${p.last_name}`,
+      data: m.data,
+      alerts: m.alerts,
+      onChange: reloadMedical,
+    });
   }
 
   function renderDiagnosesPanel() {

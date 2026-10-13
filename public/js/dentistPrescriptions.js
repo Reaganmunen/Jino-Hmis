@@ -230,6 +230,16 @@
       if (!proceed) return;
     }
 
+    // Medical-history screening: confirm only on HIGH-level warnings (cautions are shown in the box).
+    const mhHigh = (await fetchMedicalDrugAlerts(state.activePatient.id, drug_name)).filter((a) => a.level === 'high');
+    if (mhHigh.length) {
+      const lines = mhHigh.map((a) => `• ${a.message}`).join('\n');
+      const proceedMh = window.confirm(
+        `MEDICAL HISTORY WARNING for ${state.activePatient.first_name} ${state.activePatient.last_name}\n\n${lines}\n\nPrescribe ${drug_name} anyway?`,
+      );
+      if (!proceedMh) return;
+    }
+
     const isEditing = !!state.editingPrescriptionId;
     const saveBtn = document.getElementById('rxSaveBtn');
     saveBtn.disabled = true;
@@ -403,7 +413,98 @@
     AllergyCheck.check(allergiesText, document.getElementById('rxDrugName').value).forEach((hit) => {
       html += `<div class="rx-allergy-line rx-allergy-${hit.level}" role="alert">${hit.level === 'high' ? 'Warning' : 'Check'}: ${escapeHtml(hit.message)}</div>`;
     });
+
+    // Medical-history screening (conditions, medicines, pregnancy…) from the server.
+    html += medicalAlertsHtml(patient);
     box.innerHTML = html;
+
+    if (!box.dataset.mhBound) {
+      box.dataset.mhBound = '1';
+      box.addEventListener('click', (e) => {
+        if (!e.target.closest('[data-rx-record-history]') || !state.activePatient || !window.MedicalHistory) return;
+        const p = state.activePatient;
+        window.MedicalHistory.open({
+          patientId: p.id,
+          patientName: `${p.first_name} ${p.last_name}`,
+          onSaved: () => { state.mh = null; updateAllergyBox(); },
+        });
+      });
+    }
+    scheduleMedicalAlerts();
+  }
+
+  /* ============================================================
+     MEDICAL-HISTORY ALERTS
+     ------------------------------------------------------------
+     state.mh = { key, loaded, data, timer } where key is
+     "<patientId>|<drug>". The alerts endpoint is called (debounced)
+     whenever the patient or the typed drug changes; the box above
+     re-renders from the latest answer. Like the allergy check this
+     is a screening aid — no warning does not mean the drug is safe.
+     ============================================================ */
+  function medicalKey() {
+    const p = state.activePatient;
+    const drug = (document.getElementById('rxDrugName').value || '').trim().toLowerCase();
+    return p ? `${p.id}|${drug}` : '';
+  }
+
+  function scheduleMedicalAlerts() {
+    if (!window.MedicalHistory || !state.activePatient) return;
+    const key = medicalKey();
+    state.mh = state.mh || {};
+    if (state.mh.key === key) return; // already fetched (or in flight) for this patient + drug
+    state.mh.key = key;
+    state.mh.loaded = false;
+    clearTimeout(state.mh.timer);
+
+    const patientId = state.activePatient.id;
+    const drug = key.split('|')[1];
+    state.mh.timer = setTimeout(async () => {
+      let data = null;
+      try { data = await window.MedicalHistory.fetchAlerts(patientId, { drug }); } catch (e) { data = null; }
+      if (!state.mh || state.mh.key !== key) return; // patient or drug changed meanwhile
+      state.mh.data = data;
+      state.mh.loaded = true;
+      const box = document.getElementById('rxAllergyBox');
+      if (!box || !state.activePatient || state.activePatient.id !== patientId) return;
+      // Re-render without re-triggering a fetch (key is unchanged).
+      updateAllergyBox();
+    }, 350);
+  }
+
+  function medicalAlertsHtml(patient) {
+    const mh = state.mh;
+    if (!window.MedicalHistory || !mh || !mh.loaded || !mh.data) return '';
+    if (!mh.key || mh.key.split('|')[0] !== String(patient.id)) return '';
+    const d = mh.data;
+    let html = '';
+
+    if (!d.has_history) {
+      html += `<div class="rx-allergy-line rx-allergy-caution" role="alert">No medical history on file — conditions and current medicines have NOT been screened. <button type="button" class="btn btn-outline btn-sm" data-rx-record-history style="margin-left:8px;">Record now</button></div>`;
+      return html;
+    }
+    if (d.needs_review || d.stale) {
+      html += `<div class="rx-allergy-line rx-allergy-caution">${d.needs_review ? 'Medical history has not been reviewed by a clinician yet.' : 'Medical history is more than 6 months old.'} <button type="button" class="btn btn-outline btn-sm" data-rx-record-history style="margin-left:8px;">Review</button></div>`;
+    }
+    const cls = (level) => (level === 'info' ? 'record' : level);
+    const label = (level) => (level === 'high' ? 'Warning' : level === 'caution' ? 'Check' : 'Note');
+    (d.drug || []).forEach((a) => {
+      html += `<div class="rx-allergy-line rx-allergy-${cls(a.level)}" role="alert">${label(a.level)}: ${escapeHtml(a.message)}</div>`;
+    });
+    (d.standing || []).filter((a) => a.level === 'high').forEach((a) => {
+      html += `<div class="rx-allergy-line rx-allergy-record">On record: ${escapeHtml(a.message)}</div>`;
+    });
+    return html;
+  }
+
+  async function fetchMedicalDrugAlerts(patientId, drug) {
+    if (!window.MedicalHistory) return [];
+    try {
+      const d = await window.MedicalHistory.fetchAlerts(patientId, { drug });
+      return Array.isArray(d.drug) ? d.drug : [];
+    } catch (e) {
+      return []; // never block prescribing because the screening call failed
+    }
   }
 
   /* ============================================================

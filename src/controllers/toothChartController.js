@@ -1,5 +1,6 @@
 const {
   addToothChartEntry, findToothChartByPatient, findCurrentToothChart, findToothHistory,
+  findProcedureHistory,
 } = require('../models/toothChartModel');
 const { findPatientById } = require('../models/patientModel');
 const { sendPdf } = require('../services/pdfService');
@@ -7,8 +8,30 @@ const { toothChartHtml } = require('../services/pdfTemplates/toothChartTemplate'
 
 const STAFF = ['admin', 'dentist', 'receptionist'];
 
+// M mesial, D distal, O occlusal, I incisal, B buccal/labial, L lingual/palatal.
+// Stored in this canonical order so "occlusal + distal" is always ['O','D'].
+const SURFACE_ORDER = ['M', 'O', 'I', 'D', 'B', 'L'];
+
+const cleanSurfaces = (input) => {
+  const list = Array.isArray(input) ? input : [];
+  const wanted = new Set(list.map((s) => String(s).trim().toUpperCase()));
+  return SURFACE_ORDER.filter((s) => wanted.has(s));
+};
+
+const clip = (value, max) => {
+  if (value === undefined || value === null) return null;
+  const s = String(value).trim();
+  return s ? s.slice(0, max) : null;
+};
+
 const addEntry = (req, res, next) => {
-  const data = { ...req.body, recorded_by: req.user.id };
+  const data = {
+    ...req.body,
+    surfaces: cleanSurfaces(req.body.surfaces),
+    procedure_name: clip(req.body.procedure_name, 150),
+    material: clip(req.body.material, 100),
+    recorded_by: req.user.id,
+  };
   addToothChartEntry(data, (err, entry) => {
     if (err) return next(err);
     res.status(201).json(entry);
@@ -26,6 +49,14 @@ const getFullChart = (req, res, next) => {
 // Latest condition per tooth — what the FDI chart UI should render
 const getCurrentChart = (req, res, next) => {
   findCurrentToothChart(req.params.patientId, (err, entries) => {
+    if (err) return next(err);
+    res.json(entries);
+  });
+};
+
+// Restorative history — every procedure / surface entry for the patient.
+const getProcedureHistory = (req, res, next) => {
+  findProcedureHistory(req.params.patientId, (err, entries) => {
     if (err) return next(err);
     res.json(entries);
   });
@@ -65,4 +96,6 @@ const downloadToothChartPdf = (req, res, next) => {
   });
 };
 
-module.exports = { addEntry, getFullChart, getCurrentChart, getToothHistory, downloadToothChartPdf };
+module.exports = {
+  addEntry, getFullChart, getCurrentChart, getToothHistory, getProcedureHistory, downloadToothChartPdf,
+};

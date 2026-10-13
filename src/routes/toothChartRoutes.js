@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const {
-  addEntry, getFullChart, getCurrentChart, getToothHistory, downloadToothChartPdf,
+  addEntry, getFullChart, getCurrentChart, getToothHistory, getProcedureHistory, downloadToothChartPdf,
 } = require('../controllers/toothChartController');
 const verifyToken = require('../middleware/authMiddleware');
 const { authorizeRoles, allowSelfOrStaff } = require('../middleware/roleMiddleware');
@@ -15,6 +15,11 @@ router.get(
   '/patient/:patientId/current',
   allowSelfOrStaff(STAFF, (req) => req.params.patientId),
   getCurrentChart,
+);
+router.get(
+  '/patient/:patientId/procedures',
+  allowSelfOrStaff(STAFF, (req) => req.params.patientId),
+  getProcedureHistory,
 );
 router.get(
   '/patient/:patientId/history',

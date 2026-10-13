@@ -408,6 +408,23 @@
      TOOTH DETAIL — merges ToothChart conditions, Diagnoses, and
      TreatmentPlanItems into one timeline, filtered by active category.
      ============================================================ */
+  /* "Composite filling · Occlusal, Distal (OD) · Composite resin" — what was
+     done, to which surfaces, with what. Empty when the entry is just a
+     condition observation. */
+  const SURFACE_ORDER = ['M', 'O', 'I', 'D', 'B', 'L'];
+  const SURFACE_NAMES = { M: 'Mesial', O: 'Occlusal', I: 'Incisal', D: 'Distal', B: 'Buccal', L: 'Lingual' };
+  function restorationLine(entry) {
+    const codes = SURFACE_ORDER.filter((c) => Array.isArray(entry.surfaces) && entry.surfaces.includes(c));
+    const parts = [];
+    if (entry.procedure_name) parts.push(entry.procedure_name);
+    if (codes.length) parts.push(`${codes.map((c) => SURFACE_NAMES[c]).join(', ')} (${codes.join('')})`);
+    if (entry.material) parts.push(entry.material);
+    return parts.join(' · ');
+  }
+  function withRestoration(entry) {
+    return [restorationLine(entry), entry.notes].filter(Boolean).join(' — ');
+  }
+
   async function selectTooth(number) {
     state.selectedTooth = number;
     document.querySelectorAll('.tooth-svg').forEach((t) => t.classList.remove('is-selected'));
@@ -450,7 +467,7 @@
         date: h.recorded_at,
         title: CONDITION_LABEL[h.condition] || capitalize(h.condition),
         dentist: dentistNameById(h.recorded_by),
-        note: h.notes,
+        note: withRestoration(h),
         appointmentId: h.appointment_id,
       });
     });
@@ -501,7 +518,7 @@
         date: entry.recorded_at,
         title: CONDITION_LABEL[entry.condition] || capitalize(entry.condition),
         dentist: dentistNameById(entry.recorded_by),
-        note: entry.notes,
+        note: withRestoration(entry),
         toothNumber: entry.tooth_number,
         appointmentId: entry.appointment_id,
       });

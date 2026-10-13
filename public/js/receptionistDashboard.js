@@ -607,7 +607,7 @@
     };
 
     try {
-      await fetchMethod('/patients', 'POST', data, true);
+      const patient = await fetchMethod('/patients', 'POST', data, true);
       showToast('Patient registered');
       closeModal('walkinModalScrim');
       resetWalkinModal();
@@ -648,7 +648,7 @@
     if (!amount || amount <= 0) return showToast('Enter a valid amount');
 
     try {
-      const endpoint = document.getElementById('mpesaProvider').value === 'kcb' ? '/kcb/initiate' : '/mpesa/initiate';
+      const endpoint = { kcb: '/kcb/initiate', equity: '/equity/initiate' }[document.getElementById('mpesaProvider').value] || '/mpesa/initiate';
       const res = await fetchMethod(endpoint, 'POST', { bill_id: bill.id, phone, amount }, true);
       state.activeMpesaTransaction = res.transaction;
       document.getElementById('mpesaFormStep').style.display = 'none';

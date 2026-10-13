@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="../css/dashboard.css">
 <link rel="stylesheet" href="../css/dentist-dashboard.css">
 <link rel="stylesheet" href="../css/dentist-diagnosis.css">
+<link rel="stylesheet" href="../css/medical-history.css">
 <link rel="stylesheet" href="../css/tooth-conditions.css">
 <link rel="icon" type="image/x-icon" href="../favicon.ico">
 <link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
@@ -133,10 +134,13 @@
               <button type="button" class="segmented-opt is-active" data-category="medical">Medical</button>
               <button type="button" class="segmented-opt" data-category="cosmetic">Cosmetic</button>
             </div>
+            <button class="btn btn-outline btn-sm" id="patientInfoBtn" type="button">Patient details</button>
             <button class="btn btn-outline btn-sm" id="downloadPatientToothChartBtn" type="button">Download tooth chart</button>
             <button class="panel-link" id="switchPatientBtn" type="button">Switch patient</button>
           </div>
         </div>
+
+        <div class="pinfo-allergy" id="chartingAllergyAlert" style="display:none;"></div>
 
         <div class="tooth-panel">
           <div class="odontogram-wrap">
@@ -304,6 +308,31 @@
     </div>
 
     <div style="margin-top:14px;">
+      <label class="field-label">Surfaces involved (optional)</label>
+      <div class="surface-picker" id="surfacePicker" role="group" aria-label="Tooth surfaces"></div>
+      <p class="field-hint" id="surfaceSummary">No surface selected.</p>
+    </div>
+
+    <div style="margin-top:14px;">
+      <label class="field-label" for="materialInput">Material (optional)</label>
+      <input class="field-input" type="text" id="materialInput" list="materialOptions" maxlength="100" placeholder="e.g. Composite resin">
+      <datalist id="materialOptions">
+        <option value="Composite resin"></option>
+        <option value="Glass ionomer (GIC)"></option>
+        <option value="Resin-modified GIC"></option>
+        <option value="Amalgam"></option>
+        <option value="Porcelain / ceramic"></option>
+        <option value="Zirconia"></option>
+        <option value="Porcelain-fused-to-metal (PFM)"></option>
+        <option value="Gold"></option>
+        <option value="Stainless steel"></option>
+        <option value="Resin sealant"></option>
+        <option value="Temporary filling (IRM / Cavit)"></option>
+        <option value="Gutta-percha"></option>
+      </datalist>
+    </div>
+
+    <div style="margin-top:14px;">
       <label class="field-label" for="notesInput">Notes</label>
       <textarea class="field-input" id="notesInput" rows="3" placeholder="e.g. Deep caries on distal surface, patient reports sensitivity to cold…"></textarea>
     </div>
@@ -311,6 +340,28 @@
     <div class="modal-foot">
       <button class="btn btn-outline" id="toothModalCancel" type="button">Cancel</button>
       <button class="btn btn-primary" id="toothModalSave" type="button">Save finding</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PATIENT DETAILS MODAL (bio data from registration) ============ -->
+<div class="modal-scrim" id="patientInfoScrim">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="patientInfoName">
+    <div class="modal-head">
+      <div>
+        <p class="modal-kicker">Patient details</p>
+        <h2 id="patientInfoName">—</h2>
+        <p class="pinfo-meta" id="patientInfoMeta"></p>
+      </div>
+      <button class="icon-link-btn" id="patientInfoClose" type="button" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="pinfo-allergy" id="patientInfoAllergy" style="display:none;"></div>
+    <div class="pinfo-grid" id="patientInfoGrid"></div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" id="patientInfoMedicalBtn" type="button">Medical history</button>
+      <button class="btn btn-primary" id="patientInfoDoneBtn" type="button">Close</button>
     </div>
   </div>
 </div>
@@ -323,6 +374,7 @@
 -->
 <script src="../js/api.js"></script>
 <script src="../js/toothShapes.js"></script>
+<script src="../js/medicalHistory.js"></script>
 <script src="../js/dentistDiagnosis.js"></script>
 <script src="../js/revamp.js"></script>
 </body>

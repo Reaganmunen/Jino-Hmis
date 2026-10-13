@@ -234,7 +234,10 @@
       banner.style.display = 'none';
     }
 
-    switchRecordsTab('diagnoses');
+    // Opens on the bio data the receptionist captured at registration.
+    renderPatientInfo(patient);
+    loadMedicalHistory(patient);
+    switchRecordsTab('info');
     document.getElementById('recordsModalScrim').classList.add('is-open');
 
     if (state.recordsCache[patient.id]) {
@@ -248,6 +251,70 @@
   function closeRecordsModal() {
     document.getElementById('recordsModalScrim').classList.remove('is-open');
     state.activePatientId = null;
+  }
+
+  /* ---- Patient info tab: the bio data entered at registration ---- */
+  function renderPatientInfo(p) {
+    const age = ageFromDob(p.date_of_birth);
+    const rows = [
+      ['Full name', `${p.first_name} ${p.last_name}`],
+      ['Date of birth', p.date_of_birth ? `${formatDate(p.date_of_birth)}${age != null ? ` (${age} yrs)` : ''}` : null],
+      ['Phone', p.phone],
+      ['Email', p.email],
+      ['National ID', p.national_id],
+      ['Address', p.address],
+      ['Next of kin', p.next_of_kin_name],
+      ['Next of kin phone', p.next_of_kin_phone],
+      ['Allergies', hasAllergies(p) ? p.allergies : null, 'None recorded'],
+      ['Registered on', p.created_at ? formatDate(p.created_at) : null],
+    ];
+
+    document.getElementById('modalInfoGrid').innerHTML = rows.map(([label, value, emptyText]) => `
+      <div class="pinfo-cell">
+        <p class="pinfo-label">${escapeHtml(label)}</p>
+        <p class="pinfo-value">${value ? escapeHtml(String(value)) : escapeHtml(emptyText || '—')}</p>
+      </div>
+    `).join('');
+  }
+
+  /* ---- Medical history tab (shared module: medicalHistory.js) ----
+     Always fetched fresh, so a history updated in another tab or by
+     the patient shows up the next time the record is opened. */
+  async function loadMedicalHistory(patient) {
+    const host = document.getElementById('modalMedicalPanel');
+    const patientId = patient.id;
+
+    if (!window.MedicalHistory) {
+      host.innerHTML = '<div class="empty-state">The medical history module could not be loaded. Please refresh the page.</div>';
+      return;
+    }
+
+    host.innerHTML = '<div class="records-loading"><div class="mpesa-spinner"></div>Loading medical history…</div>';
+
+    try {
+      const [data, alerts] = await Promise.all([
+        window.MedicalHistory.fetchCurrent(patientId),
+        window.MedicalHistory.fetchAlerts(patientId).catch(() => null),
+      ]);
+      // Dentist closed the modal or switched patients while this was loading.
+      if (state.activePatientId !== patientId) return;
+
+      const standing = alerts && Array.isArray(alerts.standing) ? alerts.standing : [];
+      const alertHtml = standing.length ? `<div class="mh-standing" style="display:flex;margin-bottom:12px;">${window.MedicalHistory.alertsHtml(standing)}</div>` : '';
+
+      await window.MedicalHistory.renderSummary(host, {
+        patientId,
+        patientName: `${patient.first_name} ${patient.last_name}`,
+        data,
+        alerts,
+        onChange: () => loadMedicalHistory(patient),
+      });
+      if (alertHtml) host.insertAdjacentHTML('afterbegin', alertHtml);
+    } catch (err) {
+      if (state.activePatientId === patientId) {
+        host.innerHTML = '<div class="empty-state">Could not load medical history. Please try again.</div>';
+      }
+    }
   }
 
   function switchRecordsTab(tabName) {

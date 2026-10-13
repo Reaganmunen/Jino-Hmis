@@ -265,6 +265,23 @@
     });
   }
 
+  /* "Composite filling · Occlusal, Distal (OD) · Composite resin" — what was
+     done, to which surfaces, with what. Empty when the entry is just a
+     condition observation. */
+  const SURFACE_ORDER = ['M', 'O', 'I', 'D', 'B', 'L'];
+  const SURFACE_NAMES = { M: 'Mesial', O: 'Occlusal', I: 'Incisal', D: 'Distal', B: 'Buccal', L: 'Lingual' };
+  function restorationLine(entry) {
+    const codes = SURFACE_ORDER.filter((c) => Array.isArray(entry.surfaces) && entry.surfaces.includes(c));
+    const parts = [];
+    if (entry.procedure_name) parts.push(entry.procedure_name);
+    if (codes.length) parts.push(`${codes.map((c) => SURFACE_NAMES[c]).join(', ')} (${codes.join('')})`);
+    if (entry.material) parts.push(entry.material);
+    return parts.join(' · ');
+  }
+  function withRestoration(entry) {
+    return [restorationLine(entry), entry.notes].filter(Boolean).join(' — ');
+  }
+
   async function selectTooth(number) {
     document.querySelectorAll('.tooth-svg').forEach((t) => t.classList.remove('is-selected'));
     const el = document.querySelector(`.tooth-svg[data-tooth="${number}"]`);
@@ -302,7 +319,7 @@
               <span><b>${escapeHtml(dentist)}</b>Dentist</span>
             </div>
             ${appt ? `<div class="timeline-row"><span>Reason: ${escapeHtml(appt.reason || '—')}</span></div>` : ''}
-            ${h.notes ? `<div class="timeline-note">${escapeHtml(h.notes)}</div>` : ''}
+            ${withRestoration(h) ? `<div class="timeline-note">${escapeHtml(withRestoration(h))}</div>` : ''}
           </div>
         `;
       }).join('');

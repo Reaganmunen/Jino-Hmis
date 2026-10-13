@@ -366,6 +366,7 @@
       ['Address', patient.address],
       ['Next of kin', patient.next_of_kin_name],
       ['Next of kin phone', patient.next_of_kin_phone],
+      ['Allergies', hasAllergies(patient) ? patient.allergies : null],
       ['Patient since', formatDate(patient.created_at)],
     ];
 

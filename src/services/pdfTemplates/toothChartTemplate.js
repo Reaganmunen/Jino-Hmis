@@ -4,6 +4,13 @@ const CONDITION_LABEL = {
   healthy: 'Healthy', caries: 'Caries', filled: 'Filled', missing: 'Missing', crown: 'Crown',
 };
 
+const SURFACE_NAME = {
+  M: 'Mesial', O: 'Occlusal', I: 'Incisal', D: 'Distal', B: 'Buccal', L: 'Lingual',
+};
+const surfacesText = (arr) => (Array.isArray(arr) && arr.length
+  ? arr.map((s) => SURFACE_NAME[s] || s).join(', ')
+  : '—');
+
 // entries: full ToothChart history rows for the patient (every recorded
 // observation, every tooth), newest first per tooth — same data the
 // "history" view uses, not just the current-condition snapshot.
@@ -13,11 +20,14 @@ const toothChartHtml = ({ patient, entries }, clinicName, logoUrl) => {
         <tr>
           <td>${e.tooth_number}</td>
           <td>${CONDITION_LABEL[e.condition] || e.condition}</td>
+          <td>${surfacesText(e.surfaces)}</td>
+          <td>${e.procedure_name || '—'}</td>
+          <td>${e.material || '—'}</td>
           <td>${e.notes || '—'}</td>
           <td>${formatDate(e.recorded_at)}</td>
         </tr>
       `).join('')
-    : `<tr><td colspan="4" style="color:#64748b;">No tooth chart entries recorded.</td></tr>`;
+    : `<tr><td colspan="7" style="color:#64748b;">No tooth chart entries recorded.</td></tr>`;
 
   const bodyHtml = `
     <div class="meta-row"><span class="label">Patient</span><b>${patient.first_name} ${patient.last_name}</b></div>
@@ -25,7 +35,7 @@ const toothChartHtml = ({ patient, entries }, clinicName, logoUrl) => {
 
     <div class="section-title">Full tooth chart history (FDI numbering)</div>
     <table>
-      <thead><tr><th>Tooth</th><th>Condition</th><th>Notes</th><th>Recorded</th></tr></thead>
+      <thead><tr><th>Tooth</th><th>Condition</th><th>Surfaces</th><th>Procedure</th><th>Material</th><th>Notes</th><th>Recorded</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
   `;
