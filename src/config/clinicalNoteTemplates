@@ -1,0 +1,82 @@
+// Starter wording for common visits. The dentist picks one in the editor and the
+// SOAP boxes are pre-filled to edit. Served at GET /api/clinical-notes/templates
+// so the frontend never has a second copy that could drift.
+
+const TEMPLATES = [
+  {
+    key: 'consultation',
+    label: 'New patient consultation',
+    subjective: 'Presenting complaint:\nHistory of complaint:\nPain (site, severity, duration, triggers):\nPrevious dental treatment:',
+    objective: 'Extra-oral:\nIntra-oral soft tissues:\nOral hygiene / calculus:\nPeriodontal screening:\nTeeth examined:\nSpecial tests / radiographs:',
+    assessment: 'Diagnosis:',
+    plan: 'Treatment options discussed:\nTreatment plan agreed:\nPatient questions answered:\nNext appointment:',
+    procedure_done: 'Comprehensive oral examination',
+  },
+  {
+    key: 'review',
+    label: 'Review / follow-up',
+    subjective: 'Reason for review:\nSymptoms since last visit:',
+    objective: 'Findings:\nHealing / response to previous treatment:',
+    assessment: '',
+    plan: 'Advice given:\nNext appointment:',
+    procedure_done: 'Review',
+  },
+  {
+    key: 'emergency',
+    label: 'Emergency / pain visit',
+    subjective: 'Complaint:\nOnset and duration:\nPain (character, severity, keeps awake at night?):\nSwelling / fever / difficulty swallowing:',
+    objective: 'Extra-oral swelling:\nTooth / site:\nPercussion:\nPalpation:\nMobility:\nCold / heat test:\nRadiograph:',
+    assessment: 'Diagnosis:',
+    plan: 'Emergency treatment given:\nMedication prescribed:\nAdvice:\nReview in:',
+    procedure_done: '',
+  },
+  {
+    key: 'filling',
+    label: 'Restoration (filling)',
+    subjective: 'Complaint (if any):',
+    objective: 'Tooth / surface:\nCaries depth:\nPulp status:',
+    assessment: 'Diagnosis:',
+    plan: 'Review at next routine visit.',
+    procedure_done: 'Local anaesthetic:\nIsolation:\nCaries removal:\nLiner / base:\nRestorative material and shade:\nOcclusion checked and polished.\nPost-op advice given.',
+  },
+  {
+    key: 'extraction',
+    label: 'Extraction',
+    subjective: 'Reason for extraction:\nMedical history reviewed:',
+    objective: 'Tooth:\nMobility:\nRadiographic findings:',
+    assessment: 'Diagnosis:',
+    plan: 'Post-extraction instructions given (verbal and written).\nAnalgesia advised.\nReview if pain, swelling or bleeding persists.',
+    procedure_done: 'Consent obtained.\nLocal anaesthetic (agent, volume, technique):\nType of extraction (simple / surgical):\nSocket management and haemostasis:\nSutures:\nComplications: none',
+  },
+  {
+    key: 'scaling',
+    label: 'Scaling and polishing',
+    subjective: 'Complaint (bleeding gums, bad breath, sensitivity):',
+    objective: 'Plaque / calculus:\nGingival condition:\nBleeding on probing:\nPocket depths (areas of concern):',
+    assessment: 'Gingival / periodontal diagnosis:',
+    plan: 'Oral hygiene instruction given.\nRecall interval:',
+    procedure_done: 'Supra- and sub-gingival scaling (ultrasonic / hand).\nPolishing.\nOral hygiene instruction and demonstration.',
+  },
+  {
+    key: 'root_canal',
+    label: 'Root canal treatment visit',
+    subjective: 'Symptoms:',
+    objective: 'Tooth:\nPulp / periapical diagnosis:\nRadiographic findings:',
+    assessment: 'Diagnosis:',
+    plan: 'Next visit:\nFinal restoration planned:',
+    procedure_done: 'Local anaesthetic:\nRubber dam isolation:\nAccess cavity:\nCanals located and working length:\nInstrumentation and irrigation:\nIntra-canal medicament / obturation:\nTemporary restoration:',
+  },
+  {
+    key: 'crown_prep',
+    label: 'Crown / bridge preparation',
+    subjective: '',
+    objective: 'Tooth / teeth:\nExisting restoration:\nOcclusal space:',
+    assessment: 'Indication for crown:',
+    plan: 'Temporary crown fitted.\nLab:\nNext visit (fit) on:',
+    procedure_done: 'Local anaesthetic:\nPreparation:\nGingival retraction:\nImpression / scan:\nShade:\nTemporary crown cemented with:',
+  },
+];
+
+const TEMPLATE_KEYS = new Set(TEMPLATES.map((t) => t.key));
+
+module.exports = { TEMPLATES, TEMPLATE_KEYS };

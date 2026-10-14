@@ -211,12 +211,21 @@
 
     <div class="form-grid" style="margin-top:16px;">
       <div>
-        <label class="field-label">Start time</label>
-        <input type="datetime-local" class="field-input" id="bookStart">
+        <label class="field-label" for="bookDate">Date</label>
+        <input type="date" class="field-input" id="bookDate">
       </div>
       <div>
-        <label class="field-label">End time</label>
-        <input type="datetime-local" class="field-input" id="bookEnd">
+        <label class="field-label" for="bookDuration">Duration</label>
+        <select class="field-input" id="bookDuration">
+          <option value="30">30 min</option>
+          <option value="60">1 hour</option>
+          <option value="90">1 hr 30 min</option>
+          <option value="120">2 hours</option>
+        </select>
+      </div>
+      <div class="full">
+        <label class="field-label">Available times</label>
+        <div class="slot-grid" id="bookSlotGrid"><p class="tooth-detail-empty">Choose a dentist, then pick a date.</p></div>
       </div>
       <div class="full">
         <label class="field-label">Room (optional)</label>
@@ -397,12 +406,21 @@
 
     <div class="form-grid" style="margin-top:16px;">
       <div>
-        <label class="field-label">Start time</label>
-        <input type="datetime-local" class="field-input" id="editApptStart">
+        <label class="field-label" for="editApptDate">Date</label>
+        <input type="date" class="field-input" id="editApptDate">
       </div>
       <div>
-        <label class="field-label">End time</label>
-        <input type="datetime-local" class="field-input" id="editApptEnd">
+        <label class="field-label" for="editApptDuration">Duration</label>
+        <select class="field-input" id="editApptDuration">
+          <option value="30">30 min</option>
+          <option value="60">1 hour</option>
+          <option value="90">1 hr 30 min</option>
+          <option value="120">2 hours</option>
+        </select>
+      </div>
+      <div class="full">
+        <label class="field-label">Available times</label>
+        <div class="slot-grid" id="editApptSlotGrid"></div>
       </div>
       <div class="full">
         <label class="field-label">Room (optional)</label>
@@ -424,6 +442,7 @@
 <div class="toast" id="toast"></div>
 
 <script src="../js/api.js"></script>
+<script src="../js/slotUtils.js"></script>
 <script src="../js/receptionistDashboard.js"></script>
 <script src="../js/revamp.js"></script>
 </body>

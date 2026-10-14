@@ -496,6 +496,7 @@
     function openModal() {
       b.step = 1; b.dentistId = null; b.date = null; b.slot = null; b.reason = ''; b.availableSlots = [];
       document.getElementById('apptDate').value = '';
+      document.getElementById('apptDate').min = todayISODate(); // can't pick a past day
       document.getElementById('apptReason').value = '';
       document.getElementById('slotGrid').innerHTML = '<p class="tooth-detail-empty">Pick a date to see open slots.</p>';
       renderDentistOptions();
@@ -663,7 +664,6 @@
     grid.innerHTML = '<p class="tooth-detail-empty">Checking availability…</p>';
 
     try {
-      const dayOfWeek = new Date(target.date + 'T00:00:00').getDay();
       const [schedule, dayAppointments] = await Promise.all([
         fetchMethod(`/dentist-schedules/${dentistId}`, 'GET', null, true),
         fetchMethod(
@@ -672,22 +672,14 @@
         ),
       ]);
 
-      const windows = schedule.filter((s) => s.day_of_week === dayOfWeek);
-      const bookedStarts = new Set(
-        dayAppointments
-          .filter((a) => a.status !== 'cancelled' && a.id !== target.appointmentId)
-          .map((a) => a.scheduled_start)
-      );
-
-      target.availableSlots = [];
-      windows.forEach((w) => {
-        let cursor = toMinutes(w.start_time);
-        const end = toMinutes(w.end_time);
-        while (cursor + SLOT_MINUTES <= end) {
-          const iso = `${target.date}T${minutesToTimeStr(cursor)}:00`;
-          if (!bookedStarts.has(iso)) target.availableSlots.push(iso);
-          cursor += SLOT_MINUTES;
-        }
+      // JinoSlots drops slots that have already passed today and any slot
+      // overlapping an existing booking (see slotUtils.js).
+      target.availableSlots = JinoSlots.buildSlots({
+        dateStr: target.date,
+        schedule,
+        appointments: dayAppointments,
+        step: SLOT_MINUTES,
+        ignoreId: target.appointmentId,
       });
 
       renderSlots(target, gridId);
@@ -701,12 +693,16 @@
     const grid = document.getElementById(gridId);
     grid.innerHTML = '';
     if (!target.availableSlots.length) {
-      grid.innerHTML = '<p class="tooth-detail-empty">No open slots that day — try another date.</p>';
+      const isToday = target.date === todayISODate();
+      grid.innerHTML = isToday
+        ? '<p class="tooth-detail-empty">No more open slots today — try another date.</p>'
+        : '<p class="tooth-detail-empty">No open slots that day — try another date.</p>';
       return;
     }
     target.availableSlots.forEach((iso) => {
       const opt = document.createElement('div');
       opt.className = 'slot-opt' + (target.slot === iso ? ' is-selected' : '');
+      opt.setAttribute('role', 'button');
       opt.textContent = formatTime(new Date(iso));
       opt.addEventListener('click', () => { target.slot = iso; renderSlots(target, gridId); });
       grid.appendChild(opt);

@@ -1,0 +1,111 @@
+/* ============================================================
+   VISIT FLOW (Diagnosis page) — stepper + inline perio / SOAP.
+   Additive only. Loaded after dentist-diagnosis.css,
+   clinical-notes.css and perio-chart.css.
+   ============================================================ */
+
+/* ---- the visit as one large window ---- */
+.vf-scrim{z-index:90;padding:16px;} /* below the small pop-ups (tooth finding, patient details) */
+.vf-modal{
+  max-width:1280px;width:100%;height:94vh;max-height:94vh;overflow:hidden;
+  display:flex;flex-direction:column;padding:20px 24px 16px;
+}
+.vf-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:10px;}
+.vf-modal-head h2{margin:0;}
+.vf-body{flex:1 1 auto;min-height:0;overflow-y:auto;padding:14px 4px 6px;}
+/* panels inside the window are flat — the window is the card */
+.vf-body .panel{box-shadow:none;border:none;background:none;padding:0;margin:0;}
+.vf-nav{margin:0;padding-top:12px;border-top:1px solid var(--slate-200,#E2E8F0);}
+.vf-nav .btn.is-final{background:#1B7F3B;border-color:#1B7F3B;}
+.vf-header-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+
+/* ---- stepper ---- */
+.vf-steps{display:flex;gap:6px;overflow-x:auto;padding:4px 0 2px;}
+.vf-step-btn{
+  flex:1 1 0;min-width:130px;display:flex;align-items:center;gap:9px;
+  padding:9px 12px;border-radius:12px;border:1px solid var(--slate-200,#E2E8F0);
+  background:var(--white);cursor:pointer;font:inherit;text-align:left;color:var(--slate-500);
+  transition:background .12s ease,border-color .12s ease,color .12s ease;
+}
+.vf-step-btn:hover{background:var(--slate-100);}
+.vf-step-btn.is-active{background:var(--blue-50);border-color:var(--blue-600);color:var(--navy-950);}
+.vf-num{
+  flex:0 0 auto;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;
+  font-size:12px;font-weight:700;background:var(--slate-100);color:var(--slate-500);
+}
+.vf-step-btn.is-active .vf-num{background:var(--blue-600);color:#fff;}
+.vf-label{font-size:13px;font-weight:600;white-space:nowrap;}
+.vf-status{
+  margin-left:auto;font-size:11px;font-weight:700;color:var(--slate-500);
+  background:var(--slate-100);border-radius:100px;padding:1px 8px;
+}
+.vf-status:empty{display:none;}
+.vf-status.is-done{background:#E7F6EC;color:#1B7F3B;}
+
+/* ---- steps: only the active one shows ---- */
+.vf-step{display:none;}
+.vf-step.is-active{display:block;}
+
+/* ---- back / next ---- */
+.vf-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.vf-nav-label{font-size:12.5px;color:var(--slate-500);}
+
+/* ---- embedded perio chart ---- */
+.vf-step .pc-scroll{max-width:100%;}
+.pc-inline-head{display:flex;align-items:center;gap:14px;margin-bottom:12px;}
+.pc-back{background:none;border:none;cursor:pointer;font:inherit;font-weight:600;color:var(--blue-600);padding:0;}
+.pc-back:hover{text-decoration:underline;}
+.pc-inline-title{font-size:15px;font-weight:700;color:var(--navy-950);}
+
+/* ---- embedded SOAP note ---- */
+.cn-visit-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
+.cn-visit-title{margin:0;font-size:15px;font-weight:700;color:var(--navy-950);}
+.cn-letter{
+  display:inline-grid;place-items:center;width:20px;height:20px;border-radius:6px;margin-right:6px;
+  background:var(--blue-50);color:var(--blue-600);font-size:11.5px;font-weight:800;vertical-align:1px;
+}
+.cn-notice-ok{background:#E7F6EC;color:#1B7F3B;border-color:#BfE5CB;}
+.cn-count-inline{font-weight:400;color:var(--slate-500);}
+
+@media (max-width:700px){
+  .vf-step-btn{min-width:110px;padding:8px 10px;}
+  .vf-nav{flex-wrap:wrap;}
+  .vf-nav-label{order:3;width:100%;text-align:center;}
+}
+
+@media (max-width:700px){.vf-scrim{padding:0;}.vf-modal{height:100vh;max-height:100vh;border-radius:0;padding:14px;}}
+
+/* ---- skip ---- */
+.vf-nav-right{display:flex;align-items:center;gap:14px;}
+.vf-skip{background:none;border:none;cursor:pointer;font:inherit;font-size:13.5px;font-weight:600;color:var(--slate-500);padding:6px 4px;}
+.vf-skip:hover{color:var(--navy-950);text-decoration:underline;}
+.vf-status.is-skipped{background:transparent;color:var(--slate-500);font-weight:600;font-style:italic;}
+
+/* ---- layout fixes: keep the fixed parts of the window from being squashed ---- */
+.vf-modal-head,.vf-modal > .pinfo-allergy,.vf-steps,.vf-nav{flex:0 0 auto;}
+.vf-steps{overflow-y:hidden;padding:4px 2px 8px;margin-bottom:2px;}
+.vf-step-btn{flex:1 0 150px;min-height:44px;}
+.vf-body{margin-top:4px;}
+/* line the inputs up even when one label wraps onto two lines */
+.vf-body .checkup-grid{align-items:end;}
+.vf-body .checkup-grid .field-label{margin-bottom:6px;}
+
+/* ---- only the active step shows (revamp.css makes every .panel display:flex, so force it) ---- */
+.vf-body .vf-step{display:none !important;}
+.vf-body .vf-step.is-active{display:block !important;}
+
+/* ---- review step ---- */
+.vf-rv{display:flex;flex-direction:column;gap:12px;}
+.vf-rv-card{border:1px solid var(--slate-200,#E2E8F0);border-radius:14px;padding:14px 16px;background:var(--white);}
+.vf-rv-head{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.vf-rv-head h3{margin:0;font-size:14.5px;font-weight:700;color:var(--navy-950);flex:1 1 auto;}
+.vf-rv-chip{font-size:11.5px;font-weight:700;padding:2px 10px;border-radius:100px;background:var(--slate-100);color:var(--slate-500);}
+.vf-rv-chip.is-done{background:#E7F6EC;color:#1B7F3B;}
+.vf-rv-chip.is-warn{background:var(--amber-50,#FFF6E0);color:var(--amber-700,#9A6700);}
+.vf-rv-row{display:grid;grid-template-columns:190px 1fr;gap:12px;padding:6px 0;border-top:1px solid var(--slate-100);font-size:13.5px;}
+.vf-rv-row:first-child{border-top:none;}
+.vf-rv-k{color:var(--slate-500);font-weight:600;}
+.vf-rv-v{color:var(--navy-950);}
+.vf-rv-pre{white-space:pre-wrap;}
+.vf-rv-empty{margin:0;font-size:13px;color:var(--slate-500);font-style:italic;}
+@media (max-width:700px){.vf-rv-row{grid-template-columns:1fr;gap:2px;}}

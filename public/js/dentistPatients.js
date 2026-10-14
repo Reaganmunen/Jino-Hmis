@@ -23,6 +23,7 @@
     dentistsById: {},     // fetched once on page load, reused by every modal open
     recordsCache: {},     // patientId -> { diagnoses, plans, prescriptions, appointments }
     activePatientId: null,
+    activePatient: null,   // full patient row for the open record (used by the Clinical notes tab)
     planItemsByPlanId: {}, // lazy-loaded on expand, shared across modal opens
   };
 
@@ -215,6 +216,7 @@
 
   function openRecordsModal(patient) {
     state.activePatientId = patient.id;
+    state.activePatient = patient;
 
     const name = `${patient.first_name} ${patient.last_name}`;
     const age = ageFromDob(patient.date_of_birth);
@@ -251,6 +253,7 @@
   function closeRecordsModal() {
     document.getElementById('recordsModalScrim').classList.remove('is-open');
     state.activePatientId = null;
+    state.activePatient = null;
   }
 
   /* ---- Patient info tab: the bio data entered at registration ---- */

@@ -313,6 +313,16 @@
       if (e.key === 'Escape' && document.getElementById('rescheduleModalScrim').classList.contains('is-open')) closeRescheduleModal();
     });
     document.getElementById('rescheduleModalSave').addEventListener('click', saveReschedule);
+
+    // Open times come from the dentist's schedule, minus anything already
+    // past (today) or overlapping another booking — see slotUtils.js.
+    state.reschedulePicker = JinoSlots.createSlotPicker({
+      dateInput: document.getElementById('rescheduleDate'),
+      durationSelect: document.getElementById('rescheduleDuration'),
+      grid: document.getElementById('rescheduleSlotGrid'),
+      getDentistId: () => (state.activeReschedule ? state.activeReschedule.dentist_id : null),
+      getIgnoreId: () => (state.activeReschedule ? state.activeReschedule.id : null),
+    });
   }
 
   function openRescheduleModal(appt) {
@@ -320,9 +330,11 @@
     document.getElementById('rescheduleModalTitle').textContent = patientName(appt.patient_id);
     const start = new Date(appt.scheduled_start);
     const end = new Date(appt.scheduled_end);
+    const picker = state.reschedulePicker;
+    picker.reset();
     document.getElementById('rescheduleDate').value = toDateInputValue(start);
-    document.getElementById('rescheduleStart').value = toTimeInputValue(start);
-    document.getElementById('rescheduleEnd').value = toTimeInputValue(end);
+    picker.setDuration((end - start) / 60000);
+    picker.reload(); // no slot pre-selected: the point of rescheduling is a new time
     document.getElementById('rescheduleModalScrim').classList.add('is-open');
   }
 
@@ -335,20 +347,20 @@
     const appt = state.activeReschedule;
     if (!appt) return;
 
-    const dateVal = document.getElementById('rescheduleDate').value;
-    const startVal = document.getElementById('rescheduleStart').value;
-    const endVal = document.getElementById('rescheduleEnd').value;
-    if (!dateVal || !startVal || !endVal) {
-      showToast('Pick a date, start time, and end time.');
+    const slot = state.reschedulePicker.getSlot();
+    if (!slot) {
+      showToast('Pick a date and an available time.');
+      return;
+    }
+    if (JinoSlots.isInPast(slot)) {
+      state.reschedulePicker.reload();
+      showToast('That time has just passed — pick a later slot.');
       return;
     }
 
-    const scheduled_start = new Date(`${dateVal}T${startVal}`).toISOString();
-    const scheduled_end = new Date(`${dateVal}T${endVal}`).toISOString();
-    if (new Date(scheduled_end) <= new Date(scheduled_start)) {
-      showToast('End time must be after the start time.');
-      return;
-    }
+    const startDate = new Date(slot);
+    const scheduled_start = startDate.toISOString();
+    const scheduled_end = new Date(startDate.getTime() + state.reschedulePicker.getDuration() * 60000).toISOString();
 
     const saveBtn = document.getElementById('rescheduleModalSave');
     saveBtn.disabled = true;

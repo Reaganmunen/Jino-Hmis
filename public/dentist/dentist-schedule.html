@@ -153,15 +153,19 @@
       <input class="field-input" type="date" id="rescheduleDate">
     </div>
 
-    <div style="margin-top:14px; display:flex; gap:12px;">
-      <div style="flex:1;">
-        <label class="field-label" for="rescheduleStart">Start time</label>
-        <input class="field-input" type="time" id="rescheduleStart">
-      </div>
-      <div style="flex:1;">
-        <label class="field-label" for="rescheduleEnd">End time</label>
-        <input class="field-input" type="time" id="rescheduleEnd">
-      </div>
+    <div style="margin-top:14px;">
+      <label class="field-label" for="rescheduleDuration">Duration</label>
+      <select class="field-input" id="rescheduleDuration">
+        <option value="30">30 min</option>
+        <option value="60">1 hour</option>
+        <option value="90">1 hr 30 min</option>
+        <option value="120">2 hours</option>
+      </select>
+    </div>
+
+    <div style="margin-top:14px;">
+      <label class="field-label">Available times</label>
+      <div class="slot-grid" id="rescheduleSlotGrid"></div>
     </div>
 
     <div class="modal-foot">
@@ -205,6 +209,7 @@
   Adjust the paths below to wherever these actually live in your public/ folder.
 -->
 <script src="../js/api.js"></script>
+<script src="../js/slotUtils.js"></script>
 <script src="../js/patientDetails.js"></script>
 <script src="../js/recallPrompt.js"></script>
 <script src="../js/dentistSchedule.js"></script>

@@ -12,6 +12,9 @@
 <link rel="stylesheet" href="../css/dentist-diagnosis.css">
 <link rel="stylesheet" href="../css/medical-history.css">
 <link rel="stylesheet" href="../css/tooth-conditions.css">
+<link rel="stylesheet" href="../css/clinical-notes.css">
+<link rel="stylesheet" href="../css/perio-chart.css">
+<link rel="stylesheet" href="../css/visit-flow.css">
 <link rel="icon" type="image/x-icon" href="../favicon.ico">
 <link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="../assets/favicon-16.png">
@@ -121,60 +124,40 @@
         <div class="sched-list" id="apptPickerList"><!-- rendered by JS --></div>
       </section>
 
-      <!-- ---- Charting workspace — hidden until an appointment is selected ---- -->
-      <section class="panel" id="chartingPanel" style="display:none;">
-        <div class="panel-head panel-head-with-toggle">
-          <h2>Charting <span id="chartingPatientName" class="charting-patient-name"></span></h2>
-          <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-            <div class="segmented" id="dentitionToggle" role="group" aria-label="Dentition">
-              <button type="button" class="segmented-opt is-active" data-dentition="permanent">Permanent (32)</button>
-              <button type="button" class="segmented-opt" data-dentition="primary">Primary (20)</button>
-            </div>
-            <div class="segmented" id="categoryToggle">
-              <button type="button" class="segmented-opt is-active" data-category="medical">Medical</button>
-              <button type="button" class="segmented-opt" data-category="cosmetic">Cosmetic</button>
-            </div>
-            <button class="btn btn-outline btn-sm" id="patientInfoBtn" type="button">Patient details</button>
-            <button class="btn btn-outline btn-sm" id="downloadPatientToothChartBtn" type="button">Download tooth chart</button>
-            <button class="panel-link" id="switchPatientBtn" type="button">Switch patient</button>
+      </main>
+  </div>
+</div>
+
+<div id="visitFlow" class="modal-scrim vf-scrim">
+  <div class="modal vf-modal" role="dialog" aria-modal="true" aria-labelledby="vfTitle">
+
+    <div class="vf-modal-head">
+      <div>
+        <p class="modal-kicker">Visit</p>
+        <h2 id="vfTitle">Diagnosis <span id="chartingPatientName" class="charting-patient-name"></span></h2>
+      </div>
+      <div class="vf-header-actions">
+        <button class="btn btn-outline btn-sm" id="patientInfoBtn" type="button">Patient details</button>
+        <button class="btn btn-outline btn-sm" id="downloadPatientToothChartBtn" type="button">Download tooth chart</button>
+        <button class="panel-link" id="switchPatientBtn" type="button">Switch patient</button>
+        <button class="icon-link-btn" id="vfClose" type="button" aria-label="Close visit">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="pinfo-allergy" id="chartingAllergyAlert" style="display:none;"></div>
+    <nav class="vf-steps" id="vfSteps" aria-label="Visit steps"><!-- rendered by JS --></nav>
+
+    <div class="vf-body" id="vfBody">
+
+        <!-- STEP 1 — history & examination -->
+        <section class="panel vf-step is-active" data-step="exam" id="checkupPanel">
+          <div class="panel-head">
+            <h2>History &amp; examination</h2>
+            <span class="panel-sub">Complaint, history and whole-mouth screening for this visit</span>
           </div>
-        </div>
 
-        <div class="pinfo-allergy" id="chartingAllergyAlert" style="display:none;"></div>
-
-        <div class="tooth-panel">
-          <div class="odontogram-wrap">
-            <div class="odontogram-col" id="odontogramHost">
-              <svg id="odontogramSvg" viewBox="0 0 409 694"></svg>
-            </div>
-            <div class="tooth-detail-col" id="toothDetailCol">
-              <p class="tooth-detail-empty">Click a tooth to log a finding.</p>
-            </div>
-          </div>
-          <div class="legend" id="legend"><!-- rendered by JS, depends on active category --></div>
-        </div>
-
-        <h3 class="chart-subhead">Diagnosis history for this patient</h3>
-        <div class="timeline" id="diagnosisTimeline"><!-- rendered by JS --></div>
-
-        <h3 class="chart-subhead">X-rays &amp; files</h3>
-        <div class="modal-foot" style="justify-content:flex-start; padding:0 0 14px;">
-          <label class="btn btn-outline" style="cursor:pointer;">
-            Upload X-ray / file
-            <input type="file" id="diagnosisFileInput" accept="image/*,.pdf" style="display:none;">
-          </label>
-        </div>
-        <div id="diagnosisFileList"><!-- rendered by JS --></div>
-      </section>
-
-      <!-- ---- Oral Checkup — whole-mouth screening, not tied to a tooth ---- -->
-      <section class="panel" id="checkupPanel" style="display:none;">
-        <div class="panel-head">
-          <h2>Oral Checkup</h2>
-          <span class="panel-sub">General screening for this visit — not tied to a specific tooth</span>
-        </div>
-
-        <div class="checkup-grid">
+<div class="checkup-grid">
           <div>
             <label class="field-label" for="checkupPC">PC (Presenting Complaint)</label>
             <textarea class="field-input" id="checkupPC" rows="2" placeholder="What the patient came in for…"></textarea>
@@ -262,15 +245,97 @@
           <textarea class="field-input" id="checkupNotes" rows="3" placeholder="Any additional observations…"></textarea>
         </div>
 
-        <div class="modal-foot" style="justify-content:flex-end; margin-top:16px;">
-          <button class="btn btn-primary" id="checkupSaveBtn" type="button">Save checkup</button>
-        </div>
+          <div class="modal-foot" style="justify-content:flex-end; margin-top:16px;">
+            <button class="btn btn-outline" id="checkupSaveBtn" type="button">Save checkup</button>
+          </div>
 
-        <h3 class="chart-subhead">Checkup history</h3>
-        <div class="timeline" id="checkupTimeline"><!-- rendered by JS --></div>
-      </section>
+          <h3 class="chart-subhead">Checkup history</h3>
+          <div class="timeline" id="checkupTimeline"><!-- rendered by JS --></div>
+        </section>
 
-    </main>
+        <!-- STEP 2 — tooth chart -->
+        <section class="panel vf-step" data-step="teeth" id="chartingPanel">
+          <div class="panel-head panel-head-with-toggle">
+            <h2>Tooth chart</h2>
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+              <div class="segmented" id="dentitionToggle" role="group" aria-label="Dentition">
+                <button type="button" class="segmented-opt is-active" data-dentition="permanent">Permanent (32)</button>
+                <button type="button" class="segmented-opt" data-dentition="primary">Primary (20)</button>
+              </div>
+              <div class="segmented" id="categoryToggle">
+                <button type="button" class="segmented-opt is-active" data-category="medical">Medical</button>
+                <button type="button" class="segmented-opt" data-category="cosmetic">Cosmetic</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="tooth-panel">
+            <div class="odontogram-wrap">
+              <div class="odontogram-col" id="odontogramHost">
+                <svg id="odontogramSvg" viewBox="0 0 409 694"></svg>
+              </div>
+              <div class="tooth-detail-col" id="toothDetailCol">
+                <p class="tooth-detail-empty">Click a tooth to log a finding.</p>
+              </div>
+            </div>
+            <div class="legend" id="legend"><!-- rendered by JS, depends on active category --></div>
+          </div>
+
+          <h3 class="chart-subhead">Diagnosis history for this patient</h3>
+          <div class="timeline" id="diagnosisTimeline"><!-- rendered by JS --></div>
+        </section>
+
+        <!-- STEP 3 — periodontal chart (embedded editor) -->
+        <section class="panel vf-step" data-step="perio">
+          <div class="panel-head">
+            <h2>Periodontal chart</h2>
+            <span class="panel-sub">Full-mouth probing — optional, record it when gum disease is suspected or on recall</span>
+          </div>
+          <div id="flowPerioHost"><!-- rendered by JS --></div>
+        </section>
+
+        <!-- STEP 4 — radiographs & files -->
+        <section class="panel vf-step" data-step="imaging">
+          <div class="panel-head">
+            <h2>X-rays &amp; files</h2>
+            <span class="panel-sub">Uploaded files are tagged to this visit</span>
+          </div>
+          <div class="modal-foot" style="justify-content:flex-start; padding:0 0 14px;">
+            <label class="btn btn-outline" style="cursor:pointer;">
+              Upload X-ray / file
+              <input type="file" id="diagnosisFileInput" accept="image/*,.pdf" style="display:none;">
+            </label>
+          </div>
+          <div id="diagnosisFileList"><!-- rendered by JS --></div>
+        </section>
+
+        <!-- STEP 5 — SOAP note & sign-off (embedded editor) -->
+        <section class="panel vf-step" data-step="soap">
+          <div class="panel-head">
+            <h2>Clinical note (SOAP)</h2>
+            <span class="panel-sub">Summarise the visit, then sign it off</span>
+          </div>
+          <div id="flowSoapHost"><!-- rendered by JS --></div>
+        </section>
+
+        <!-- STEP 6 — review everything, edit anything, then sign -->
+        <section class="panel vf-step" data-step="review">
+          <div class="panel-head">
+            <h2>Review &amp; sign</h2>
+            <span class="panel-sub">Everything recorded for this visit. Use Edit to go back to any step.</span>
+          </div>
+          <div id="flowReviewHost"><!-- rendered by JS --></div>
+        </section>
+    </div>
+
+    <div class="vf-nav">
+      <button type="button" class="btn btn-outline" id="vfBack">&larr; Back</button>
+      <span class="vf-nav-label" id="vfNavLabel"></span>
+      <div class="vf-nav-right">
+        <button type="button" class="vf-skip" id="vfSkip">Skip this step</button>
+        <button type="button" class="btn btn-primary" id="vfNext">Next &rarr;</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -375,6 +440,9 @@
 <script src="../js/api.js"></script>
 <script src="../js/toothShapes.js"></script>
 <script src="../js/medicalHistory.js"></script>
+<script src="../js/clinicalNotes.js"></script>
+<script src="../js/perioSummary.js"></script>
+<script src="../js/perioChart.js"></script>
 <script src="../js/dentistDiagnosis.js"></script>
 <script src="../js/revamp.js"></script>
 </body>

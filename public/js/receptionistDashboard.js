@@ -352,10 +352,12 @@
 
   /* ============================================================
      MODAL: BOOK APPOINTMENT
-     (Simple version — direct datetime input rather than a live slot
-     picker. A proper open-slots grid needs the dentist-availability
-     endpoint that appointmentController.js flags as not yet split out
-     from GET /appointments/dentist/:dentistId; wire that in later.)
+     Start time is chosen from a live slot grid (JinoSlots in
+     slotUtils.js): the dentist's weekly schedule, minus slots that
+     have already passed today, minus slots overlapping an existing
+     booking. Still reads GET /appointments/dentist/:dentistId until
+     the dedicated availability endpoint flagged in
+     appointmentController.js exists.
      ============================================================ */
   function initModals() {
     bindModal('bookModalScrim', 'btnBookAppt', 'bookModalClose', 'bookCancelBtn', resetBookModal);
@@ -365,6 +367,22 @@
     bindModal('editApptModalScrim', null, 'editApptModalClose', 'editApptCancelBtn', resetEditApptModal);
 
     document.getElementById('mpesaCloseWaitingBtn').addEventListener('click', () => closeModal('mpesaModalScrim'));
+
+    // Slot pickers: show only open times from the dentist's schedule, and
+    // (for today) only times that haven't passed yet.
+    state.bookPicker = JinoSlots.createSlotPicker({
+      dateInput: document.getElementById('bookDate'),
+      durationSelect: document.getElementById('bookDuration'),
+      grid: document.getElementById('bookSlotGrid'),
+      getDentistId: () => selectedDentistId('#bookDentistList'),
+    });
+    state.editPicker = JinoSlots.createSlotPicker({
+      dateInput: document.getElementById('editApptDate'),
+      durationSelect: document.getElementById('editApptDuration'),
+      grid: document.getElementById('editApptSlotGrid'),
+      getDentistId: () => selectedDentistId('#editApptDentistList'),
+      getIgnoreId: () => (state.activeApptForEdit ? state.activeApptForEdit.id : null),
+    });
 
     document.getElementById('bookPatientSearch').addEventListener('input', debounce(onBookPatientSearch, 250));
     document.getElementById('bookSubmitBtn').addEventListener('click', submitBooking);
@@ -429,6 +447,11 @@
     `;
   }
 
+  function selectedDentistId(listSelector) {
+    const el = document.querySelector(`${listSelector} .dentist-opt.is-selected`);
+    return el ? el.dataset.dentistId : null;
+  }
+
   function populateDentistList() {
     const container = document.getElementById('bookDentistList');
     container.innerHTML = '';
@@ -447,6 +470,7 @@
       opt.addEventListener('click', () => {
         container.querySelectorAll('.dentist-opt').forEach((el) => el.classList.remove('is-selected'));
         opt.classList.add('is-selected');
+        state.bookPicker.reload(); // a different dentist has different open times
       });
       container.appendChild(opt);
     });
@@ -455,21 +479,27 @@
   async function submitBooking() {
     const patient = state.bookSelectedPatient;
     const dentistOpt = document.querySelector('#bookDentistList .dentist-opt.is-selected');
-    const start = document.getElementById('bookStart').value;
-    const end = document.getElementById('bookEnd').value;
+    const slot = state.bookPicker.getSlot();
     const room = document.getElementById('bookRoom').value.trim();
     const reason = document.getElementById('bookReason').value.trim();
 
     if (!patient) return showToast('Select a patient first');
     if (!dentistOpt) return showToast('Select a dentist');
-    if (!start || !end) return showToast('Start and end time are required');
+    if (!slot) return showToast('Pick a date and an available time');
+    if (JinoSlots.isInPast(slot)) {
+      state.bookPicker.reload();
+      return showToast('That time has just passed — pick a later slot');
+    }
+
+    const startDate = new Date(slot);
+    const endDate = new Date(startDate.getTime() + state.bookPicker.getDuration() * 60000);
 
     try {
       await fetchMethod('/appointments', 'POST', {
         patient_id: patient.id,
         dentist_id: dentistOpt.dataset.dentistId,
-        scheduled_start: new Date(start).toISOString(),
-        scheduled_end: new Date(end).toISOString(),
+        scheduled_start: startDate.toISOString(),
+        scheduled_end: endDate.toISOString(),
         room: room || null,
         reason: reason || null,
       }, true);
@@ -488,8 +518,7 @@
     document.getElementById('bookPatientResults').innerHTML = '';
     document.getElementById('bookPatientSelected').style.display = 'none';
     document.getElementById('bookPatientSelected').innerHTML = '';
-    document.getElementById('bookStart').value = '';
-    document.getElementById('bookEnd').value = '';
+    state.bookPicker.reset();
     document.getElementById('bookRoom').value = '';
     document.getElementById('bookReason').value = '';
     document.querySelectorAll('#bookDentistList .dentist-opt').forEach((el) => el.classList.remove('is-selected'));
@@ -514,8 +543,17 @@
     `;
 
     populateEditDentistList(appt.dentist_id);
-    document.getElementById('editApptStart').value = toDatetimeLocalValue(appt.scheduled_start);
-    document.getElementById('editApptEnd').value = toDatetimeLocalValue(appt.scheduled_end);
+    // Pre-fill with the current booking. The current time is pinned so it
+    // stays selectable even if it has passed — that lets staff fix the room
+    // or reason without being forced to choose a new time.
+    const startLocal = toDatetimeLocalValue(appt.scheduled_start); // 'YYYY-MM-DDTHH:mm'
+    const minutes = Math.round((new Date(appt.scheduled_end) - new Date(appt.scheduled_start)) / 60000);
+    const picker = state.editPicker;
+    picker.reset();
+    document.getElementById('editApptDate').value = startLocal.slice(0, 10);
+    picker.setDuration(minutes);
+    picker.setSlot(`${startLocal}:00`, { pin: true });
+    picker.reload();
     document.getElementById('editApptRoom').value = appt.room || '';
     document.getElementById('editApptReason').value = appt.reason || '';
 
@@ -540,6 +578,7 @@
       opt.addEventListener('click', () => {
         container.querySelectorAll('.dentist-opt').forEach((el) => el.classList.remove('is-selected'));
         opt.classList.add('is-selected');
+        state.editPicker.reload();
       });
       container.appendChild(opt);
     });
@@ -548,20 +587,27 @@
   async function submitApptEdit() {
     const appt = state.activeApptForEdit;
     const dentistOpt = document.querySelector('#editApptDentistList .dentist-opt.is-selected');
-    const start = document.getElementById('editApptStart').value;
-    const end = document.getElementById('editApptEnd').value;
+    const slot = state.editPicker.getSlot();
     const room = document.getElementById('editApptRoom').value.trim();
     const reason = document.getElementById('editApptReason').value.trim();
 
     if (!dentistOpt) return showToast('Select a dentist');
-    if (!start || !end) return showToast('Start and end time are required');
-    if (new Date(end) <= new Date(start)) return showToast('End time must be after start time');
+    if (!slot) return showToast('Pick a date and an available time');
+
+    const startDate = new Date(slot);
+    const endDate = new Date(startDate.getTime() + state.editPicker.getDuration() * 60000);
+
+    // If the time is unchanged we keep the original instants exactly (the
+    // slot string has no seconds/ms), so a room/reason-only edit doesn't
+    // look like a reschedule to the server.
+    const unchanged = startDate.getTime() === new Date(appt.scheduled_start).getTime()
+      && endDate.getTime() === new Date(appt.scheduled_end).getTime();
 
     try {
       await fetchMethod(`/appointments/${appt.id}`, 'PUT', {
         dentist_id: dentistOpt.dataset.dentistId,
-        scheduled_start: new Date(start).toISOString(),
-        scheduled_end: new Date(end).toISOString(),
+        scheduled_start: unchanged ? appt.scheduled_start : startDate.toISOString(),
+        scheduled_end: unchanged ? appt.scheduled_end : endDate.toISOString(),
         room: room || null,
         reason: reason || null,
       }, true);
@@ -576,8 +622,7 @@
 
   function resetEditApptModal() {
     state.activeApptForEdit = null;
-    document.getElementById('editApptStart').value = '';
-    document.getElementById('editApptEnd').value = '';
+    state.editPicker.reset();
     document.getElementById('editApptRoom').value = '';
     document.getElementById('editApptReason').value = '';
     document.querySelectorAll('#editApptDentistList .dentist-opt').forEach((el) => el.classList.remove('is-selected'));

@@ -34,9 +34,26 @@ const notifyPatient = (action, appointmentId) => {
   });
 };
 
+// The UI only offers future slots, but a page left open past a slot's start
+// time (or a hand-built request) could still submit one, so the server checks
+// too. The small grace window absorbs clock drift between the browser and server.
+const PAST_GRACE_MS = 5 * 60 * 1000;
+const PAST_TIME_MESSAGE = 'That time has already passed — please choose a later time';
+const isInvalidDate = (value) => Number.isNaN(new Date(value).getTime());
+const isInPast = (value) => new Date(value).getTime() < Date.now() - PAST_GRACE_MS;
+
 // Postgres exclusion_violation (23P01) on overlapping dentist slots is caught
 // centrally by errorMiddleware.errorHandler — no special-casing needed here.
 const bookAppointment = (req, res, next) => {
+  const { scheduled_start, scheduled_end } = req.body;
+  if (!scheduled_start || !scheduled_end || isInvalidDate(scheduled_start) || isInvalidDate(scheduled_end)) {
+    return res.status(400).json({ message: 'Valid scheduled_start and scheduled_end are required' });
+  }
+  if (new Date(scheduled_end) <= new Date(scheduled_start)) {
+    return res.status(400).json({ message: 'scheduled_end must be after scheduled_start' });
+  }
+  if (isInPast(scheduled_start)) return res.status(400).json({ message: PAST_TIME_MESSAGE });
+
   const data = { ...req.body, booked_by: req.user.id };
   createAppointment(data, (err, appointment) => {
     if (err) return next(err);
@@ -127,6 +144,13 @@ const reschedule = (req, res, next) => {
   if (!scheduled_start || !scheduled_end) {
     return res.status(400).json({ message: 'scheduled_start and scheduled_end are required' });
   }
+  if (isInvalidDate(scheduled_start) || isInvalidDate(scheduled_end)) {
+    return res.status(400).json({ message: 'scheduled_start and scheduled_end must be valid dates' });
+  }
+  if (new Date(scheduled_end) <= new Date(scheduled_start)) {
+    return res.status(400).json({ message: 'scheduled_end must be after scheduled_start' });
+  }
+  if (isInPast(scheduled_start)) return res.status(400).json({ message: PAST_TIME_MESSAGE });
 
   findAppointmentById(req.params.id, (findErr, appointment) => {
     if (findErr) return next(findErr);
@@ -157,10 +181,24 @@ const editAppointment = (req, res, next) => {
   if (!dentist_id || !scheduled_start || !scheduled_end) {
     return res.status(400).json({ message: 'dentist_id, scheduled_start, and scheduled_end are required' });
   }
+  if (isInvalidDate(scheduled_start) || isInvalidDate(scheduled_end)) {
+    return res.status(400).json({ message: 'scheduled_start and scheduled_end must be valid dates' });
+  }
+  if (new Date(scheduled_end) <= new Date(scheduled_start)) {
+    return res.status(400).json({ message: 'scheduled_end must be after scheduled_start' });
+  }
 
   findAppointmentById(req.params.id, (findErr, appointment) => {
     if (findErr) return next(findErr);
     if (!appointment) return res.status(404).json({ message: 'Appointment not found' });
+
+    // Only block past times when the start time is actually being moved —
+    // fixing the room or reason on an appointment that already happened
+    // (same time) must keep working.
+    const startMoved = new Date(appointment.scheduled_start).getTime() !== new Date(scheduled_start).getTime();
+    if (startMoved && isInPast(scheduled_start)) {
+      return res.status(400).json({ message: PAST_TIME_MESSAGE });
+    }
 
     const patientFacingChange =
       String(appointment.dentist_id) !== String(dentist_id) ||
