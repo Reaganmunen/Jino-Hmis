@@ -1,6 +1,6 @@
 /* ============================================================
    PEDIATRIC / DEVELOPMENTAL TOOTH FINDINGS
-   Exfoliated, Unerupted, Sealant, Pulpotomy.
+   Exfoliated, Unerupted, Sealant, Pulpotomy, Retained roots.
    Same pattern as .cond-cosmetic in tooth-chart.css: the tooth <g> gets
    cond-<finding>, and the outline / fill / highlight paths are recoloured.
    Link this AFTER dashboard.css on every page that draws the odontogram
@@ -31,3 +31,9 @@
 .dot-unerupted{background:#DCE3EE;box-shadow:inset 0 0 0 1.5px #5B6B82;}
 .dot-sealant{background:#D5F3EE;box-shadow:inset 0 0 0 1.5px #0E9F8E;}
 .dot-pulpotomy{background:#FCE4F1;box-shadow:inset 0 0 0 1.5px #C2418F;}
+
+/* retained roots: brown, dashed outline so it reads differently from Missing / Caries */
+.tooth-svg.cond-retained_roots .tooth-outline{stroke:#92400E;stroke-dasharray:6 3;}
+.tooth-svg.cond-retained_roots .tooth-fill{fill:#F5DEC8;opacity:1;}
+.tooth-svg.cond-retained_roots .tooth-highlight{stroke:#92400E;}
+.dot-retained_roots{background:#F5DEC8;box-shadow:inset 0 0 0 1.5px #92400E;}

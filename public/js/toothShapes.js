@@ -284,13 +284,16 @@ const Dentition = (function () {
     unerupted:  { label: 'Unerupted',  dentitions: ['primary', 'permanent'] },
     sealant:    { label: 'Sealant',    dentitions: ['primary', 'permanent'] },
     pulpotomy:  { label: 'Pulpotomy',  dentitions: ['primary', 'permanent'] },
+    // general: true -> listed in the main Condition dropdown, not under
+    // "Pediatric & developmental" (applies to any dentition).
+    retained_roots: { label: 'Retained roots', dentitions: ['primary', 'permanent'], general: true },
   };
 
   // [{ key, label }] of the extra findings that apply to a dentition.
   function conditionsFor(dentitionKey) {
     return Object.keys(EXTRA_CONDITIONS)
       .filter((k) => EXTRA_CONDITIONS[k].dentitions.includes(dentitionKey))
-      .map((k) => ({ key: k, label: EXTRA_CONDITIONS[k].label }));
+      .map((k) => ({ key: k, label: EXTRA_CONDITIONS[k].label, general: !!EXTRA_CONDITIONS[k].general }));
   }
 
   // { key: label } for every extra finding, for label lookups.

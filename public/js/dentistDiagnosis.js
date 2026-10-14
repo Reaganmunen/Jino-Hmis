@@ -1021,6 +1021,8 @@
   // this, those findings parse to null and the tooth silently reverts
   // to healthy even though a real diagnosis is on file for it.
   const CONDITION_KEYWORDS = {
+    // Checked first: "retained roots after extraction" must not fall through to "missing".
+    retained_roots: ['retained root', 'root stump', 'root remnant', 'residual root'],
     caries: ['caries', 'cavity', 'decay'],
     filled: ['filled', 'filling', 'restoration', 'restored'],
     missing: ['missing', 'extracted', 'extraction'],
@@ -1524,9 +1526,12 @@
     // only appears for primary teeth.
     if (category === 'medical') {
       const extras = Dentition.conditionsFor(Dentition.of(state.selectedTooth));
-      if (extras.length) {
+      const general = extras.filter((c) => c.general);
+      const paeds = extras.filter((c) => !c.general);
+      options += general.map((c) => `<option value="${c.key}">${escapeHtml(c.label)}</option>`).join('');
+      if (paeds.length) {
         options += '<optgroup label="Pediatric &amp; developmental">' +
-          extras.map((c) => `<option value="${c.key}">${escapeHtml(c.label)}</option>`).join('') +
+          paeds.map((c) => `<option value="${c.key}">${escapeHtml(c.label)}</option>`).join('') +
           '</optgroup>';
       }
     }
