@@ -510,11 +510,12 @@
     { key: 'exam',    label: 'History & exam' },
     { key: 'teeth',   label: 'Tooth chart',    optional: true },
     { key: 'perio',   label: 'Perio chart',    optional: true },
+    { key: 'ortho',   label: 'Orthodontics',   optional: true },
     { key: 'imaging', label: 'X-rays & files', optional: true },
     { key: 'soap',    label: 'SOAP note' },
     { key: 'review',  label: 'Review & sign' },
   ];
-  const flow = { step: 'exam', perioMounted: false, soapMounted: false, perio: null, soap: null, completing: false, skipped: {}, returnTo: false };
+  const flow = { step: 'exam', perioMounted: false, orthoMounted: false, soapMounted: false, perio: null, ortho: null, soap: null, completing: false, skipped: {}, returnTo: false };
 
   function setFlowVisible(on) {
     document.getElementById('visitFlow').classList.toggle('is-open', !!on);
@@ -536,12 +537,15 @@
     flow.perioMounted = false;
     flow.soapMounted = false;
     flow.perio = null;
+    flow.orthoMounted = false;
+    flow.ortho = null;
     flow.soap = null;
     flow.completing = false;
     flow.skipped = {};
     flow.returnTo = false;
     document.getElementById('flowReviewHost').innerHTML = '';
     document.getElementById('flowPerioHost').innerHTML = '';
+    document.getElementById('flowOrthoHost').innerHTML = '';
     document.getElementById('flowSoapHost').innerHTML = '';
     showStep('exam');
     updateFlowStatus();
@@ -647,6 +651,7 @@
 
     if (key !== 'review') flow.completing = false;
     if (key === 'perio') mountPerio();
+    if (key === 'ortho') mountOrtho();
     if (key === 'soap') mountSoap();
     if (key === 'review') { mountSoap(); renderReview(); }
   }
@@ -669,6 +674,21 @@
       patientName: patientDisplayName(),
       inline: true,
       onLoaded: (charts) => { flow.perio = charts; updateFlowStatus(); },
+    });
+  }
+
+  function mountOrtho() {
+    if (flow.orthoMounted || !state.activePatient) return;
+    const host = document.getElementById('flowOrthoHost');
+    if (!window.Orthodontics) {
+      host.innerHTML = '<div class="empty-state">The orthodontics module could not be loaded. Please refresh the page.</div>';
+      return;
+    }
+    flow.orthoMounted = true;
+    window.Orthodontics.render(host, {
+      patientId: state.activePatient.id,
+      patientName: patientDisplayName(),
+      onLoaded: (cases) => { flow.ortho = cases; updateFlowStatus(); },
     });
   }
 
@@ -724,6 +744,12 @@
       const finals = flow.perio.filter((c) => c.status === 'final').length;
       const drafts = flow.perio.filter((c) => c.status === 'draft').length;
       set('perio', drafts ? 'draft' : (finals ? `${finals}` : ''), finals && !drafts);
+    }
+
+    if (!flow.ortho) set('ortho', '', false);
+    if (flow.ortho) {
+      const open = flow.ortho.filter((c) => ['planning', 'active', 'retention'].includes(c.status)).length;
+      set('ortho', open ? 'active' : (flow.ortho.length ? String(flow.ortho.length) : ''), open);
     }
 
     const files = state.files.filter((f) => String(f.appointment_id) === apptId).length;

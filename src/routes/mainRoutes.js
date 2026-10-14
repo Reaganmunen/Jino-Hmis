@@ -16,6 +16,7 @@ router.use('/consent-forms', require('./consentFormRoutes'));
 router.use('/medical-history', require('./medicalHistoryRoutes')); // structured medical history + clinical alerts
 router.use('/clinical-notes', require('./clinicalNoteRoutes')); // SOAP / progress notes (dentist-signed, locked after signing)
 router.use('/perio-charts', require('./perioChartRoutes')); // periodontal charting (6-point probing, BOP, plaque, CAL; locked once finalised)
+router.use('/ortho', require('./orthoRoutes')); // orthodontic cases + adjustment visits (baseline locked once finalised)
 router.use('/medical-certificates', require('./medicalCertificateRoutes')); // sick-off / fitness-to-work notes
 router.use('/patient-files', require('./patientFileRoutes'));
 router.use('/inventory-items', require('./inventoryItemRoutes'));

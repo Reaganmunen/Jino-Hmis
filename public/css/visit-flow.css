@@ -39,6 +39,7 @@
   margin-left:auto;font-size:11px;font-weight:700;color:var(--slate-500);
   background:var(--slate-100);border-radius:100px;padding:1px 8px;
 }
+.vf-status{flex:0 0 auto;white-space:nowrap;}
 .vf-status:empty{display:none;}
 .vf-status.is-done{background:#E7F6EC;color:#1B7F3B;}
 
@@ -84,7 +85,7 @@
 /* ---- layout fixes: keep the fixed parts of the window from being squashed ---- */
 .vf-modal-head,.vf-modal > .pinfo-allergy,.vf-steps,.vf-nav{flex:0 0 auto;}
 .vf-steps{overflow-y:hidden;padding:4px 2px 8px;margin-bottom:2px;}
-.vf-step-btn{flex:1 0 150px;min-height:44px;}
+.vf-step-btn{flex:1 0 auto;min-width:max-content;min-height:44px;} /* size to content: label + status chip always fit, the strip scrolls if the window is narrow */
 .vf-body{margin-top:4px;}
 /* line the inputs up even when one label wraps onto two lines */
 .vf-body .checkup-grid{align-items:end;}
