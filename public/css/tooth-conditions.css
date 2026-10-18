@@ -37,3 +37,15 @@
 .tooth-svg.cond-retained_roots .tooth-fill{fill:#F5DEC8;opacity:1;}
 .tooth-svg.cond-retained_roots .tooth-highlight{stroke:#92400E;}
 .dot-retained_roots{background:#F5DEC8;box-shadow:inset 0 0 0 1.5px #92400E;}
+
+/* mobile (loose) tooth: amber with a heavier outline so it stands apart from Caries (red) and Retained roots (brown) */
+.tooth-svg.cond-mobile .tooth-outline{stroke:#D97706;stroke-width:3;}
+.tooth-svg.cond-mobile .tooth-fill{fill:#FDE9C4;opacity:1;}
+.tooth-svg.cond-mobile .tooth-highlight{stroke:#D97706;}
+.dot-mobile{background:#FDE9C4;box-shadow:inset 0 0 0 1.5px #D97706;}
+
+/* over-retained primary tooth: violet, dash-dot outline (distinct from the plain dashes of Exfoliated / Retained roots) */
+.tooth-svg.cond-over_retained .tooth-outline{stroke:#7C3AED;stroke-dasharray:8 3 2 3;}
+.tooth-svg.cond-over_retained .tooth-fill{fill:#EBE3FD;opacity:1;}
+.tooth-svg.cond-over_retained .tooth-highlight{stroke:#7C3AED;}
+.dot-over_retained{background:#EBE3FD;box-shadow:inset 0 0 0 1.5px #7C3AED;}

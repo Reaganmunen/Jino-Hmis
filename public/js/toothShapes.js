@@ -287,6 +287,12 @@ const Dentition = (function () {
     // general: true -> listed in the main Condition dropdown, not under
     // "Pediatric & developmental" (applies to any dentition).
     retained_roots: { label: 'Retained roots', dentitions: ['primary', 'permanent'], general: true },
+    // Mobile: any tooth can be loose (periodontal disease, trauma, or a primary
+    // tooth about to exfoliate), so it sits in the main dropdown too.
+    mobile: { label: 'Mobile', dentitions: ['primary', 'permanent'], general: true },
+    // Over-retained: a primary tooth still present past its normal exfoliation
+    // age (often with the permanent successor erupting beside it) -- primary only.
+    over_retained: { label: 'Over-retained', dentitions: ['primary'] },
   };
 
   // [{ key, label }] of the extra findings that apply to a dentition.

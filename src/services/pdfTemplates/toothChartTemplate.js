@@ -2,6 +2,8 @@ const { wrapper, formatDate } = require('./pdfLayout');
 
 const CONDITION_LABEL = {
   healthy: 'Healthy', caries: 'Caries', filled: 'Filled', missing: 'Missing', crown: 'Crown',
+  exfoliated: 'Exfoliated', unerupted: 'Unerupted', sealant: 'Sealant', pulpotomy: 'Pulpotomy',
+  retained_roots: 'Retained roots', mobile: 'Mobile', over_retained: 'Over-retained',
 };
 
 const SURFACE_NAME = {

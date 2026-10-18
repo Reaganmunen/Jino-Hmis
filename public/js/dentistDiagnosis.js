@@ -1023,10 +1023,13 @@
   const CONDITION_KEYWORDS = {
     // Checked first: "retained roots after extraction" must not fall through to "missing".
     retained_roots: ['retained root', 'root stump', 'root remnant', 'residual root'],
+    // Also before the generic words below, e.g. "over-retained primary molar".
+    over_retained: ['over-retained', 'over retained', 'overretained', 'retained primary', 'retained deciduous'],
     caries: ['caries', 'cavity', 'decay'],
     filled: ['filled', 'filling', 'restoration', 'restored'],
     missing: ['missing', 'extracted', 'extraction'],
     crown: ['crown'],
+    mobile: ['mobile', 'mobility', 'loose tooth'],
     whitening: ['whiten', 'bleach'],
     veneer: ['veneer'],
     bonding: ['bonding'],
