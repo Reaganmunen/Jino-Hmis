@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="../css/dentist-dashboard.css">
 <link rel="stylesheet" href="../css/dentist-patients.css">
 <link rel="stylesheet" href="../css/medical-history.css">
+<link rel="stylesheet" href="../css/imaging.css">
 <link rel="icon" type="image/x-icon" href="../favicon.ico">
 <link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="../assets/favicon-16.png">
@@ -155,6 +156,7 @@
       <button class="filter-tab is-active" data-tab="info" type="button">Patient info</button>
       <button class="filter-tab" data-tab="medical" type="button">Medical history</button>
       <button class="filter-tab" data-tab="diagnoses" type="button">Diagnoses</button>
+      <button class="filter-tab" data-tab="imaging" type="button">Imaging</button>
       <button class="filter-tab" data-tab="plans" type="button">Treatment plans</button>
       <button class="filter-tab" data-tab="prescriptions" type="button">Prescriptions</button>
       <button class="filter-tab" data-tab="appointments" type="button">Appointments</button>
@@ -171,6 +173,9 @@
       </div>
       <div class="records-tab-panel" data-tab-panel="diagnoses">
         <div class="timeline" id="modalDiagnosisTimeline"></div>
+      </div>
+      <div class="records-tab-panel" data-tab-panel="imaging">
+        <div id="modalImagingPanel"></div>
       </div>
       <div class="records-tab-panel" data-tab-panel="plans">
         <div class="plan-list" id="modalPlanList"></div>
@@ -251,6 +256,7 @@
 <script src="../js/api.js"></script>
 <script src="../js/avatar.js"></script>
 <script src="../js/medicalHistory.js"></script>
+<script src="../js/imaging.js"></script>
 <script src="../js/dentistPatients.js"></script>
 <script src="../js/revamp.js"></script>
 </body>

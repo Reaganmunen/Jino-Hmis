@@ -19,6 +19,7 @@ router.use('/perio-charts', require('./perioChartRoutes')); // periodontal chart
 router.use('/ortho', require('./orthoRoutes')); // orthodontic cases + adjustment visits (baseline locked once finalised)
 router.use('/medical-certificates', require('./medicalCertificateRoutes')); // sick-off / fitness-to-work notes
 router.use('/patient-files', require('./patientFileRoutes'));
+router.use('/imaging', require('./imagingRoutes')); // X-rays + clinical photos (stored in DB, viewer in patient record)
 router.use('/inventory-items', require('./inventoryItemRoutes'));
 router.use('/inventory-usage', require('./inventoryUsageRoutes'));
 router.use('/services', require('./serviceRoutes'));

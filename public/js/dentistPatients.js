@@ -237,6 +237,10 @@
     }
 
     // Opens on the bio data the receptionist captured at registration.
+    // Imaging is lazy: clear it so a different patient never shows the previous one's images.
+    const imagingHost = document.getElementById('modalImagingPanel');
+    if (imagingHost) { imagingHost.innerHTML = ''; delete imagingHost.dataset.patientId; }
+
     renderPatientInfo(patient);
     loadMedicalHistory(patient);
     switchRecordsTab('info');
@@ -254,6 +258,7 @@
     document.getElementById('recordsModalScrim').classList.remove('is-open');
     state.activePatientId = null;
     state.activePatient = null;
+    if (window.Imaging) window.Imaging.clear(); // free image memory when the record closes
   }
 
   /* ---- Patient info tab: the bio data entered at registration ---- */
@@ -326,6 +331,22 @@
     });
     document.querySelectorAll('.records-tab-panel').forEach((p) => {
       p.classList.toggle('is-active', p.dataset.tabPanel === tabName);
+    });
+    if (tabName === 'imaging') loadImaging();
+  }
+
+  /* ---- Imaging tab (shared module: imaging.js) ----
+     Loaded when the tab is opened, not with the rest of the record, because the
+     images are heavier than the other tabs. Re-mounts only when the patient changes. */
+  function loadImaging() {
+    const patient = state.activePatient;
+    const host = document.getElementById('modalImagingPanel');
+    if (!patient || !host || !window.Imaging) return;
+    if (host.dataset.patientId === String(patient.id)) return;
+    host.dataset.patientId = String(patient.id);
+    window.Imaging.mount(host, {
+      patientId: patient.id,
+      patientName: `${patient.first_name} ${patient.last_name}`,
     });
   }
 
