@@ -432,7 +432,7 @@
   }
 
   async function toggleExpandPlan(planId) {
-    const id = Number(planId);
+    const id = String(planId);
     if (state.expandedPlanId === id) {
       state.expandedPlanId = null;
       renderPatientPlans();
@@ -578,7 +578,7 @@
   }
 
   function openItemModal(planId) {
-    state.newItemPlanId = Number(planId);
+    state.newItemPlanId = String(planId);
     const items = state.planItemsByPlanId[planId] || [];
     document.getElementById('itemProcedure').value = '';
     document.getElementById('itemTooth').value = '';
