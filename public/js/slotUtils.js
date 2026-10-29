@@ -26,6 +26,9 @@
   'use strict';
 
   const DEFAULT_STEP = 30;
+  // How far back a walk-in visit can be recorded. Keep in sync with PAST_VISIT_MAX_DAYS in
+  // src/controllers/appointmentController.js (the server enforces it too).
+  const MAX_PAST_DAYS = 30;
 
   function pad(n) { return String(n).padStart(2, '0'); }
 
@@ -46,6 +49,12 @@
     return dateToISODateStr(new Date());
   }
 
+  function daysAgoISODate(n) {
+    const d = new Date();
+    d.setDate(d.getDate() - n);
+    return dateToISODateStr(d);
+  }
+
   // "Now" rounded down to the minute, so a slot starting at exactly the
   // current minute is still offered.
   function nowFloor() {
@@ -64,12 +73,14 @@
    * @param {number}   [opts.duration=step] appointment length (minutes)
    * @param {*}        [opts.ignoreId]     appointment id to ignore (editing/rescheduling it)
    * @param {Date}     [opts.now]          override for tests
+   * @param {boolean}  [opts.pastOnly]     offer only slots that have ALREADY started (for recording
+   *                                       a walk-in visit after the fact) instead of hiding them
    * @returns {string[]} local slot start strings, in time order
    */
   function buildSlots(opts) {
     const {
       dateStr, schedule = [], appointments = [],
-      step = DEFAULT_STEP, ignoreId = null,
+      step = DEFAULT_STEP, ignoreId = null, pastOnly = false,
     } = opts;
     const duration = opts.duration || step;
     const now = opts.now || nowFloor();
@@ -94,7 +105,11 @@
         if (seen.has(iso)) continue; // overlapping windows shouldn't duplicate a slot
 
         const start = new Date(iso);
-        if (start.getTime() < now.getTime()) continue; // already passed
+        if (pastOnly) {
+          if (start.getTime() > now.getTime()) continue; // hasn't started yet
+        } else if (start.getTime() < now.getTime()) {
+          continue; // already passed
+        }
 
         const s = start.getTime();
         const e = s + duration * 60000;
@@ -125,8 +140,12 @@
        durationSelect         <select> of minutes (optional; default 30)
        getDentistId()         current dentist id, or falsy if none picked yet
        getIgnoreId()          appointment id being edited/rescheduled (optional)
+       getMode()              'upcoming' (default) or 'past'. In 'past' mode the date can be today
+                              or up to MAX_PAST_DAYS back, and the grid lists slots that have
+                              already started (for logging a walk-in the dentist already saw).
+                              Call applyMode() after the mode changes.
 
-     Returns { reload, reset, getSlot, getDuration, setDuration, setSlot }.
+     Returns { reload, reset, applyMode, getSlot, getDuration, setDuration, setSlot }.
      setSlot(iso, { pin: true }) keeps that time visible & selected even
      though it has passed — used when editing an existing appointment
      so notes/room can be changed without forcing a new time.
@@ -135,6 +154,8 @@
     const { dateInput, grid, durationSelect } = opts;
     const getDentistId = opts.getDentistId || (() => null);
     const getIgnoreId = opts.getIgnoreId || (() => null);
+    const getMode = opts.getMode || (() => 'upcoming');
+    const isPast = () => getMode() === 'past';
     const scheduleCache = new Map(); // dentistId -> weekly schedule rows
 
     let slots = [];
@@ -143,6 +164,17 @@
     let requestSeq = 0;
 
     const hint = (text) => { grid.innerHTML = `<p class="tooth-detail-empty">${text}</p>`; };
+
+    // The date box allows today onwards normally, or the last MAX_PAST_DAYS days up to today in past mode.
+    function applyBounds() {
+      if (isPast()) {
+        dateInput.min = daysAgoISODate(MAX_PAST_DAYS);
+        dateInput.max = todayISODate();
+      } else {
+        dateInput.min = todayISODate();
+        dateInput.removeAttribute('max');
+      }
+    }
 
     function getDuration() {
       return durationSelect ? Number(durationSelect.value) || DEFAULT_STEP : DEFAULT_STEP;
@@ -167,9 +199,13 @@
         list.sort();
       }
       if (!list.length) {
-        hint(dateInput.value === todayISODate()
-          ? 'No more open slots today — try another date.'
-          : 'No open slots that day — try another date.');
+        if (isPast()) {
+          hint('No free slots on that day. The dentist may not have been scheduled, or the times are already booked.');
+        } else {
+          hint(dateInput.value === todayISODate()
+            ? 'No more open slots today — try another date.'
+            : 'No open slots that day — try another date.');
+        }
         return;
       }
       grid.innerHTML = '';
@@ -187,7 +223,10 @@
       const dentistId = getDentistId();
       const dateStr = dateInput.value;
       if (!dentistId) { slots = []; selected = null; return hint('Choose a dentist first.'); }
-      if (!dateStr) { slots = []; selected = null; return hint('Pick a date to see open slots.'); }
+      if (!dateStr) {
+        slots = []; selected = null;
+        return hint(isPast() ? 'Pick the day the patient was seen.' : 'Pick a date to see open slots.');
+      }
 
       const seq = ++requestSeq;
       hint('Checking availability…');
@@ -208,6 +247,7 @@
           step: DEFAULT_STEP,
           duration: getDuration(),
           ignoreId: getIgnoreId(),
+          pastOnly: isPast(),
         });
         if (selected && !slots.includes(selected) && selected !== pinned) selected = null;
         render();
@@ -219,12 +259,24 @@
       }
     }
 
-    dateInput.min = todayISODate();
+    applyBounds();
     dateInput.addEventListener('change', () => { selected = null; reload(); });
     if (durationSelect) durationSelect.addEventListener('change', () => { selected = null; reload(); });
 
+    // Switch between upcoming and past: new date limits, clear the chosen slot, and drop a date
+    // that is no longer allowed (e.g. a past day picked, then back to "future visit").
+    function applyMode() {
+      selected = null; pinned = null; requestSeq++;
+      applyBounds();
+      if (dateInput.value && ((dateInput.min && dateInput.value < dateInput.min) || (dateInput.max && dateInput.value > dateInput.max))) {
+        dateInput.value = '';
+      }
+      reload();
+    }
+
     return {
       reload,
+      applyMode,
       getSlot: () => selected,
       getDuration,
       setDuration,
@@ -232,15 +284,15 @@
       reset() {
         slots = []; selected = null; pinned = null; requestSeq++;
         dateInput.value = '';
-        dateInput.min = todayISODate();
+        applyBounds();
         if (durationSelect) durationSelect.value = String(DEFAULT_STEP);
-        hint('Pick a date to see open slots.');
+        hint(isPast() ? 'Pick the day the patient was seen.' : 'Pick a date to see open slots.');
       },
     };
   }
 
   global.JinoSlots = {
     buildSlots, isInPast, todayISODate, dateToISODateStr, toMinutes, minutesToTimeStr,
-    formatSlotLabel, createSlotPicker,
+    formatSlotLabel, createSlotPicker, MAX_PAST_DAYS,
   };
 })(window);

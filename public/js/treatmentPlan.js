@@ -26,6 +26,7 @@
   };
 
   const ACTIVE_STATUSES = ['approved', 'in_progress'];
+  const CLOSED_STATUSES = ['approved', 'in_progress', 'completed', 'cancelled', 'rejected'];
   const STATUS_LABEL = {
     draft: 'Draft', proposed: 'Proposed', approved: 'Approved',
     in_progress: 'In Progress', completed: 'Completed', rejected: 'Rejected',
@@ -44,6 +45,7 @@
     try {
       const patient = await fetchMethod('/patients/me', 'GET', null, true);
       state.patientId = patient.id;
+      state.patientName = `${patient.first_name} ${patient.last_name}`;
 
       renderTopbarAvatar(`${patient.first_name} ${patient.last_name}`, await fetchProfilePhotoUrl(patient.id));
 
@@ -60,6 +62,13 @@
       // Items are needed up front for accurate stats (completed count, active-plan cost),
       // so load them for every plan once rather than only on expand.
       await Promise.all(state.plans.map((p) => loadPlanDetail(p.id, { silent: true })));
+
+      // Plans waiting for the patient's approval open by themselves, so the
+      // "Review and accept" button is the first thing they see.
+      state.plans.forEach((p) => {
+        const d = state.detail[p.id];
+        if (d && d.items && d.items.length && !CLOSED_STATUSES.includes(p.status)) d.open = true;
+      });
 
       renderStats();
       renderPlanList();
@@ -186,6 +195,18 @@
     if (!state.detail[planId]) state.detail[planId] = { open: false };
     state.detail[planId].open = !state.detail[planId].open;
     card.classList.toggle('is-open', state.detail[planId].open);
+    if (state.detail[planId].open) mountAcceptance(planId);
+  }
+
+  // Acceptance state + buttons (planAcceptance.js). Reloads the list once the patient has decided.
+  function mountAcceptance(planId) {
+    const host = document.getElementById(`planAccept-${planId}`);
+    const plan = state.plans.find((p) => String(p.id) === String(planId));
+    if (!host || !plan || !window.PlanAcceptance) return;
+    window.PlanAcceptance.mountRow(host, {
+      plan, role: 'patient', patientName: state.patientName,
+      onDone: () => loadTreatmentPlans(),
+    });
   }
 
   function renderPlanBody(planId) {
@@ -242,7 +263,9 @@
         <p class="bill-section-title">Procedures</p>
         ${itemsHtml}
       </div>
+      <div id="planAccept-${plan.id}"></div>
     `;
+    if (d.open) mountAcceptance(planId);
   }
 
   function dentistNameById(id) {

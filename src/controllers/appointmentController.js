@@ -42,6 +42,14 @@ const PAST_TIME_MESSAGE = 'That time has already passed — please choose a late
 const isInvalidDate = (value) => Number.isNaN(new Date(value).getTime());
 const isInPast = (value) => new Date(value).getTime() < Date.now() - PAST_GRACE_MS;
 
+// "Record a visit already seen": a walk-in patient saw the dentist while reception was away, and
+// reception logs it afterwards so the visit exists for notes, diagnosis and billing.
+// Kept deliberately narrow: reception/admin only, the visit must already have started, and not
+// older than PAST_VISIT_MAX_DAYS (keep in sync with JinoSlots.MAX_PAST_DAYS in slotUtils.js).
+const PAST_VISIT_MAX_DAYS = 30;
+const PAST_VISIT_STATUSES = ['completed', 'checked_in'];
+const PAST_VISIT_TAG = 'Walk-in (recorded after the visit)';
+
 // Postgres exclusion_violation (23P01) on overlapping dentist slots is caught
 // centrally by errorMiddleware.errorHandler — no special-casing needed here.
 const bookAppointment = (req, res, next) => {
@@ -52,13 +60,49 @@ const bookAppointment = (req, res, next) => {
   if (new Date(scheduled_end) <= new Date(scheduled_start)) {
     return res.status(400).json({ message: 'scheduled_end must be after scheduled_start' });
   }
-  if (isInPast(scheduled_start)) return res.status(400).json({ message: PAST_TIME_MESSAGE });
 
-  const data = { ...req.body, booked_by: req.user.id };
+  const recordPast = req.body.record_past === true;
+  let status;
+  let reason = req.body.reason;
+
+  if (recordPast) {
+    if (!['receptionist', 'admin'].includes(req.user.role)) {
+      return res.status(403).json({ message: 'Only reception or an admin can record a visit that has already happened' });
+    }
+    const startMs = new Date(scheduled_start).getTime();
+    if (startMs > Date.now() + PAST_GRACE_MS) {
+      return res.status(400).json({ message: 'That visit hasn’t started yet. Use the normal booking for a future time' });
+    }
+    if (startMs < Date.now() - PAST_VISIT_MAX_DAYS * 24 * 3600 * 1000) {
+      return res.status(400).json({ message: `Visits can only be recorded up to ${PAST_VISIT_MAX_DAYS} days back` });
+    }
+    status = req.body.status === undefined ? 'completed' : req.body.status;
+    if (!PAST_VISIT_STATUSES.includes(status)) {
+      return res.status(400).json({ message: `status must be one of: ${PAST_VISIT_STATUSES.join(', ')}` });
+    }
+    // Always tagged, so the dentist can tell a late entry from a booked visit.
+    const note = reason ? String(reason).trim().slice(0, 500) : '';
+    reason = note ? `${PAST_VISIT_TAG} — ${note}` : PAST_VISIT_TAG;
+  } else if (isInPast(scheduled_start)) {
+    return res.status(400).json({ message: PAST_TIME_MESSAGE });
+  }
+
+  // Built field by field (not spread from the body) so a normal booking can never set its own status.
+  const data = {
+    patient_id: req.body.patient_id,
+    dentist_id: req.body.dentist_id,
+    scheduled_start,
+    scheduled_end,
+    room: req.body.room,
+    reason,
+    status,
+    booked_by: req.user.id,
+  };
   createAppointment(data, (err, appointment) => {
     if (err) return next(err);
     res.status(201).json(appointment);
-    notifyPatient('booked', appointment.id);
+    // No "your appointment is booked" email for a visit that has already happened.
+    if (!recordPast) notifyPatient('booked', appointment.id);
   });
 };
 

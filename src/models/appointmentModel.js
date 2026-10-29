@@ -1,14 +1,19 @@
 const pool = require('../config/db');
 
+// `status` is optional: normal bookings leave it out and get the column default.
+// Only the "record a visit already seen" path passes one (completed / checked_in).
 const createAppointment = (data, callback) => {
-  const { patient_id, dentist_id, booked_by, scheduled_start, scheduled_end, reason, room } = data;
+  const {
+    patient_id, dentist_id, booked_by, scheduled_start, scheduled_end, reason, room, status,
+  } = data;
+  const columns = ['patient_id', 'dentist_id', 'booked_by', 'scheduled_start', 'scheduled_end', 'reason', 'room'];
+  const values = [patient_id, dentist_id, booked_by, scheduled_start, scheduled_end, reason, room];
+  if (status) { columns.push('status'); values.push(status); }
   const query = `
-    INSERT INTO "Appointment"
-      (patient_id, dentist_id, booked_by, scheduled_start, scheduled_end, reason, room)
-    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    INSERT INTO "Appointment" (${columns.join(', ')})
+    VALUES (${values.map((_, i) => `$${i + 1}`).join(', ')})
     RETURNING *
   `;
-  const values = [patient_id, dentist_id, booked_by, scheduled_start, scheduled_end, reason, room];
   pool.query(query, values, (err, result) => {
     if (err) return callback(err);
     callback(null, result.rows[0]);

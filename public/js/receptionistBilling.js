@@ -77,9 +77,39 @@
       renderStats();
       renderBillList();
       populateNewBillPatientSelect();
+      loadCollections();
     } catch (err) {
       handleLoadError(err);
     }
+  }
+
+  /* ============================================================
+     OVERDUE PAYMENT-PLAN INSTALMENTS (paymentPlans.js)
+     The panel hides itself if the feature isn't available yet, so the
+     rest of the billing page never depends on it.
+     ============================================================ */
+  async function loadCollections() {
+    const panel = document.getElementById('collectionsPanel');
+    const host = document.getElementById('collectionsHost');
+    if (!panel || !host || !window.PaymentPlans) return;
+    const ok = await window.PaymentPlans.renderCollections(host, { onOpenBill: openBillFromCollections });
+    panel.style.display = ok === false ? 'none' : '';
+  }
+
+  // Jump to a bill from the overdue list: clear filters so it is visible, open it, scroll to it.
+  async function openBillFromCollections(billId) {
+    state.activeFilter = 'all';
+    state.searchTerm = '';
+    const search = document.getElementById('billSearch');
+    if (search) search.value = '';
+    document.querySelectorAll('#statusTabs .filter-tab').forEach((t) => {
+      t.classList.toggle('is-active', t.getAttribute('data-status') === 'all');
+    });
+    renderBillList();
+    const card = document.querySelector(`.bill-card[data-bill-id="${billId}"]`);
+    if (!card) return;
+    if (!card.classList.contains('is-open')) await toggleBill(billId);
+    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function handleLoadError(err) {
@@ -237,12 +267,14 @@
   async function loadBillDetail(billId) {
     const body = document.getElementById(`billBody-${billId}`);
     try {
-      const [items, payments, transactions] = await Promise.all([
+      const [items, payments, transactions, planRes] = await Promise.all([
         fetchMethod(`/bill-items/bill/${billId}`, 'GET', null, true),
         fetchMethod(`/payments/bill/${billId}`, 'GET', null, true),
         fetchMethod(`/mpesa/bill/${billId}`, 'GET', null, true),
+        // Best-effort: a problem with payment plans must never stop a bill from opening.
+        fetchMethod(`/payment-plans/bill/${billId}`, 'GET', null, true).catch(() => ({ plan: null, unavailable: true })),
       ]);
-      state.detail[billId] = { open: true, loaded: true, items, payments, transactions };
+      state.detail[billId] = { open: true, loaded: true, items, payments, transactions, plan: planRes.plan, planUnavailable: !!planRes.unavailable };
       renderBillBody(billId);
     } catch (err) {
       if (body) body.innerHTML = '<p class="bill-body-empty">Could not load this bill\'s details.</p>';
@@ -295,6 +327,8 @@
       : '<p class="bill-body-empty">No M-Pesa activity for this bill.</p>';
 
     const pendingTxn = d.transactions.find((t) => t.status === 'pending');
+    const showPlan = window.PaymentPlans && !d.planUnavailable
+      && (d.plan || ['unpaid', 'partially_paid'].includes(bill.status));
 
     // No void action here — voiding a bill is admin-only (billRoutes.js:
     // authorizeRoles('admin')). Receptionists get record-payment + STK only.
@@ -319,6 +353,7 @@
         <p class="bill-section-title">M-Pesa activity</p>
         ${txnHtml}
       </div>
+      ${showPlan ? `<div class="bill-section"><p class="bill-section-title">Payment plan</p><div id="planHost-${bill.id}"></div></div>` : ''}
       <div class="bill-actions">
         <button class="btn btn-outline btn-sm" data-action="print-invoice" data-id="${bill.id}">
           Print invoice
@@ -335,6 +370,13 @@
         ` : ''}
       </div>
     `;
+
+    const planHost = body.querySelector(`#planHost-${bill.id}`);
+    if (planHost) {
+      window.PaymentPlans.renderSection(planHost, {
+        bill, plan: d.plan, canManage: true, onChange: () => refreshBillsAndKeepOpen(bill.id),
+      });
+    }
 
     const addItemBtn = body.querySelector('[data-action="add-item"]');
     if (addItemBtn) addItemBtn.addEventListener('click', () => addLineItem(bill.id));
@@ -399,6 +441,7 @@
       state.bills = statusResults.flat().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       renderStats();
       renderBillList();
+      loadCollections();
       await loadBillDetail(billId);
     } catch (err) {
       showToast(err.message || 'Could not refresh billing data');

@@ -375,6 +375,7 @@
       durationSelect: document.getElementById('bookDuration'),
       grid: document.getElementById('bookSlotGrid'),
       getDentistId: () => selectedDentistId('#bookDentistList'),
+      getMode: () => state.bookMode, // 'upcoming' or 'past' (record a visit already seen)
     });
     state.editPicker = JinoSlots.createSlotPicker({
       dateInput: document.getElementById('editApptDate'),
@@ -382,6 +383,11 @@
       grid: document.getElementById('editApptSlotGrid'),
       getDentistId: () => selectedDentistId('#editApptDentistList'),
       getIgnoreId: () => (state.activeApptForEdit ? state.activeApptForEdit.id : null),
+    });
+
+    state.bookMode = 'upcoming';
+    document.querySelectorAll('#bookModeTabs .filter-tab').forEach((tab) => {
+      tab.addEventListener('click', () => setBookMode(tab.dataset.mode));
     });
 
     document.getElementById('bookPatientSearch').addEventListener('input', debounce(onBookPatientSearch, 250));
@@ -476,7 +482,26 @@
     });
   }
 
+  // Switches the Book modal between a future booking and logging a visit that already happened.
+  function setBookMode(mode) {
+    const past = mode === 'past';
+    state.bookMode = past ? 'past' : 'upcoming';
+    document.querySelectorAll('#bookModeTabs .filter-tab').forEach((tab) => {
+      const on = tab.dataset.mode === state.bookMode;
+      tab.classList.toggle('is-active', on);
+      tab.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    document.getElementById('bookPastNote').style.display = past ? 'block' : 'none';
+    document.getElementById('bookVisitStatusWrap').style.display = past ? '' : 'none';
+    document.getElementById('bookModalKicker').textContent = past ? 'Late entry' : 'New appointment';
+    document.getElementById('bookModalTitle').textContent = past ? 'Record a visit already seen' : 'Book for a patient';
+    document.getElementById('bookSlotLabel').textContent = past ? 'Time slot the patient was seen' : 'Available times';
+    document.getElementById('bookSubmitBtn').textContent = past ? 'Record visit' : 'Book appointment';
+    state.bookPicker.applyMode();
+  }
+
   async function submitBooking() {
+    const past = state.bookMode === 'past';
     const patient = state.bookSelectedPatient;
     const dentistOpt = document.querySelector('#bookDentistList .dentist-opt.is-selected');
     const slot = state.bookPicker.getSlot();
@@ -485,14 +510,26 @@
 
     if (!patient) return showToast('Select a patient first');
     if (!dentistOpt) return showToast('Select a dentist');
-    if (!slot) return showToast('Pick a date and an available time');
-    if (JinoSlots.isInPast(slot)) {
+    if (!slot) return showToast(past ? 'Pick the day and the time slot the patient was seen' : 'Pick a date and an available time');
+    if (!past && JinoSlots.isInPast(slot)) {
       state.bookPicker.reload();
       return showToast('That time has just passed — pick a later slot');
+    }
+    if (past && new Date(slot).getTime() > Date.now()) {
+      state.bookPicker.reload();
+      return showToast('That time hasn’t started yet — pick a slot that has already passed');
     }
 
     const startDate = new Date(slot);
     const endDate = new Date(startDate.getTime() + state.bookPicker.getDuration() * 60000);
+
+    // A recorded visit is a statement that something happened, so make the receptionist confirm it.
+    if (past) {
+      const dentistName = dentistOpt.querySelector('.t').textContent.trim();
+      const when = `${startDate.toLocaleDateString('en-KE', { weekday: 'short', day: 'numeric', month: 'short' })} at ${JinoSlots.formatSlotLabel(slot)}`;
+      const ok = window.confirm(`Record that ${patient.first_name} ${patient.last_name} was seen by ${dentistName} on ${when}?`);
+      if (!ok) return null;
+    }
 
     try {
       await fetchMethod('/appointments', 'POST', {
@@ -502,17 +539,21 @@
         scheduled_end: endDate.toISOString(),
         room: room || null,
         reason: reason || null,
+        ...(past ? { record_past: true, status: document.getElementById('bookVisitStatus').value } : {}),
       }, true);
-      showToast('Appointment booked');
+      showToast(past ? 'Visit recorded' : 'Appointment booked');
       closeModal('bookModalScrim');
       resetBookModal();
       loadDashboard();
     } catch (err) {
-      showToast(err.message || 'Could not book appointment');
+      showToast(err.message || (past ? 'Could not record the visit' : 'Could not book appointment'));
     }
+    return null;
   }
 
   function resetBookModal() {
+    setBookMode('upcoming');
+    document.getElementById('bookVisitStatus').value = 'completed';
     state.bookSelectedPatient = null;
     document.getElementById('bookPatientSearch').value = '';
     document.getElementById('bookPatientResults').innerHTML = '';

@@ -1,0 +1,118 @@
+/* ============================================================
+   plan-finance.css — treatment plan acceptance (pa-*) and
+   payment plans (pp-*). Uses the shared colour variables.
+   ============================================================ */
+
+/* ---- shared window ---- */
+.pa-scrim{
+  display:none;position:fixed;inset:0;background:rgba(10,23,48,.55);z-index:150;
+  align-items:center;justify-content:center;padding:16px;
+}
+.pa-scrim.is-open{display:flex;}
+.pa-modal{
+  width:100%;max-width:560px;max-height:92vh;overflow:auto;background:var(--white);
+  border-radius:var(--radius-lg);box-shadow:var(--shadow-card);padding:22px 22px 18px;
+}
+.pp-modal{max-width:640px;}
+.pa-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+.pa-kicker{margin:0 0 4px;font-size:11.5px;font-weight:700;color:var(--blue-600);text-transform:uppercase;letter-spacing:.05em;}
+.pa-head h2{margin:0;font-size:19px;font-weight:700;color:var(--navy-950);}
+.pa-x{border:0;background:none;font-size:28px;line-height:1;color:var(--slate-500);cursor:pointer;padding:0 4px;}
+.pa-body{margin-top:14px;}
+.pa-error{margin:12px 0 0;color:var(--red-700);font-size:13px;font-weight:600;}
+.pa-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid var(--slate-200);}
+.pa-foot-r{display:flex;gap:10px;margin-left:auto;}
+
+/* ---- review + sign ---- */
+.pa-items{border:1px solid var(--slate-200);border-radius:var(--radius-md);overflow:hidden;}
+.pa-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--slate-200);font-size:13.5px;}
+.pa-item:last-child{border-bottom:0;}
+.pa-n{flex:0 0 22px;height:22px;border-radius:50%;background:var(--slate-100);color:var(--slate-500);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+.pa-proc{flex:1;color:var(--navy-950);font-weight:600;}
+.pa-proc em{font-style:normal;font-weight:500;color:var(--slate-500);font-size:12px;margin-left:4px;}
+.pa-amt{font-weight:600;color:var(--navy-900);white-space:nowrap;}
+.pa-total{display:flex;justify-content:space-between;padding:12px 4px 0;font-size:15px;color:var(--navy-950);}
+.pa-note{margin:6px 0 0;font-size:12px;color:var(--slate-500);}
+.pa-signer{display:grid;grid-template-columns:1fr;gap:12px;margin-top:16px;}
+.pa-sigwrap{position:relative;border:1.5px dashed var(--slate-300);border-radius:var(--radius-md);background:var(--white);}
+.pa-sig{display:block;width:100%;height:150px;touch-action:none;cursor:crosshair;border-radius:var(--radius-md);}
+.pa-sig-hint{position:absolute;left:14px;top:12px;font-size:12px;color:var(--slate-300);pointer-events:none;}
+.pa-sig-clear{position:absolute;right:8px;top:8px;border:0;background:var(--slate-100);color:var(--slate-700);font-size:12px;font-weight:600;padding:4px 10px;border-radius:100px;cursor:pointer;}
+.pa-confirm{display:flex;gap:10px;align-items:flex-start;margin-top:14px;font-size:13.5px;color:var(--navy-900);line-height:1.45;cursor:pointer;}
+.pa-confirm input{margin-top:3px;flex:0 0 auto;}
+.pa-decline-link{border:0;background:none;color:var(--slate-500);font-size:12.5px;text-decoration:underline;cursor:pointer;padding:0;}
+.pa-decline{margin-top:14px;padding:14px;border-radius:var(--radius-sm);background:var(--slate-100);}
+
+/* ---- status row on a plan ---- */
+.pa-row{margin:14px 0 4px;}
+.pa-strip{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;line-height:1.45;}
+.pa-strip.is-ok{background:var(--green-50);color:var(--green-700);}
+.pa-strip.is-warn{background:var(--amber-50);color:var(--amber-700);}
+.pa-strip.is-wait{background:var(--blue-50);color:var(--navy-900);border:1px solid var(--blue-100);}
+.pa-strip.is-plain{background:var(--slate-100);color:var(--slate-700);}
+.pa-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+
+/* ---- payment plan: setup ---- */
+.pp-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
+.pp-sum div{background:var(--slate-100);border-radius:var(--radius-sm);padding:10px 12px;}
+.pp-sum div.is-key{background:var(--blue-50);border:1px solid var(--blue-100);}
+.pp-sum span{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--slate-500);}
+.pp-sum b{font-size:15px;color:var(--navy-950);}
+.pp-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.pp-chips{display:flex;gap:6px;margin-top:7px;}
+.pp-chips button{border:1px solid var(--slate-200);background:var(--white);border-radius:100px;padding:3px 11px;font-size:12px;font-weight:600;color:var(--slate-700);cursor:pointer;}
+.pp-chips button:hover{border-color:var(--blue-500);color:var(--blue-600);}
+.pp-preview{margin-top:16px;}
+
+/* ---- payment plan: tables ---- */
+.pp-scroll{overflow-x:auto;}
+.pp-table{width:100%;border-collapse:collapse;font-size:13px;}
+.pp-table th{text-align:left;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--slate-500);border-bottom:2px solid var(--slate-200);}
+.pp-table td{padding:9px 10px;border-bottom:1px solid var(--slate-200);color:var(--navy-900);vertical-align:top;}
+.pp-table tfoot td{font-weight:700;border-bottom:0;color:var(--navy-950);}
+.pp-table tr.is-paid td{color:var(--slate-500);}
+.pp-sub{display:block;font-size:11.5px;color:var(--slate-500);margin-top:2px;}
+.pp-late{display:block;font-size:11.5px;color:var(--red-700);font-weight:600;margin-top:2px;}
+.pp-badge{display:inline-block;padding:2px 9px;border-radius:100px;font-size:11px;font-weight:700;}
+.pp-badge.is-paid{background:var(--green-50);color:var(--green-700);}
+.pp-badge.is-overdue{background:var(--red-50);color:var(--red-700);}
+.pp-badge.is-partial{background:var(--amber-50);color:var(--amber-700);}
+.pp-badge.is-upcoming{background:var(--slate-100);color:var(--slate-700);}
+
+/* ---- payment plan: on a bill ---- */
+.pp-empty{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 14px;border:1px dashed var(--slate-300);border-radius:var(--radius-sm);font-size:13px;color:var(--slate-500);}
+.pp-card{border:1px solid var(--slate-200);border-radius:var(--radius-md);padding:14px;background:var(--white);}
+.pp-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:8px;}
+.pp-title{margin:0;font-size:14px;font-weight:700;color:var(--navy-950);}
+.pp-meta{margin:3px 0 0;font-size:12.5px;color:var(--slate-500);}
+.pp-bad{color:var(--red-700);}
+.pp-state{margin-left:8px;padding:2px 9px;border-radius:100px;font-size:11px;font-weight:700;vertical-align:middle;}
+.pp-state.is-ok{background:var(--green-50);color:var(--green-700);}
+.pp-state.is-bad{background:var(--red-50);color:var(--red-700);}
+.pp-state.is-plain{background:var(--slate-100);color:var(--slate-700);}
+.pp-next{margin:0;font-size:13px;color:var(--navy-900);}
+.pp-warn{margin:10px 0 0;padding:8px 12px;border-radius:var(--radius-sm);background:var(--amber-50);color:var(--amber-700);font-size:12.5px;}
+.pp-notes{margin:10px 0 0;font-size:12.5px;color:var(--slate-700);font-style:italic;}
+.pp-foot{margin:10px 0 0;font-size:11.5px;color:var(--slate-500);}
+.pp-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+.pp-danger{color:var(--red-700);}
+
+/* ---- collections ---- */
+.pp-coll-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
+.pp-coll-title{margin:0;font-size:16px;font-weight:700;color:var(--navy-950);}
+.pp-buckets{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
+.pp-bucket{border:1px solid var(--slate-200);border-radius:var(--radius-md);padding:11px 13px;background:var(--white);}
+.pp-bucket.has{border-color:var(--amber-700);background:var(--amber-50);}
+.pp-bucket span{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--slate-500);}
+.pp-bucket b{display:block;font-size:15px;color:var(--navy-950);margin-top:2px;}
+.pp-bucket em{font-style:normal;font-size:11.5px;color:var(--slate-500);}
+.pp-age{display:inline-block;padding:2px 9px;border-radius:100px;font-size:11.5px;font-weight:700;background:var(--amber-50);color:var(--amber-700);}
+.pp-age.age-61-90,.pp-age.age-90plus{background:var(--red-50);color:var(--red-700);}
+.pp-row-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+.pp-row-actions .btn{text-decoration:none;}
+
+@media (max-width:640px){
+  .pp-grid{grid-template-columns:1fr;}
+  .pp-sum{grid-template-columns:1fr;}
+  .pp-buckets{grid-template-columns:1fr 1fr;}
+}

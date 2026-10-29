@@ -253,13 +253,15 @@
   async function loadBillDetail(billId) {
     const body = document.getElementById(`billBody-${billId}`);
     try {
-      const [items, payments, transactions, claim] = await Promise.all([
+      const [items, payments, transactions, claim, planRes] = await Promise.all([
         fetchMethod(`/bill-items/bill/${billId}`, 'GET', null, true),
         fetchMethod(`/payments/bill/${billId}`, 'GET', null, true),
         fetchMethod(`/mpesa/bill/${billId}`, 'GET', null, true),
         fetchMethod(`/insurance-claims/bill/${billId}`, 'GET', null, true).catch(() => null),
+        // Best-effort: payment plans must never stop a bill from opening.
+        fetchMethod(`/payment-plans/bill/${billId}`, 'GET', null, true).catch(() => ({ plan: null })),
       ]);
-      state.detail[billId] = { open: true, loaded: true, items, payments, transactions, claim };
+      state.detail[billId] = { open: true, loaded: true, items, payments, transactions, claim, plan: planRes.plan };
       renderBillBody(billId);
     } catch (err) {
       body.innerHTML = '<p class="bill-body-empty">Could not load this bill\'s details.</p>';
@@ -335,6 +337,7 @@
       </div>
       ${txnHtml ? `<div class="bill-section"><p class="bill-section-title">M-Pesa activity</p>${txnHtml}</div>` : ''}
       ${claimHtml}
+      ${d.plan ? `<div class="bill-section"><p class="bill-section-title">Your payment plan</p><div id="planHost-${bill.id}"></div></div>` : ''}
       <div class="bill-actions">
         ${bill.status !== 'void' && balance > 0 ? `
           <button class="btn btn-primary btn-sm" data-action="pay" data-id="${bill.id}"
@@ -352,6 +355,11 @@
         </button>
       </div>
     `;
+
+    const planHost = body.querySelector(`#planHost-${bill.id}`);
+    if (planHost && window.PaymentPlans) {
+      window.PaymentPlans.renderSection(planHost, { bill, plan: d.plan, canManage: false });
+    }
 
     const payBtn = body.querySelector('[data-action="pay"]');
     if (payBtn) payBtn.addEventListener('click', () => openPayModal(bill.id));
@@ -385,14 +393,21 @@
     document.getElementById('payFormView').style.display = 'block';
     document.getElementById('payWaitingView').style.display = 'none';
 
+    // With a payment plan, suggest the next instalment instead of the whole balance.
+    // The patient can still change the amount.
+    const plan = state.detail[billId] && state.detail[billId].plan;
+    const suggested = plan && ['active', 'overdue'].includes(plan.state) && plan.next_due
+      ? Math.min(Math.ceil(plan.next_due.outstanding), Math.round(balance)) : null;
+
     document.getElementById('paySummary').innerHTML = `
       <div class="pay-summary-row"><span>Bill</span><b>#${shortId(bill.id)}</b></div>
       <div class="pay-summary-row"><span>Total</span><b>${formatMoney(bill.total_amount)}</b></div>
       <div class="pay-summary-row"><span>Amount due</span><b>${formatMoney(balance)}</b></div>
+      ${suggested ? '<div class="pay-summary-row"><span>Next plan payment</span><b>' + formatMoney(suggested) + '</b></div>' : ''}
     `;
 
     document.getElementById('payPhone').value = state.patientPhone || '';
-    document.getElementById('payAmount').value = balance > 0 ? Math.round(balance) : '';
+    document.getElementById('payAmount').value = balance > 0 ? (suggested || Math.round(balance)) : '';
     document.getElementById('payAmount').max = String(Math.round(balance));
 
     const submitBtn = document.getElementById('paySubmit');

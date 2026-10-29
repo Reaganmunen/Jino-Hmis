@@ -314,6 +314,29 @@
     }
     list.innerHTML = state.patientPlans.map(renderPlanCard).join('');
     bindPlanCardActions(list);
+    mountAcceptanceRows(list);
+  }
+
+  // Signature status, "record acceptance in clinic" and quote PDF on each plan (planAcceptance.js).
+  function mountAcceptanceRows(scope) {
+    if (!window.PlanAcceptance || !state.activePatient) return;
+    const patient = state.activePatient;
+    scope.querySelectorAll('[data-role="plan-accept"]').forEach((host) => {
+      const plan = state.patientPlans.find((p) => String(p.id) === host.getAttribute('data-plan-id'));
+      if (!plan) return;
+      window.PlanAcceptance.mountRow(host, {
+        plan,
+        role: 'staff',
+        patientName: `${patient.first_name} ${patient.last_name}`,
+        onDone: async () => {
+          try {
+            state.patientPlans = await fetchMethod(`/treatment-plans/patient/${patient.id}`, 'GET', null, true);
+            renderPatientPlans();
+            reloadActivePlans();
+          } catch (err) { handleLoadError(err); }
+        },
+      });
+    });
   }
 
   function renderPlanCard(plan) {
@@ -334,8 +357,9 @@
           <span class="plan-date">Created ${formatDate(plan.created_at)}</span>
           ${plan.diagnosis_id ? `<span class="plan-date">Diagnosis #${escapeHtml(String(plan.diagnosis_id))}</span>` : ''}
         </div>
+        <div data-role="plan-accept" data-plan-id="${plan.id}"></div>
         <div class="plan-actions">
-          ${!['approved', 'in_progress', 'completed', 'cancelled'].includes(plan.status) ? `<button class="plan-action-btn approve" data-plan-action="approved" data-plan-id="${plan.id}" type="button">Approve for patient</button>` : ''}
+          ${!['approved', 'in_progress', 'completed', 'cancelled'].includes(plan.status) ? `<button class="plan-action-btn approve" data-plan-action="approved" data-plan-id="${plan.id}" type="button" title="Approves the plan with no signature on file">Approve by phone (no signature)</button>` : ''}
           ${plan.status === 'approved' ? `<button class="plan-action-btn start" data-plan-action="in_progress" data-plan-id="${plan.id}" type="button">Start treatment</button>` : ''}
           ${plan.status === 'in_progress' ? `<button class="plan-action-btn complete" data-plan-action="completed" data-plan-id="${plan.id}" type="button">Mark completed</button>` : ''}
           ${!['completed', 'cancelled'].includes(plan.status) ? `<button class="plan-action-btn cancel" data-plan-action="cancelled" data-plan-id="${plan.id}" type="button">Cancel plan</button>` : ''}

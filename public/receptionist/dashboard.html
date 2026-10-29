@@ -189,13 +189,24 @@
   <div class="modal">
     <div class="modal-head">
       <div>
-        <p class="modal-kicker">New appointment</p>
-        <h2>Book for a patient</h2>
+        <p class="modal-kicker" id="bookModalKicker">New appointment</p>
+        <h2 id="bookModalTitle">Book for a patient</h2>
       </div>
       <button class="icon-link-btn" id="bookModalClose" aria-label="Close" type="button">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
       </button>
     </div>
+
+    <!-- Book a future visit, or log a walk-in the dentist already saw while reception was away -->
+    <div class="filter-tabs" id="bookModeTabs" role="tablist" aria-label="Type of booking" style="margin-top:16px;">
+      <button class="filter-tab is-active" type="button" role="tab" aria-selected="true" data-mode="upcoming">Book a future visit</button>
+      <button class="filter-tab" type="button" role="tab" aria-selected="false" data-mode="past">Record a visit already seen</button>
+    </div>
+    <p id="bookPastNote" style="display:none;margin:10px 0 0;padding:10px 12px;border-radius:var(--radius-sm);background:var(--blue-50);border:1px solid var(--blue-100);color:var(--navy-900);font-size:12.5px;line-height:1.5;">
+      For a patient who walked in and saw the dentist while reception was away. Pick the day and the time slot they were seen.
+      The visit is saved as a past appointment, so the dentist can add notes and a diagnosis to it, and it can be billed.
+      No email is sent to the patient.
+    </p>
 
     <div style="margin-top:18px;">
       <label class="field-label">Patient</label>
@@ -224,7 +235,7 @@
         </select>
       </div>
       <div class="full">
-        <label class="field-label">Available times</label>
+        <label class="field-label" id="bookSlotLabel">Available times</label>
         <div class="slot-grid" id="bookSlotGrid"><p class="tooth-detail-empty">Choose a dentist, then pick a date.</p></div>
       </div>
       <div class="full">
@@ -234,6 +245,13 @@
       <div class="full">
         <label class="field-label">Reason for visit</label>
         <textarea class="field-input" id="bookReason" rows="2" placeholder="e.g. Routine checkup, toothache…"></textarea>
+      </div>
+      <div class="full" id="bookVisitStatusWrap" style="display:none;">
+        <label class="field-label" for="bookVisitStatus">Where is the visit now?</label>
+        <select class="field-input" id="bookVisitStatus">
+          <option value="completed">Finished. The patient has been seen</option>
+          <option value="checked_in">Still with the dentist</option>
+        </select>
       </div>
     </div>
 

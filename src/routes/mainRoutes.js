@@ -10,6 +10,7 @@ router.use('/tooth-chart', require('./toothChartRoutes'));
 router.use('/diagnoses', require('./diagnosisRoutes'));
 router.use('/treatment-plans', require('./treatmentPlanRoutes'));
 router.use('/treatment-plan-items', require('./treatmentPlanItemRoutes'));
+router.use('/plan-acceptance', require('./planAcceptanceRoutes')); // patient e-signature on a treatment plan + quote PDF
 router.use('/prescriptions', require('./prescriptionRoutes'));
 router.use('/prescription-templates', require('./prescriptionTemplateRoutes')); // dentist-saved Rx shortcuts
 router.use('/consent-forms', require('./consentFormRoutes'));
@@ -24,6 +25,7 @@ router.use('/inventory-items', require('./inventoryItemRoutes'));
 router.use('/inventory-usage', require('./inventoryUsageRoutes'));
 router.use('/services', require('./serviceRoutes'));
 router.use('/bills', require('./billRoutes'));
+router.use('/payment-plans', require('./paymentPlanRoutes')); // deposit + instalment schedules on a bill, overdue/collections view
 router.use('/bill-items', require('./billItemRoutes'));
 router.use('/payments', require('./paymentRoutes'));
 router.use('/mpesa', require('./mpesaRoutes'));
