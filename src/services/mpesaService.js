@@ -27,18 +27,9 @@ const getAccessToken = (callback) => {
     .catch((err) => callback(err));
 };
 
-const getTimestamp = () => {
-  const now = new Date();
-  const pad = (n) => String(n).padStart(2, '0');
-  return (
-    now.getFullYear().toString() +
-    pad(now.getMonth() + 1) +
-    pad(now.getDate()) +
-    pad(now.getHours()) +
-    pad(now.getMinutes()) +
-    pad(now.getSeconds())
-  );
-};
+// Daraja expects Nairobi time (EAT). Render/Vercel servers run in UTC, so don't use local time.
+const getTimestamp = () =>
+  new Date().toLocaleString('sv-SE', { timeZone: 'Africa/Nairobi' }).replace(/\D/g, '');
 
 // Normalizes 07XXXXXXXX / +254XXXXXXXXX / 254XXXXXXXXX to 254XXXXXXXXX
 const normalizePhone = (phone) => {
@@ -66,10 +57,10 @@ const initiateStkPush = ({ phone, amount, accountReference, transactionDesc }, c
         BusinessShortCode: process.env.MPESA_SHORTCODE,
         Password: password,
         Timestamp: timestamp,
-        TransactionType: 'CustomerPayBillOnline',
+        TransactionType: process.env.MPESA_TRANSACTION_TYPE || 'CustomerPayBillOnline',
         Amount: Math.round(amount),
         PartyA: normalizedPhone,
-        PartyB: process.env.MPESA_SHORTCODE,
+        PartyB: process.env.MPESA_PARTY_B || process.env.MPESA_SHORTCODE,
         PhoneNumber: normalizedPhone,
         CallBackURL: process.env.MPESA_CALLBACK_URL,
         AccountReference: accountReference,
@@ -82,4 +73,29 @@ const initiateStkPush = ({ phone, amount, accountReference, transactionDesc }, c
   });
 };
 
-module.exports = { getAccessToken, initiateStkPush, normalizePhone };
+// Asks Safaricom what happened to an STK push. Used to settle payments whose callback never arrived.
+const queryStkStatus = (checkoutRequestId, callback) => {
+  getAccessToken((tokenErr, accessToken) => {
+    if (tokenErr) return callback(tokenErr);
+
+    const timestamp = getTimestamp();
+    const password = Buffer.from(
+      `${process.env.MPESA_SHORTCODE}${process.env.MPESA_PASSKEY}${timestamp}`
+    ).toString('base64');
+
+    axios.post(
+      `${BASE_URL}/mpesa/stkpushquery/v1/query`,
+      {
+        BusinessShortCode: process.env.MPESA_SHORTCODE,
+        Password: password,
+        Timestamp: timestamp,
+        CheckoutRequestID: checkoutRequestId,
+      },
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    )
+      .then((response) => callback(null, response.data))
+      .catch((err) => callback(err.response ? err.response.data : err));
+  });
+};
+
+module.exports = { getAccessToken, initiateStkPush, queryStkStatus, normalizePhone };

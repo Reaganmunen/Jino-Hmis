@@ -4,9 +4,11 @@ const { initiatePayment, handleCallback, checkStatus, getTransactionsByBill } = 
 const verifyToken = require('../middleware/authMiddleware');
 const { authorizeRoles } = require('../middleware/roleMiddleware');
 const { mpesaInitiateLimiter } = require('../middleware/rateLimiter');
+const mpesaCallbackGuard = require('../middleware/mpesaCallbackGuard');
 
 // Public — Safaricom calls this directly, it can't send a JWT. Must stay outside verifyToken.
-router.post('/callback', handleCallback);
+// The :secret segment must equal MPESA_CALLBACK_SECRET, and MPESA_CALLBACK_URL must end with it.
+router.post('/callback/:secret', mpesaCallbackGuard, handleCallback);
 
 // Everything else requires auth
 router.post('/initiate', verifyToken, mpesaInitiateLimiter, authorizeRoles('admin', 'receptionist', 'patient'), initiatePayment);

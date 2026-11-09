@@ -4,6 +4,7 @@ const path = require('path');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 const { generalLimiter } = require('./middleware/rateLimiter');
 const mainRoutes = require('./routes/mainRoutes');
+const { brandedPage } = require('./config/branding');
 
 const app = express();
 
@@ -14,6 +15,11 @@ app.set('trust proxy', 1);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Login and sign-up pages carry this clinic's branding (colours, logo, name) from BRAND_* env
+// vars. Must come before express.static so these routes win over the plain files.
+app.get('/login.html', brandedPage('login.html'));
+app.get('/register.html', brandedPage('register.html'));
 
 // Serve frontend assets without API rate limiting
 app.use(express.static(path.join(__dirname, '..', 'public')));

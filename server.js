@@ -2,6 +2,7 @@ require('dotenv').config();
 
 const app = require('./src/app');
 const pool = require('./src/config/db');
+const { startMpesaReconciliation } = require('./src/jobs/mpesaReconciliation');
 
 const PORT = process.env.PORT || 5000;
 
@@ -14,5 +15,6 @@ pool.query('SELECT 1', (err) => {
 
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    startMpesaReconciliation();
   });
 });
