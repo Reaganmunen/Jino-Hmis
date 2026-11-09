@@ -23,6 +23,9 @@ const shouldVerifyCallback = () =>
 
 const ACK = { ResultCode: 0, ResultDesc: 'Accepted' };
 
+// Don't query Safaricom on every poll; give the customer a few seconds to enter their PIN.
+const STATUS_QUERY_MIN_AGE_MS = 8 * 1000;
+
 const canAccessBill = (user, bill) => {
   if (STAFF.includes(user.role)) return true;
   if (user.role === 'patient') return user.patient_id === bill.patient_id;
@@ -237,7 +240,40 @@ const checkStatus = (req, res, next) => {
       if (!canAccessBill(req.user, bill)) {
         return res.status(403).json({ message: 'You do not have permission to access this resource' });
       }
-      res.json(transaction);
+
+      // Still pending after a few seconds: ask Safaricom now instead of waiting for the
+      // callback or the reconciliation job. settleTransactionIfPending guarantees only one
+      // of (callback, this poll, reconciliation) ever credits the bill.
+      const ageMs = Date.now() - new Date(transaction.created_at).getTime();
+      if (transaction.status !== 'pending' || ageMs < STATUS_QUERY_MIN_AGE_MS) {
+        return res.json(transaction);
+      }
+
+      queryStkStatus(transaction.checkout_request_id, (queryErr, r) => {
+        // Errors or 4999 mean "still processing"; just return the current row.
+        if (queryErr || !r || r.ResultCode === undefined || String(r.ResultCode) === '4999') {
+          return res.json(transaction);
+        }
+        const success = String(r.ResultCode) === '0';
+        settleTransactionIfPending(
+          transaction.checkout_request_id,
+          {
+            status: success ? 'success' : 'failed',
+            mpesa_receipt: null,
+            result_desc: r.ResultDesc || null,
+            raw_callback: { source: 'status-poll', response: r },
+          },
+          (settleErr, settled) => {
+            if (settleErr) {
+              console.error('Status-poll settle failed:', settleErr);
+              return res.json(transaction);
+            }
+            const respond = () => findByCheckoutRequestId(transaction.checkout_request_id, (e, fresh) => res.json(fresh || settled || transaction));
+            if (settled && success) return creditBill(settled, null, null, respond);
+            respond();
+          }
+        );
+      });
     });
   });
 };
