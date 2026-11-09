@@ -1,4 +1,4 @@
-const { initiateStkPush, queryStkStatus } = require('../services/mpesaService');
+const { initiateStkPush, queryStkStatus, normalizePhone } = require('../services/mpesaService');
 const {
   createMpesaTransaction, findByCheckoutRequestId, settleTransactionIfPending, findTransactionsByBill,
 } = require('../models/mpesaTransactionModel');
@@ -44,6 +44,12 @@ const initiatePayment = (req, res, next) => {
     return res.status(400).json({ message: 'amount must be at least 1' });
   }
 
+  // Reject bad numbers here instead of letting Safaricom answer "Invalid PhoneNumber".
+  const normalizedPhone = normalizePhone(String(phone));
+  if (!/^254[17]\d{8}$/.test(normalizedPhone)) {
+    return res.status(400).json({ message: 'Enter a valid Safaricom number, e.g. 0712345678' });
+  }
+
   findBillById(bill_id, (billErr, bill) => {
     if (billErr) return next(billErr);
     if (!bill) return res.status(404).json({ message: 'Bill not found' });
@@ -73,7 +79,7 @@ const initiatePayment = (req, res, next) => {
       }
 
       initiateStkPush(
-        { phone, amount, accountReference: shortBillReference(bill_id), transactionDesc: `Bill ${bill_id}` },
+        { phone: normalizedPhone, amount, accountReference: shortBillReference(bill_id), transactionDesc: `Bill ${bill_id}` },
         (stkErr, stkResponse) => {
           if (stkErr) {
             console.error('M-Pesa STK push failed:', stkErr);
@@ -83,7 +89,7 @@ const initiatePayment = (req, res, next) => {
           createMpesaTransaction(
             {
               bill_id,
-              phone,
+              phone: normalizedPhone,
               amount,
               checkout_request_id: stkResponse.CheckoutRequestID,
               merchant_request_id: stkResponse.MerchantRequestID,

@@ -28,7 +28,8 @@ router.use('/bills', require('./billRoutes'));
 router.use('/payment-plans', require('./paymentPlanRoutes')); // deposit + instalment schedules on a bill, overdue/collections view
 router.use('/bill-items', require('./billItemRoutes'));
 router.use('/payments', require('./paymentRoutes'));
-router.use('/mpesa', require('./mpesaRoutes'));
+router.use('/mpesa', require('./mpesaRoutes')); // frontend: /api/mpesa/initiate, /status, /bill
+router.use('/pay', require('./mpesaRoutes')); // same router; Daraja callback URL uses this path because it rejects "mpesa"
 router.use('/kcb', require('./kcbRoutes')); // KCB Buni STK push (runs alongside Daraja)
 router.use('/equity', require('./equityRoutes')); // Equity paybill STK push via Jenga (runs alongside Daraja/KCB)
 router.use('/insurance-providers', require('./insuranceProviderRoutes'));

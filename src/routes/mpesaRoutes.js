@@ -8,6 +8,7 @@ const mpesaCallbackGuard = require('../middleware/mpesaCallbackGuard');
 
 // Public — Safaricom calls this directly, it can't send a JWT. Must stay outside verifyToken.
 // The :secret segment must equal MPESA_CALLBACK_SECRET, and MPESA_CALLBACK_URL must end with it.
+// Daraja rejects callback URLs containing "mpesa", so register it via the /pay alias in mainRoutes.
 router.post('/callback/:secret', mpesaCallbackGuard, handleCallback);
 
 // Everything else requires auth
