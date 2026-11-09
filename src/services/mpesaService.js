@@ -4,6 +4,29 @@ const BASE_URL = process.env.MPESA_ENV === 'production'
   ? 'https://api.safaricom.co.ke'
   : 'https://sandbox.safaricom.co.ke';
 
+// Fail loudly at startup instead of silently sending Paybill defaults for a Till.
+const REQUIRED_ENV = [
+  'MPESA_ENV', 'MPESA_CONSUMER_KEY', 'MPESA_CONSUMER_SECRET', 'MPESA_PASSKEY',
+  'MPESA_SHORTCODE', 'MPESA_CALLBACK_URL', 'MPESA_CALLBACK_SECRET',
+];
+const missing = REQUIRED_ENV.filter((k) => !process.env[k]);
+if (missing.length) console.error(`[mpesa] Missing env vars: ${missing.join(', ')}`);
+if (process.env.MPESA_ENV === 'production') {
+  if (process.env.MPESA_TRANSACTION_TYPE === 'CustomerBuyGoodsOnline' && !process.env.MPESA_PARTY_B) {
+    console.error('[mpesa] Till setup needs MPESA_PARTY_B (the till number); PartyB would fall back to the store number');
+  }
+  if (!process.env.MPESA_TRANSACTION_TYPE) {
+    console.warn('[mpesa] MPESA_TRANSACTION_TYPE not set; defaulting to CustomerPayBillOnline (wrong for a Till)');
+  }
+  if (process.env.MPESA_CALLBACK_URL && /mpesa/i.test(process.env.MPESA_CALLBACK_URL)) {
+    console.warn('[mpesa] MPESA_CALLBACK_URL contains "mpesa"; Daraja rejects such URLs');
+  }
+  if (process.env.MPESA_CALLBACK_URL && process.env.MPESA_CALLBACK_SECRET
+    && !process.env.MPESA_CALLBACK_URL.endsWith(process.env.MPESA_CALLBACK_SECRET)) {
+    console.warn('[mpesa] MPESA_CALLBACK_URL does not end with MPESA_CALLBACK_SECRET; callbacks will be rejected (404)');
+  }
+}
+
 let cachedToken = null;
 let tokenExpiresAt = 0;
 

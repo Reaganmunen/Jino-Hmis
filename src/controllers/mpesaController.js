@@ -131,11 +131,17 @@ const settleWithRetry = (checkoutRequestId, data, attempt, done) => {
   });
 };
 
-const creditBill = (transaction, amountPaid, mpesaReceipt, res) => {
+const creditBill = (transaction, amountPaid, mpesaReceipt, done) => {
+  // Always credit the amount we requested; a different amount in the callback is suspicious.
+  if (amountPaid && Number(amountPaid) !== Number(transaction.amount)) {
+    console.warn(
+      `M-Pesa amount mismatch for ${transaction.checkout_request_id}: callback ${amountPaid}, requested ${transaction.amount}`
+    );
+  }
   recordPayment(
     {
       bill_id: transaction.bill_id,
-      amount: amountPaid || transaction.amount,
+      amount: transaction.amount,
       method: 'mpesa',
       reference: mpesaReceipt || transaction.checkout_request_id,
       received_by: null,
@@ -144,9 +150,25 @@ const creditBill = (transaction, amountPaid, mpesaReceipt, res) => {
       // Transaction is already 'success'; the reconciliation job re-credits any
       // success row with no matching Payment, so just log here.
       if (paymentErr) console.error('recordPayment failed, reconciliation will retry:', paymentErr);
-      res.status(200).json(ACK);
+      done();
     }
   );
+};
+
+// Safaricom's query endpoint often isn't ready for a few seconds after the callback,
+// so retry before giving up and leaving the row for the reconciliation job.
+const VERIFY_RETRIES = 4;
+const VERIFY_DELAY_MS = 3000;
+
+const verifyWithRetry = (checkoutRequestId, attempt, done) => {
+  queryStkStatus(checkoutRequestId, (err, result) => {
+    if (!err && result && String(result.ResultCode) === '0') return done(true);
+    // A definitive failure code means the callback's "success" is not trustworthy; stop retrying.
+    const definitiveFail = !err && result && result.ResultCode !== undefined
+      && !['0', '4999'].includes(String(result.ResultCode));
+    if (definitiveFail || attempt >= VERIFY_RETRIES) return done(false, err || result);
+    setTimeout(() => verifyWithRetry(checkoutRequestId, attempt + 1, done), VERIFY_DELAY_MS);
+  });
 };
 
 // Public endpoint (no JWT). Mounted at /callback/:secret behind mpesaCallbackGuard.
@@ -166,6 +188,10 @@ const handleCallback = (req, res) => {
     amountPaid = (items.find((i) => i.Name === 'Amount') || {}).Value || null;
   }
 
+  // Acknowledge immediately so Safaricom never waits on our DB or verification calls.
+  // Everything below runs after the response; failures are picked up by reconciliation.
+  res.status(200).json(ACK);
+
   const settle = () => {
     settleWithRetry(
       CheckoutRequestID,
@@ -179,10 +205,10 @@ const handleCallback = (req, res) => {
       (err, transaction) => {
         if (err) {
           console.error('Failed to settle M-Pesa transaction, reconciliation will retry:', err);
-          return res.status(200).json(ACK);
+          return;
         }
-        if (!success || !transaction) return res.status(200).json(ACK);
-        creditBill(transaction, amountPaid, mpesaReceipt, res);
+        if (!success || !transaction) return;
+        creditBill(transaction, amountPaid, mpesaReceipt, () => {});
       }
     );
   };
@@ -190,12 +216,11 @@ const handleCallback = (req, res) => {
   if (!success || !shouldVerifyCallback()) return settle();
 
   // Callbacks are unsigned, so ask Safaricom whether this payment really succeeded.
-  // If the check fails or can't be completed, leave the row 'pending'; the reconciliation
-  // job will settle it from Safaricom's answer.
-  queryStkStatus(CheckoutRequestID, (queryErr, result) => {
-    if (queryErr || !result || String(result.ResultCode) !== '0') {
-      console.warn(`M-Pesa callback for ${CheckoutRequestID} not confirmed by Safaricom; deferring`, queryErr || result);
-      return res.status(200).json(ACK);
+  // If it can't be confirmed, leave the row 'pending'; reconciliation settles it later.
+  verifyWithRetry(CheckoutRequestID, 1, (confirmed, detail) => {
+    if (!confirmed) {
+      console.warn(`M-Pesa callback for ${CheckoutRequestID} not confirmed by Safaricom; deferring`, detail);
+      return;
     }
     settle();
   });
