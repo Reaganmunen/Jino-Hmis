@@ -1,10 +1,14 @@
 /**
  * smsService.js
  *
- * Sends appointment SMS to patients through Africa's Talking and records every
- * attempt in the "SmsLog" table (which event, who triggered it, how many billable
- * segments, what it cost). Used by appointmentController.notifyPatient(), the same
+ * Sends appointment SMS to patients through HashSMS (HashBack Solutions, api.hashback.co.ke)
+ * and records every attempt in the "SmsLog" table (which event, who triggered it, how many
+ * billable units, what it cost). Used by appointmentController.notifyPatient(), the same
  * place that already sends the email, so SMS and email can never drift apart.
+ *
+ * Why HashSMS: every account can send from day one on the shared sender "HASHBACKSMS", with no
+ * sender ID application, at a flat KES 0.35 per unit (168 characters) on all Kenyan networks.
+ * You top up the SMS wallet by M-Pesa and send. A message the network rejects is refunded.
  *
  * Fire-and-forget by design: callers must NOT await sendAppointmentSms() before
  * responding. It never throws; any failure is logged and the appointment action
@@ -20,10 +24,10 @@
  *   SMS_ENABLED              'true' to really send. Unset = completely off
  *   SMS_DRY_RUN              'true' (with SMS_ENABLED not true) prints each message to the console
  *                            instead of sending; handy for checking wording before going live
- *   AT_USERNAME              your Africa's Talking app username ('sandbox' while testing)
- *   AT_API_KEY               API key from the AT dashboard
- *   AT_SENDER_ID             optional, approved alphanumeric sender ID (max 11 chars)
- *   AT_ENV                   'sandbox' or 'production' (default: production when NODE_ENV=production)
+ *   HASHSMS_API_KEY          your HashBack API key (dashboard > Settings)
+ *   HASHSMS_SENDER_ID        optional. Leave empty to use your account default (the shared
+ *                            HASHBACKSMS sender, or your own sender ID once one is assigned)
+ *   HASHSMS_BASE_URL         optional, default https://api.hashback.co.ke/sms
  *   SMS_CLINIC_NAME          optional short name for the SMS prefix (falls back to CLINIC_NAME)
  *   SMS_NOTIFY_SELF_ACTIONS  'true' to also text a patient about things they did themselves
  *                            (default false: they just saw it on screen, so it would be paid-for noise)
@@ -91,29 +95,32 @@ const countSegments = (text) => {
 };
 
 // ---------------------------------------------------------------------------
-// Africa's Talking
+// HashSMS
 // ---------------------------------------------------------------------------
 
-const isSandbox = () => {
-  const env = (process.env.AT_ENV || (process.env.NODE_ENV === 'production' ? 'production' : 'sandbox')).toLowerCase();
-  return env === 'sandbox';
+const getSendUrl = () => {
+  const raw = process.env.HASHSMS_BASE_URL || 'https://api.hashback.co.ke/sms';
+  return new URL(raw.replace(/\/+$/, '') + '/send');
 };
 
-const postToAfricasTalking = ({ to, message }) =>
+const postToHashSms = ({ to, message }) =>
   new Promise((resolve, reject) => {
-    const form = { username: process.env.AT_USERNAME, to, message };
-    if (process.env.AT_SENDER_ID && !isSandbox()) form.from = process.env.AT_SENDER_ID;
-    const body = new URLSearchParams(form).toString();
+    const url = getSendUrl();
+    const payload = { to, message }; // HashSMS accepts 07..., 2547... and +2547...
+    // sender_id omitted = the account default (shared HASHBACKSMS, or your own ID once assigned)
+    if (process.env.HASHSMS_SENDER_ID) payload.sender_id = process.env.HASHSMS_SENDER_ID;
+    const body = JSON.stringify(payload);
 
     const req = https.request(
       {
-        hostname: isSandbox() ? 'api.sandbox.africastalking.com' : 'api.africastalking.com',
-        path: '/version1/messaging',
+        hostname: url.hostname,
+        port: url.port || 443,
+        path: url.pathname,
         method: 'POST',
         headers: {
-          apiKey: process.env.AT_API_KEY,
+          Authorization: `Bearer ${process.env.HASHSMS_API_KEY}`,
           Accept: 'application/json',
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/json',
           'Content-Length': Buffer.byteLength(body),
         },
         timeout: 10000,
@@ -122,26 +129,35 @@ const postToAfricasTalking = ({ to, message }) =>
         let raw = '';
         res.on('data', (chunk) => { raw += chunk; });
         res.on('end', () => {
-          if (res.statusCode < 200 || res.statusCode >= 300) {
-            return reject(new Error(`Africa's Talking HTTP ${res.statusCode}: ${raw.slice(0, 200)}`));
+          let json = null;
+          try { json = JSON.parse(raw); } catch (e) { /* handled below */ }
+          if (!json) {
+            return reject(new Error(`HashSMS HTTP ${res.statusCode}: unreadable response ${raw.slice(0, 200)}`));
           }
-          try { resolve(JSON.parse(raw)); } catch (e) { reject(new Error(`Unreadable response: ${raw.slice(0, 200)}`)); }
+          resolve({ httpStatus: res.statusCode, json });
         });
       },
     );
-    req.on('timeout', () => req.destroy(new Error('Africa\'s Talking request timed out')));
+    req.on('timeout', () => req.destroy(new Error('HashSMS request timed out')));
     req.on('error', reject);
     req.write(body);
     req.end();
   });
 
-// AT statusCodes: 100 Processed, 101 Sent, 102 Queued are all "accepted"; others are rejections
-const AT_ACCEPTED = new Set([100, 101, 102]);
-
-// "KES 0.8000" -> 0.8
-const parseCost = (cost) => {
-  const n = parseFloat(String(cost || '').replace(/[^\d.]/g, ''));
-  return Number.isFinite(n) ? n : null;
+// Success is 201 with { success: true, id, to, sender_id, status, units, cost, balance }.
+// Failures carry a stable `code` (INSUFFICIENT_FUNDS, SENDER_NOT_FOUND, RATE_LIMITED, ...).
+const readHashSmsReply = ({ httpStatus, json }) => {
+  const ok = httpStatus >= 200 && httpStatus < 300 && json.success !== false;
+  const num = (v) => { const n = Number(v); return Number.isFinite(n) ? n : null; };
+  return {
+    ok,
+    messageId: json.id || null,
+    units: num(json.units),
+    costKes: num(json.cost),
+    balance: num(json.balance),
+    senderId: json.sender_id || null,
+    error: ok ? null : `${json.code ? json.code + ': ' : ''}${json.message || `HTTP ${httpStatus}`}`.slice(0, 300),
+  };
 };
 
 // ---------------------------------------------------------------------------
@@ -177,13 +193,20 @@ const sendAppointmentSms = async (event, details, actor) => {
   if (process.env.SMS_ENABLED !== 'true' && process.env.SMS_DRY_RUN !== 'true') return;
 
   try {
+    console.log(`smsService: '${event}' for appointment ${details.id}, triggered by ${actor ? actor.role : 'system'}`);
     const text = buildAppointmentSms(event, details);
-    if (!text) return; // statuses with no SMS (checked_in, completed, no_show ...)
+    if (!text) {
+      console.log(`smsService: no SMS template for '${event}', nothing sent`); // statuses like checked_in, completed, no_show
+      return;
+    }
 
     // The patient did this themselves and is looking at the confirmation screen. Texting them
     // costs money and tells them nothing new. Flip SMS_NOTIFY_SELF_ACTIONS=true to override.
     const isSelfAction = actor && actor.role === 'patient';
-    if (isSelfAction && process.env.SMS_NOTIFY_SELF_ACTIONS !== 'true') return;
+    if (isSelfAction && process.env.SMS_NOTIFY_SELF_ACTIONS !== 'true') {
+      console.log(`smsService: skipped '${event}', the patient did this themselves (set SMS_NOTIFY_SELF_ACTIONS=true to text them anyway)`);
+      return;
+    }
 
     const message = toGsm(text);
     const { encoding, segments, length } = countSegments(message);
@@ -213,23 +236,22 @@ const sendAppointmentSms = async (event, details, actor) => {
       console.log(`smsService [dry run] -> ${phone} (${segments} seg): ${message}`);
       return;
     }
-    if (!process.env.AT_USERNAME || !process.env.AT_API_KEY) {
-      console.error('smsService: SMS_ENABLED is true but AT_USERNAME / AT_API_KEY are not set');
+    if (!process.env.HASHSMS_API_KEY) {
+      console.error('smsService: SMS_ENABLED is true but HASHSMS_API_KEY is not set');
       return;
     }
 
     try {
-      const data = await postToAfricasTalking({ to: phone, message });
-      const recipient = data && data.SMSMessageData && data.SMSMessageData.Recipients && data.SMSMessageData.Recipients[0];
-      if (recipient && AT_ACCEPTED.has(Number(recipient.statusCode))) {
-        console.log(`smsService: sent '${event}' for appointment ${details.id} (${segments} seg, ${recipient.cost})`);
+      const reply = readHashSmsReply(await postToHashSms({ to: phone, message }));
+      if (reply.ok) {
+        const units = reply.units ?? segments;
+        console.log(`smsService: sent '${event}' for appointment ${details.id} (${units} unit(s), KES ${reply.costKes ?? '?'}, sender ${reply.senderId || 'default'}, wallet ${reply.balance ?? '?'})`);
         return writeLog({
-          ...base, phone, status: 'sent', provider_message_id: recipient.messageId, cost_kes: parseCost(recipient.cost),
+          ...base, phone, segments: units, status: 'sent', provider_message_id: reply.messageId, cost_kes: reply.costKes,
         });
       }
-      const reason = recipient ? `${recipient.status} (code ${recipient.statusCode})` : 'No recipient in provider response';
-      console.error(`smsService: provider rejected '${event}' for appointment ${details.id}: ${reason}`);
-      return writeLog({ ...base, phone, status: 'failed', error: reason });
+      console.error(`smsService: provider rejected '${event}' for appointment ${details.id}: ${reply.error}`);
+      return writeLog({ ...base, phone, status: 'failed', error: reply.error });
     } catch (sendErr) {
       console.error(`smsService: send failed for appointment ${details.id}:`, sendErr.message);
       return writeLog({ ...base, phone, status: 'failed', error: sendErr.message.slice(0, 300) });
@@ -239,4 +261,14 @@ const sendAppointmentSms = async (event, details, actor) => {
   }
 };
 
-module.exports = { sendAppointmentSms, normalizeKenyanPhone, countSegments, toGsm, parseCost };
+// Startup banner, only for clinics that enabled SMS (or dry run): shows what THIS running process
+// picked up from its environment, so "did my env vars load / did it restart?" is answered in the logs.
+if (process.env.SMS_ENABLED === 'true' || process.env.SMS_DRY_RUN === 'true') {
+  console.log(
+    `smsService: ${process.env.SMS_ENABLED === 'true' ? 'LIVE' : 'DRY RUN'} | provider=HashSMS`
+    + ` | apiKey=${process.env.HASHSMS_API_KEY ? 'set' : '(MISSING)'}`
+    + ` | senderId=${process.env.HASHSMS_SENDER_ID || '(account default)'} | selfActions=${process.env.SMS_NOTIFY_SELF_ACTIONS === 'true'}`,
+  );
+}
+
+module.exports = { sendAppointmentSms, normalizeKenyanPhone, countSegments, toGsm };

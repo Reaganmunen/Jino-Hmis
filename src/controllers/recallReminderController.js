@@ -26,7 +26,7 @@ const getPatientReminders = (req, res, next) => {
   });
 };
 
-// Called after the SMS/email actually goes out (e.g. by the cron job, post Africa's Talking send)
+// Called after the SMS/email actually goes out (e.g. by the cron job, after the SMS provider send)
 const markSent = (req, res, next) => {
   markReminderSent(req.params.id, (err, reminder) => {
     if (err) return next(err);
