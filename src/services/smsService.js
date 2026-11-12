@@ -269,6 +269,9 @@ if (process.env.SMS_ENABLED === 'true' || process.env.SMS_DRY_RUN === 'true') {
     + ` | apiKey=${process.env.HASHSMS_API_KEY ? 'set' : '(MISSING)'}`
     + ` | senderId=${process.env.HASHSMS_SENDER_ID || '(account default)'} | selfActions=${process.env.SMS_NOTIFY_SELF_ACTIONS === 'true'}`,
   );
+} else {
+  // One line at startup so the logs always say whether SMS is on. Nothing is printed per request.
+  console.log(`smsService: DISABLED (SMS_ENABLED is ${JSON.stringify(process.env.SMS_ENABLED)}, expected "true"). No SMS will be sent.`);
 }
 
 module.exports = { sendAppointmentSms, normalizeKenyanPhone, countSegments, toGsm };
