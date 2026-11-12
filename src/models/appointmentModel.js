@@ -28,14 +28,15 @@ const findAppointmentById = (id, callback) => {
   });
 };
 
-// Used only for email notifications — joins in what the templates need
-// (patient name/email, dentist name). Deliberately has NO deleted_at filter
+// Used only for notifications (email + SMS) — joins in what the templates need
+// (patient name/email/phone, dentist name). Deliberately has NO deleted_at filter
 // (unlike findAppointmentById) because we still need to email the patient
 // after a cancel, which sets deleted_at on the row.
 const findAppointmentWithDetails = (id, callback) => {
   const query = `
     SELECT a.*,
            p.first_name AS patient_first_name, p.last_name AS patient_last_name, p.email AS patient_email,
+           p.phone AS patient_phone,
            d.first_name AS dentist_first_name, d.last_name AS dentist_last_name
     FROM "Appointment" a
     JOIN "Patient" p ON p.id = a.patient_id

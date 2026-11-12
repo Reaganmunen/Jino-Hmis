@@ -39,6 +39,7 @@ router.use('/lab-partners', require('./labPartnerRoutes'));
 router.use('/lab-orders', require('./labOrderRoutes'));
 router.use('/referrals', require('./referralRoutes'));
 router.use('/recall-reminders', require('./recallReminderRoutes'));
+router.use('/sms', require('./smsRoutes')); // admin-only: SMS usage per month + per-message log
 router.use('/audit-log', require('./auditLogRoutes'));
 router.use('/admin', require('./adminRoutes')); // NEW — admin overview stats + clinic-wide schedule
 

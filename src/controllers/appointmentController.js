@@ -7,6 +7,7 @@ const {
 const { findUserById } = require('../models/userModel');
 const { sendEmail } = require('../services/emailService');
 const { getAppointmentEmail } = require('../services/emailTemplates');
+const { sendAppointmentSms } = require('../services/smsService');
 
 const STAFF = ['admin', 'dentist', 'receptionist'];
 
@@ -20,17 +21,27 @@ const canAccessAppointment = (user, appointment) => {
 };
 
 // Fire-and-forget: never awaited, never blocks the HTTP response, never
-// throws into the request cycle. If the email fails, the appointment action
+// throws into the request cycle. If the email/SMS fails, the appointment action
 // itself has already succeeded and already responded to the client.
-const notifyPatient = (action, appointmentId) => {
+//
+// `actor` is req.user (who did it). It is recorded on the SMS log so you can tell
+// "receptionist booked" from "dentist cancelled", and lets the SMS layer skip
+// texting a patient about something they just did themselves.
+//
+// Email behaviour is exactly what it was before SMS existed. SMS has its own two knobs:
+//   options.smsAction  send a different SMS event than the email action (edit: dentist-only change)
+//   options.skipSms    don't text this time (e.g. status didn't actually change)
+const notifyPatient = (action, appointmentId, actor, options = {}) => {
   findAppointmentWithDetails(appointmentId, (err, details) => {
     if (err || !details) {
       console.error(`notifyPatient(${action}) — couldn't load appointment ${appointmentId}`, err);
       return;
     }
     const email = getAppointmentEmail(action, details);
-    if (!email) return; // e.g. a status with no template (checked_in, completed, etc.)
-    sendEmail({ to: details.patient_email, subject: email.subject, html: email.html });
+    if (email) sendEmail({ to: details.patient_email, subject: email.subject, html: email.html });
+    // Statuses with no template (checked_in, completed, no_show ...) send no email and no SMS.
+    // sendAppointmentSms never throws and is a no-op unless the clinic enabled SMS; the .catch is belt and braces.
+    if (!options.skipSms) sendAppointmentSms(options.smsAction || action, details, actor).catch(() => {});
   });
 };
 
@@ -102,7 +113,7 @@ const bookAppointment = (req, res, next) => {
     if (err) return next(err);
     res.status(201).json(appointment);
     // No "your appointment is booked" email for a visit that has already happened.
-    if (!recordPast) notifyPatient('booked', appointment.id);
+    if (!recordPast) notifyPatient('booked', appointment.id, req.user);
   });
 };
 
@@ -178,7 +189,9 @@ const setStatus = (req, res, next) => {
       if (err) return next(err);
       if (!appointment) return res.status(404).json({ message: 'Appointment not found' });
       res.json(appointment);
-      notifyPatient(status, appointment.id); // no-op for statuses with no template (checked_in, completed, ...)
+      // Email: as before. SMS: only when the status really changed, so clicking "Confirm" twice
+      // doesn't send (and bill) two texts. No-op for statuses with no template (checked_in, completed, ...).
+      notifyPatient(status, appointment.id, req.user, { skipSms: existing.status === status });
     });
   });
 };
@@ -206,7 +219,7 @@ const reschedule = (req, res, next) => {
     rescheduleAppointment(req.params.id, scheduled_start, scheduled_end, (err, updated) => {
       if (err) return next(err);
       res.json(updated);
-      notifyPatient('rescheduled', updated.id);
+      notifyPatient('rescheduled', updated.id, req.user);
     });
   });
 };
@@ -216,7 +229,7 @@ const reschedule = (req, res, next) => {
 // receptionist's "Edit appointment" action calls; distinct from `reschedule`
 // above, which only changes time and is also reachable by patients.
 //
-// Email policy: only notify the patient if the dentist or the appointment
+// Notification policy (email + SMS): only notify the patient if the dentist or the appointment
 // time actually changed — those are the changes that affect the patient's
 // plans. A pure room/reason correction (e.g. fixing a typo) stays silent so
 // staff aren't spamming patients for internal housekeeping edits.
@@ -244,10 +257,14 @@ const editAppointment = (req, res, next) => {
       return res.status(400).json({ message: PAST_TIME_MESSAGE });
     }
 
-    const patientFacingChange =
-      String(appointment.dentist_id) !== String(dentist_id) ||
+    const dentistChanged = String(appointment.dentist_id) !== String(dentist_id);
+    const timeChanged =
       new Date(appointment.scheduled_start).getTime() !== new Date(scheduled_start).getTime() ||
       new Date(appointment.scheduled_end).getTime() !== new Date(scheduled_end).getTime();
+    const patientFacingChange = dentistChanged || timeChanged;
+    // Email keeps using 'rescheduled' for any patient-facing change, as before. The SMS is more precise:
+    // time moved = 'rescheduled'; only the dentist changed = 'reassigned' ("same time, new dentist").
+    const smsAction = timeChanged ? 'rescheduled' : 'reassigned';
 
     updateAppointment(
       req.params.id,
@@ -256,7 +273,7 @@ const editAppointment = (req, res, next) => {
         if (err) return next(err);
         if (!updated) return res.status(404).json({ message: 'Appointment not found' });
         res.json(updated);
-        if (patientFacingChange) notifyPatient('rescheduled', updated.id);
+        if (patientFacingChange) notifyPatient('rescheduled', updated.id, req.user, { smsAction });
       },
     );
   });
@@ -294,7 +311,7 @@ const reassign = (req, res, next) => {
         if (err) return next(err);
         if (!updated) return res.status(404).json({ message: 'Appointment not found' });
         res.json(updated);
-        notifyPatient('reassigned', updated.id);
+        notifyPatient('reassigned', updated.id, req.user);
       });
     });
   });
@@ -312,7 +329,7 @@ const cancelAppointment = (req, res, next) => {
       if (err) return next(err);
       if (!rowCount) return res.status(404).json({ message: 'Appointment not found' });
       res.json({ message: 'Appointment cancelled' });
-      notifyPatient('cancelled', req.params.id);
+      notifyPatient('cancelled', req.params.id, req.user);
     });
   });
 };
